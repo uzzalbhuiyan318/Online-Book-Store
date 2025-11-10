@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 from .models import Category, Book, Review, Wishlist, Cart, Banner
 
 
@@ -16,7 +18,7 @@ class BookAdmin(admin.ModelAdmin):
     list_display = ['title', 'author', 'category', 'price', 'discount_price', 'stock', 'is_active', 'is_featured']
     list_filter = ['category', 'language', 'is_active', 'is_featured', 'is_bestseller', 'created_at']
     search_fields = ['title', 'author', 'isbn', 'publisher']
-    list_editable = ['is_active', 'is_featured', 'stock']
+    list_editable = ['is_active', 'stock']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['views', 'sales']
     
@@ -43,6 +45,20 @@ class BookAdmin(admin.ModelAdmin):
             'fields': ('views', 'sales')
         }),
     )
+    
+    def save_model(self, request, obj, form, change):
+        try:
+            super().save_model(request, obj, form, change)
+            if obj.is_featured:
+                featured_count = Book.objects.filter(is_featured=True).count()
+                self.message_user(
+                    request,
+                    f'Book marked as featured. Total featured books: {featured_count}/4',
+                    messages.SUCCESS
+                )
+        except ValidationError as e:
+            self.message_user(request, str(e), messages.ERROR)
+            raise
 
 
 @admin.register(Review)

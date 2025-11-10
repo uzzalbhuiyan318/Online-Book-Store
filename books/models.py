@@ -94,6 +94,15 @@ class Book(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        
+        # Validate featured books limit
+        if self.is_featured:
+            # Count current featured books (excluding this one if updating)
+            featured_count = Book.objects.filter(is_featured=True).exclude(pk=self.pk).count()
+            if featured_count >= 4:
+                from django.core.exceptions import ValidationError
+                raise ValidationError('Maximum 4 books can be featured. Please unmark another book first.')
+        
         super().save(*args, **kwargs)
     
     @property
