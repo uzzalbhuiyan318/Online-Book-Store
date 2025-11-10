@@ -1,0 +1,1731 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Agent Dashboard - Customer Support{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hide chat widget on agent dashboard */
+    .chat-widget {
+        display: none !important;
+    }
+    
+    body {
+        overflow: hidden;
+        overflow-x: hidden;
+    }
+    
+    .agent-dashboard {
+        height: calc(100vh - 56px);
+        display: flex;
+        gap: 0;
+        margin: 0;
+        overflow-x: hidden;
+    }
+    
+    /* Sidebar */
+    .conversations-sidebar {
+        width: 380px;
+        border-right: 2px solid #e0e0e0;
+        background: #fff;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .sidebar-header {
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .sidebar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .sidebar-title i {
+        font-size: 24px;
+    }
+    
+    .agent-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding: 10px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+    }
+    
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+    
+    .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ffc107;
+        border: 2px solid white;
+    }
+    
+    .status-dot.online {
+        background: #28a745;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
+    }
+    
+    .toggle-status-btn {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 5px 15px;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 13px;
+    }
+    
+    .toggle-status-btn:hover {
+        background: rgba(255,255,255,0.3);
+    }
+    
+    .conversation-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    .conversation-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        position: relative;
+    }
+    
+    .conversation-item:hover {
+        background: #f8f9ff;
+    }
+    
+    .conversation-item.active {
+        background: #e8eeff;
+        border-left: 4px solid #667eea;
+    }
+    
+    .conversation-item.unread {
+        background: #fffbf0;
+        font-weight: 600;
+    }
+    
+    .conv-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    
+    .conv-user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+    
+    .conv-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 600;
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+    
+    .conv-avatar.initials {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .conv-details {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .conv-name {
+        font-weight: 600;
+        font-size: 15px;
+        color: #2c3e50;
+        margin-bottom: 4px;
+    }
+    
+    .conv-last-msg {
+        font-size: 13px;
+        color: #7f8c8d;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .conv-meta {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 5px;
+    }
+    
+    .conv-time {
+        font-size: 11px;
+        color: #95a5a6;
+    }
+    
+    .unread-badge {
+        background: #e74c3c;
+        color: white;
+        border-radius: 12px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        min-width: 20px;
+        text-align: center;
+        animation: badgePulse 2s infinite;
+    }
+    
+    @keyframes badgePulse {
+        0%, 100% { 
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);
+        }
+        50% { 
+            transform: scale(1.05);
+            box-shadow: 0 0 0 4px rgba(231, 76, 60, 0);
+        }
+    }
+    
+    /* Chat Area */
+    .chat-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #f5f7fa;
+    }
+    
+    .chat-header {
+        padding: 18px 25px;
+        border-bottom: 2px solid #e0e0e0;
+        background: linear-gradient(135deg, #20b2aa 0%, #008b8b 100%);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .chat-user-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .chat-user-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+    }
+    
+    .chat-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: 600;
+        object-fit: cover;
+    }
+    
+    .chat-avatar.initials {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .chat-user-details h6 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #ffffff;
+    }
+    
+    .chat-user-details small {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+    }
+    
+    .chat-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-left: auto;
+    }
+    
+    .chat-actions select {
+        font-size: 13px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    
+    .chat-actions select option {
+        color: #2c3e50;
+        background: white;
+    }
+    
+    .chat-messages-container {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 25px;
+        background: #ecf0f1;
+    }
+    
+    .message-group {
+        margin-bottom: 20px;
+    }
+    
+    .date-separator {
+        text-align: center;
+        margin: 25px 0;
+        position: relative;
+    }
+    
+    .date-separator-line {
+        height: 1px;
+        background: #bdc3c7;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+    }
+    
+    .date-separator-text {
+        background: #ecf0f1;
+        padding: 5px 15px;
+        border-radius: 12px;
+        font-size: 12px;
+        color: #7f8c8d;
+        font-weight: 600;
+        position: relative;
+        display: inline-block;
+        z-index: 1;
+    }
+    
+    .chat-message {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 8px;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .chat-message.customer {
+        justify-content: flex-start;
+    }
+    
+    .chat-message.agent {
+        justify-content: flex-end;
+    }
+    
+    .message-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #95a5a6;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 600;
+        flex-shrink: 0;
+        object-fit: cover;
+    }
+    
+    .message-avatar img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .chat-message.customer .message-avatar {
+        background: #008b8b;
+    }
+    
+    .chat-message.agent .message-avatar {
+        background: #008b8b;
+    }
+    
+    .message-content {
+        max-width: 60%;
+    }
+    
+    .message-bubble {
+        padding: 12px 16px;
+        border-radius: 18px;
+        word-wrap: break-word;
+        line-height: 1.5;
+        font-size: 14px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    
+    .chat-message.customer .message-bubble {
+        background: white;
+        color: #2c3e50;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .chat-message.agent .message-bubble {
+        background: #008b8b;;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        color: #95a5a6;
+        margin-top: 4px;
+        padding: 0 4px;
+        cursor: pointer;
+        position: relative;
+    }
+    
+    .chat-message.agent .message-time {
+        text-align: right;
+    }
+    
+    .message-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2c3e50;
+        color: white;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        margin-bottom: 5px;
+        z-index: 10;
+    }
+    
+    .message-tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #2c3e50;
+    }
+    
+    .message-time:hover .message-tooltip {
+        opacity: 1;
+    }
+    
+    .chat-input-area {
+        padding: 20px 25px;
+        border-top: 2px solid #e0e0e0;
+        background: white;
+    }
+    
+    .quick-replies-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        overflow-x: auto;
+        padding: 5px 0;
+    }
+    
+    .quick-replies-row::-webkit-scrollbar {
+        height: 4px;
+    }
+    
+    .quick-replies-row::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    .quick-replies-row::-webkit-scrollbar-thumb {
+        background: #bdc3c7;
+        border-radius: 4px;
+    }
+    
+    .quick-reply-btn {
+        font-size: 12px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        border: 1px solid #667eea;
+        background: white;
+        color: #667eea;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    
+    .quick-reply-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+    }
+    
+    .input-container {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        overflow-x: hidden;
+    }
+    
+    .input-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    
+    .emoji-btn, .attach-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 2px solid #e0e0e0;
+        background: white;
+        color: #667eea;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .emoji-btn:hover, .attach-btn:hover {
+        background: #f8f9ff;
+        border-color: #667eea;
+        transform: scale(1.05);
+    }
+    
+    .file-input {
+        display: none;
+    }
+    
+    .emoji-picker {
+        position: absolute;
+        bottom: 70px;
+        right: 25px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        display: none;
+        z-index: 1000;
+        max-width: 320px;
+        max-height: 280px;
+        overflow-y: auto;
+    }
+    
+    .emoji-picker.show {
+        display: block;
+    }
+    
+    .emoji-grid {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+    }
+    
+    .emoji-item {
+        font-size: 24px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        text-align: center;
+        transition: all 0.2s;
+    }
+    
+    .emoji-item:hover {
+        background: #f0f0f0;
+        transform: scale(1.2);
+    }
+    
+    .attached-file {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+        background: #f8f9ff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .attached-file-info {
+        flex: 1;
+    }
+    
+    .attached-file-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    
+    .attached-file-size {
+        font-size: 11px;
+        color: #7f8c8d;
+    }
+    
+    .remove-file-btn {
+        background: none;
+        border: none;
+        color: #e74c3c;
+        cursor: pointer;
+        padding: 5px;
+        font-size: 16px;
+    }
+    
+    .message-input {
+        flex: 1;
+        border: 2px solid #e0e0e0;
+        border-radius: 24px;
+        padding: 12px 18px;
+        resize: none;
+        max-height: 120px;
+        font-family: inherit;
+        font-size: 14px;
+        transition: border-color 0.2s;
+        overflow-x: hidden;
+        overflow-y: auto;
+        word-wrap: break-word;
+    }
+    
+    .message-input:focus {
+        outline: none;
+        border-color: #667eea;
+    }
+    
+    .message-attachment {
+        margin-top: 8px;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.75);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.51);
+    }
+    
+    .message-attachment img {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 8px;
+    }
+    
+    .message-attachment a {
+        color: #000000;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+    
+    .message-attachment a:hover {
+        color: #604e5cff;
+
+        text-decoration: underline;
+    }
+    
+    .send-btn {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: none;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .send-btn:hover:not(:disabled) {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .send-btn:disabled {
+        background: #bdc3c7;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #95a5a6;
+    }
+    
+    .empty-state i {
+        font-size: 80px;
+        margin-bottom: 20px;
+        opacity: 0.3;
+        color: #bdc3c7;
+    }
+    
+    .empty-state h5 {
+        color: #7f8c8d;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: #95a5a6;
+    }
+    
+    /* Scrollbar */
+    .conversation-list::-webkit-scrollbar,
+    .chat-messages-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .conversation-list::-webkit-scrollbar-track,
+    .chat-messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .conversation-list::-webkit-scrollbar-thumb,
+    .chat-messages-container::-webkit-scrollbar-thumb {
+        background: #bdc3c7;
+        border-radius: 3px;
+    }
+    
+    .conversation-list::-webkit-scrollbar-thumb:hover,
+    .chat-messages-container::-webkit-scrollbar-thumb:hover {
+        background: #95a5a6;
+    }
+    
+    /* Prevent horizontal scrolling globally */
+    * {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .message-bubble {
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+    
+    .message-content {
+        max-width: 60%;
+        overflow-x: hidden;
+    }
+    
+    .chat-message {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .chat-area {
+        overflow-x: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="agent-dashboard">
+    <!-- Conversations Sidebar -->
+    <div class="conversations-sidebar" id="conversationsSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">
+                <i class="fas fa-headset"></i>
+                <span>Conversations</span>
+            </div>
+            <div class="agent-status">
+                <div class="status-indicator">
+                    <span class="status-dot {% if agent.is_online %}online{% endif %}" id="statusDot"></span>
+                    <span id="statusText">{% if agent.is_online %}Online{% else %}Offline{% endif %}</span>
+                </div>
+                <button class="toggle-status-btn" id="toggleOnlineBtn">
+                    <i class="fas fa-power-off"></i> Toggle
+                </button>
+            </div>
+            <select class="form-select form-select-sm" id="statusFilter" style="background: rgba(255,255,255,0.9); border: none;">
+                <option value="open,pending" selected>Open & Pending</option>
+                <option value="open">Open Only</option>
+                <option value="pending">Pending Only</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+                <option value="">All</option>
+            </select>
+        </div>
+        
+        <div class="conversation-list" id="conversationList">
+            {% for conv in conversations %}
+            <div class="conversation-item {% if conv.agent_unread_count > 0 %}unread{% endif %}" 
+                 data-conversation-id="{{ conv.conversation_id }}"
+                 data-user-name="{{ conv.user.full_name }}"
+                 data-user-email="{{ conv.user.email }}"
+                 data-user-avatar="{% if conv.user.profile_image %}{{ conv.user.profile_image.url }}{% endif %}">
+                <div class="conv-user-info">
+                    {% if conv.user.profile_image %}
+                    <img src="{{ conv.user.profile_image.url }}" alt="{{ conv.user.full_name }}" class="conv-avatar">
+                    {% else %}
+                    <div class="conv-avatar initials">
+                        {{ conv.user.full_name|first|upper }}
+                    </div>
+                    {% endif %}
+                    <div class="conv-details">
+                        <div class="conv-name">{{ conv.user.full_name }}</div>
+                        <div class="conv-last-msg">
+                            {% with last_msg=conv.messages.last %}
+                                {% if last_msg %}
+                                    {{ last_msg.content|truncatewords:8 }}
+                                {% else %}
+                                    No messages yet
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="conv-meta">
+                        <div class="conv-time">{{ conv.last_message_at|timesince }} ago</div>
+                        {% if conv.agent_unread_count > 0 %}
+                        <span class="unread-badge">{{ conv.agent_unread_count }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center p-5 text-muted">
+                <i class="fas fa-inbox fa-3x mb-3" style="opacity: 0.2;"></i>
+                <p>No conversations yet</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Chat Area -->
+    <div class="chat-area" id="chatArea">
+        <div class="empty-state">
+            <i class="fas fa-comments"></i>
+            <h5>Select a conversation to start chatting</h5>
+            <p>Choose a customer from the list to view their messages</p>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden template for chat interface -->
+<template id="chatInterfaceTemplate">
+    <div class="chat-header">
+        <div class="chat-user-info">
+            <div class="chat-user-left">
+                <div class="chat-avatar initials" id="chatUserAvatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="chat-user-details">
+                    <h6 id="chatUserName">Customer Name</h6>
+                    <small id="chatUserEmail">customer@email.com</small>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <select class="form-select form-select-sm" id="conversationStatus">
+                    <option value="open">Open</option>
+                    <option value="pending">Pending</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                </select>
+                <select class="form-select form-select-sm" id="conversationPriority">
+                    <option value="low">Low</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="chat-messages-container" id="chatMessagesContainer">
+        <!-- Messages will be loaded here -->
+    </div>
+    
+    <div class="chat-input-area">
+        <div class="quick-replies-row" id="quickRepliesRow">
+            {% for reply in quick_replies|slice:":5" %}
+            <button class="quick-reply-btn" data-content="{{ reply.content }}">
+                {{ reply.title }}
+            </button>
+            {% endfor %}
+        </div>
+        <div id="attachedFilePreview"></div>
+        <div class="input-container">
+            <div class="input-actions">
+                <button class="emoji-btn" id="emojiBtn" type="button">
+                    <i class="far fa-smile"></i>
+                </button>
+                <button class="attach-btn" id="attachBtn" type="button">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <input type="file" class="file-input" id="fileInput" accept="image/*,.pdf,.doc,.docx,.txt">
+            </div>
+            <textarea 
+                class="message-input" 
+                id="messageInput" 
+                placeholder="Type your message here..."
+                rows="1"
+            ></textarea>
+            <button class="send-btn" id="sendMessageBtn" disabled>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="emoji-picker" id="emojiPicker">
+            <div class="emoji-grid" id="emojiGrid"></div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentConversationId = null;
+let lastMessageId = 0;
+let messagePolling = null;
+let conversationListPolling = null;
+let currentUserName = '';
+let currentUserEmail = '';
+let loadedMessages = new Set(); // Track loaded message IDs to prevent duplicates
+let selectedFile = null;
+
+// Common emojis
+const emojis = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊',
+    '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘',
+    '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪',
+    '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒',
+    '😞', '😔', '😟', '😕', '🙁', '😣', '😖', '😫',
+    '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬',
+    '👍', '👎', '👌', '✌️', '🤞', '🤝', '👏', '🙌',
+    '👋', '🤚', '✋', '🖐️', '🖖', '👊', '✊', '🤛',
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
+    '💯', '✅', '❌', '⭐', '🌟', '💫', '🔥', '💥',
+];
+
+// Initialize emoji picker
+function initializeEmojiPicker() {
+    const emojiGrid = document.getElementById('emojiGrid');
+    if (!emojiGrid) return;
+    
+    emojiGrid.innerHTML = '';
+    emojis.forEach(emoji => {
+        const emojiItem = document.createElement('div');
+        emojiItem.className = 'emoji-item';
+        emojiItem.textContent = emoji;
+        emojiItem.addEventListener('click', function() {
+            insertEmoji(emoji);
+        });
+        emojiGrid.appendChild(emojiItem);
+    });
+}
+
+// Insert emoji into message input
+function insertEmoji(emoji) {
+    const input = document.getElementById('messageInput');
+    if (!input) return;
+    
+    const startPos = input.selectionStart;
+    const endPos = input.selectionEnd;
+    const textBefore = input.value.substring(0, startPos);
+    const textAfter = input.value.substring(endPos);
+    
+    input.value = textBefore + emoji + textAfter;
+    input.focus();
+    
+    const newPos = startPos + emoji.length;
+    input.setSelectionRange(newPos, newPos);
+    
+    // Enable send button if there's text
+    const sendBtn = document.getElementById('sendMessageBtn');
+    if (sendBtn) {
+        sendBtn.disabled = !input.value.trim();
+    }
+    
+    // Hide emoji picker
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) {
+        emojiPicker.classList.remove('show');
+    }
+}
+
+// Toggle emoji picker
+function toggleEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) {
+        emojiPicker.classList.toggle('show');
+    }
+}
+
+// Handle file selection
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+        alert('File size must be less than 5MB');
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    if (!allowedTypes.includes(file.type)) {
+        alert('File type not allowed. Please upload images, PDF, DOC, or TXT files.');
+        return;
+    }
+    
+    selectedFile = file;
+    displayAttachedFile(file);
+}
+
+// Display attached file preview
+function displayAttachedFile(file) {
+    const preview = document.getElementById('attachedFilePreview');
+    if (!preview) return;
+    
+    const fileSize = (file.size / 1024).toFixed(2) + ' KB';
+    const fileName = file.name;
+    
+    preview.innerHTML = `
+        <div class="attached-file">
+            <i class="fas fa-file" style="font-size: 24px; color: #667eea;"></i>
+            <div class="attached-file-info">
+                <div class="attached-file-name">${fileName}</div>
+                <div class="attached-file-size">${fileSize}</div>
+            </div>
+            <button class="remove-file-btn" onclick="removeAttachedFile()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    // Enable send button
+    const sendBtn = document.getElementById('sendMessageBtn');
+    if (sendBtn) {
+        sendBtn.disabled = false;
+    }
+}
+
+// Remove attached file
+function removeAttachedFile() {
+    selectedFile = null;
+    const preview = document.getElementById('attachedFilePreview');
+    if (preview) {
+        preview.innerHTML = '';
+    }
+    
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    // Check if send button should be disabled
+    const input = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendMessageBtn');
+    if (sendBtn && input) {
+        sendBtn.disabled = !input.value.trim();
+    }
+}
+
+// Close emoji picker when clicking outside
+document.addEventListener('click', function(e) {
+    const emojiPicker = document.getElementById('emojiPicker');
+    const emojiBtn = document.getElementById('emojiBtn');
+    
+    if (emojiPicker && emojiBtn && !emojiPicker.contains(e.target) && !emojiBtn.contains(e.target)) {
+        emojiPicker.classList.remove('show');
+    }
+});
+
+// Toggle online status
+document.getElementById('toggleOnlineBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+        const response = await fetch('{% url "support:agent_toggle_online" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (data.is_online) {
+                statusDot.classList.add('online');
+                statusText.textContent = 'Online';
+            } else {
+                statusDot.classList.remove('online');
+                statusText.textContent = 'Offline';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to toggle status:', error);
+    }
+});
+
+// Load conversation
+async function loadConversation(conversationId, userName, userEmail, userAvatar) {
+    // Prevent reload if clicking same conversation
+    if (currentConversationId === conversationId) {
+        return;
+    }
+    
+    // Stop previous polling
+    if (messagePolling) {
+        clearInterval(messagePolling);
+        messagePolling = null;
+    }
+    
+    currentConversationId = conversationId;
+    currentUserName = userName;
+    currentUserEmail = userEmail;
+    lastMessageId = 0;
+    loadedMessages.clear();
+    
+    // Highlight selected conversation
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    const selectedItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('active');
+        
+        // Remove unread badge
+        setTimeout(() => {
+            selectedItem.classList.remove('unread');
+            const badge = selectedItem.querySelector('.unread-badge');
+            if (badge) badge.remove();
+        }, 500);
+    }
+    
+    // Load chat interface
+    const template = document.getElementById('chatInterfaceTemplate');
+    const chatArea = document.getElementById('chatArea');
+    chatArea.innerHTML = template.innerHTML;
+    
+    // Set user info
+    document.getElementById('chatUserName').textContent = userName;
+    document.getElementById('chatUserEmail').textContent = userEmail;
+    
+    // Set user avatar
+    const avatarEl = document.getElementById('chatUserAvatar');
+    if (userAvatar) {
+        avatarEl.innerHTML = `<img src="${userAvatar}" alt="${userName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        avatarEl.classList.remove('initials');
+    } else {
+        avatarEl.textContent = userName.charAt(0).toUpperCase();
+        avatarEl.classList.add('initials');
+    }
+    
+    // Load messages
+    await loadMessages(conversationId, true);
+    
+    // Setup input handlers
+    setupMessageInput();
+    
+    // Setup quick replies
+    setupQuickReplies();
+    
+    // Initialize emoji picker
+    initializeEmojiPicker();
+    
+    // Setup emoji button
+    const emojiBtn = document.getElementById('emojiBtn');
+    if (emojiBtn) {
+        emojiBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleEmojiPicker();
+        });
+    }
+    
+    // Setup attach button
+    const attachBtn = document.getElementById('attachBtn');
+    const fileInput = document.getElementById('fileInput');
+    if (attachBtn && fileInput) {
+        attachBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+    
+    // Start polling for new messages
+    startMessagePolling();
+}
+
+async function loadMessages(conversationId, isInitial = false) {
+    try {
+        let url = `/support/api/conversation/${conversationId}/messages/`;
+        if (!isInitial && lastMessageId > 0) {
+            url += `?after=${lastMessageId}`;
+        }
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        const container = document.getElementById('chatMessagesContainer');
+        
+        if (isInitial) {
+            container.innerHTML = '';
+            loadedMessages.clear();
+        }
+        
+        if (data.messages && data.messages.length > 0) {
+            let lastDate = null;
+            
+            data.messages.forEach(msg => {
+                // Prevent duplicate messages
+                if (!loadedMessages.has(msg.id)) {
+                    // Add date separator if date changed
+                    const msgDate = getDateOnly(msg.created_at);
+                    if (lastDate !== msgDate) {
+                        appendDateSeparator(msgDate);
+                        lastDate = msgDate;
+                    }
+                    
+                    appendMessage(msg);
+                    loadedMessages.add(msg.id);
+                    lastMessageId = Math.max(lastMessageId, msg.id);
+                }
+            });
+            
+            if (isInitial) {
+                scrollToBottom();
+            }
+        } else if (isInitial) {
+            container.innerHTML = '<div class="text-center text-muted p-4"><i class="fas fa-comment-slash"></i><br><br>No messages yet. Start the conversation!</div>';
+        }
+        
+        // Update unread count in conversation list
+        updateConversationUnreadCount(conversationId);
+        
+    } catch (error) {
+        console.error('Failed to load messages:', error);
+        const container = document.getElementById('chatMessagesContainer');
+        if (container) {
+            container.innerHTML = '<div class="text-center text-danger p-4"><i class="fas fa-exclamation-triangle"></i><br><br>Failed to load messages</div>';
+        }
+    }
+}
+
+function appendMessage(msg) {
+    const container = document.getElementById('chatMessagesContainer');
+    if (!container) return;
+    
+    const messageClass = msg.is_agent ? 'agent' : 'customer';
+    const senderName = msg.sender_name || (msg.is_agent ? '{{ user.full_name }}' : currentUserName);
+    const senderAvatar = msg.sender_avatar || (msg.is_agent ? '{% if user.profile_image %}{{ user.profile_image.url }}{% endif %}' : document.querySelector('.conversation-item.active')?.getAttribute('data-user-avatar') || '');
+    const senderInitial = senderName.charAt(0).toUpperCase();
+    const time = formatTime(msg.created_at);
+    const fullDateTime = formatFullDateTime(msg.created_at);
+    
+    let avatarHTML = '';
+    if (senderAvatar) {
+        avatarHTML = `<img src="${senderAvatar}" alt="${senderName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+    } else {
+        avatarHTML = senderInitial;
+    }
+    
+    // Handle attachment display
+    let attachmentHTML = '';
+    if (msg.attachment) {
+        const isImage = msg.message_type === 'image' || msg.attachment.match(/\.(jpg|jpeg|png|gif)$/i);
+        if (isImage) {
+            attachmentHTML = `
+                <div class="message-attachment">
+                    <img src="${msg.attachment}" alt="Attachment" />
+                </div>
+            `;
+        } else {
+            const fileName = msg.attachment_name || msg.attachment.split('/').pop();
+            attachmentHTML = `
+                <div class="message-attachment">
+                    <a href="${msg.attachment}" target="_blank">
+                        <i class="fas fa-file"></i>
+                        <span>${fileName}</span>
+                    </a>
+                </div>
+            `;
+        }
+    }
+    
+    const messageHTML = `
+        <div class="chat-message ${messageClass}" data-message-id="${msg.id}" data-created-at="${msg.created_at}">
+            <div class="message-avatar">${avatarHTML}</div>
+            <div class="message-content">
+                <div class="message-bubble">
+                    ${escapeHtml(msg.content)}
+                    ${attachmentHTML}
+                </div>
+                <div class="message-time">
+                    ${time}
+                    <div class="message-tooltip">${fullDateTime}</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', messageHTML);
+}
+
+// Append date separator (like WhatsApp)
+function appendDateSeparator(dateString) {
+    const container = document.getElementById('chatMessagesContainer');
+    if (!container) return;
+    
+    const displayDate = formatDateSeparator(dateString);
+    
+    const separatorHTML = `
+        <div class="date-separator">
+            <div class="date-separator-line"></div>
+            <div class="date-separator-text">${displayDate}</div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', separatorHTML);
+}
+
+// Get date only (YYYY-MM-DD) from ISO datetime
+function getDateOnly(dateString) {
+    const date = new Date(dateString);
+    return date.toISOString().split('T')[0];
+}
+
+// Format date separator
+function formatDateSeparator(dateString) {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const dateOnly = date.toISOString().split('T')[0];
+    const todayOnly = today.toISOString().split('T')[0];
+    const yesterdayOnly = yesterday.toISOString().split('T')[0];
+    
+    if (dateOnly === todayOnly) {
+        return 'Today';
+    } else if (dateOnly === yesterdayOnly) {
+        return 'Yesterday';
+    } else {
+        // Format as "Dec 10, 2024"
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+    }
+}
+
+// Format full date and time for tooltip
+function formatFullDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+}
+
+// Update conversation unread count
+async function updateConversationUnreadCount(conversationId) {
+    try {
+        const response = await fetch(`/support/api/conversation/${conversationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+        
+        if (response.ok) {
+            // Update UI - remove badge from current conversation
+            const convItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+            if (convItem) {
+                const badge = convItem.querySelector('.unread-badge');
+                if (badge) {
+                    badge.remove();
+                }
+                convItem.classList.remove('unread');
+            }
+        }
+    } catch (error) {
+        console.error('Failed to mark messages as read:', error);
+    }
+}
+
+function setupMessageInput() {
+    const input = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendMessageBtn');
+    
+    if (!input || !sendBtn) return;
+    
+    // Remove old event listeners by cloning
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    const newSendBtn = sendBtn.cloneNode(true);
+    sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+    
+    newInput.addEventListener('input', function() {
+        const hasText = this.value.trim();
+        const hasFile = selectedFile !== null;
+        newSendBtn.disabled = !hasText && !hasFile;
+        autoResize(this);
+    });
+    
+    newInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!newSendBtn.disabled) {
+                sendMessage();
+            }
+        }
+    });
+    
+    newSendBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+}
+
+function setupQuickReplies() {
+    document.querySelectorAll('.quick-reply-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const content = this.getAttribute('data-content');
+            const input = document.getElementById('messageInput');
+            const sendBtn = document.getElementById('sendMessageBtn');
+            if (input) {
+                input.value = content;
+                sendBtn.disabled = false;
+                input.focus();
+                autoResize(input);
+            }
+        });
+    });
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendMessageBtn');
+    const content = input.value.trim();
+    
+    if ((!content && !selectedFile) || !currentConversationId) return;
+    
+    // Disable button to prevent double-send
+    sendBtn.disabled = true;
+    
+    try {
+        const formData = new FormData();
+        if (content) {
+            formData.append('content', content);
+        }
+        formData.append('conversation_id', currentConversationId);
+        
+        // Add file if selected
+        if (selectedFile) {
+            formData.append('attachment', selectedFile);
+            formData.append('message_type', selectedFile.type.startsWith('image/') ? 'image' : 'file');
+        } else {
+            formData.append('message_type', 'text');
+        }
+        
+        const response = await fetch('{% url "support:agent_send_message" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            // Clear input immediately
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Clear file selection
+            if (selectedFile) {
+                removeAttachedFile();
+            }
+            
+            // Add message to UI with proper data
+            const newMsg = {
+                id: data.message.id,
+                content: data.message.content,
+                is_agent: true,
+                sender_name: data.message.sender_name || '{{ user.full_name }}',
+                created_at: data.message.created_at,
+                attachment: data.message.attachment,
+                attachment_name: data.message.attachment_name,
+                message_type: data.message.message_type
+            };
+            
+            if (!loadedMessages.has(newMsg.id)) {
+                appendMessage(newMsg);
+                loadedMessages.add(newMsg.id);
+                lastMessageId = Math.max(lastMessageId, newMsg.id);
+            }
+            
+            scrollToBottom();
+        } else {
+            alert(data.message || 'Failed to send message');
+            sendBtn.disabled = false;
+        }
+    } catch (error) {
+        console.error('Failed to send message:', error);
+        alert('Failed to send message. Please try again.');
+        sendBtn.disabled = false;
+    }
+}
+
+function startMessagePolling() {
+    if (messagePolling) {
+        clearInterval(messagePolling);
+    }
+    
+    messagePolling = setInterval(async () => {
+        if (currentConversationId && lastMessageId > 0) {
+            await loadMessages(currentConversationId, false);
+        }
+    }, 5000); // Poll every 5 seconds
+}
+
+// Poll for conversation list updates (unread counts)
+function startConversationListPolling() {
+    if (conversationListPolling) {
+        clearInterval(conversationListPolling);
+    }
+    
+    conversationListPolling = setInterval(async () => {
+        await updateConversationList();
+    }, 10000); // Poll every 10 seconds
+}
+
+// Update conversation list with latest unread counts
+async function updateConversationList() {
+    try {
+        const statusFilter = document.getElementById('statusFilter');
+        const status = statusFilter ? statusFilter.value : 'open,pending';
+        
+        const response = await fetch(`/support/api/conversations/?status=${encodeURIComponent(status)}`);
+        const data = await response.json();
+        
+        if (data.conversations) {
+            data.conversations.forEach(conv => {
+                const convItem = document.querySelector(`[data-conversation-id="${conv.conversation_id}"]`);
+                if (convItem && conv.conversation_id !== currentConversationId) {
+                    // Update unread badge
+                    const existingBadge = convItem.querySelector('.unread-badge');
+                    const metaDiv = convItem.querySelector('.conv-meta');
+                    
+                    if (conv.agent_unread_count > 0) {
+                        convItem.classList.add('unread');
+                        
+                        if (existingBadge) {
+                            existingBadge.textContent = conv.agent_unread_count;
+                        } else if (metaDiv) {
+                            const badge = document.createElement('span');
+                            badge.className = 'unread-badge';
+                            badge.textContent = conv.agent_unread_count;
+                            metaDiv.appendChild(badge);
+                        }
+                    } else {
+                        convItem.classList.remove('unread');
+                        if (existingBadge) {
+                            existingBadge.remove();
+                        }
+                    }
+                    
+                    // Update last message
+                    const lastMsgDiv = convItem.querySelector('.conv-last-msg');
+                    if (lastMsgDiv && conv.last_message) {
+                        lastMsgDiv.textContent = conv.last_message.content.substring(0, 50);
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Failed to update conversation list:', error);
+    }
+}
+
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
+
+function scrollToBottom() {
+    const container = document.getElementById('chatMessagesContainer');
+    if (container) {
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 50);
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatTime(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    
+    const days = Math.floor(diffHours / 24);
+    if (days < 7) return `${days}d ago`;
+    
+    return date.toLocaleDateString();
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Status filter - prevent page reload
+document.getElementById('statusFilter').addEventListener('change', function(e) {
+    e.preventDefault();
+    const status = this.value;
+    if (status) {
+        window.location.href = '{% url "support:agent_dashboard" %}?status=' + encodeURIComponent(status);
+    } else {
+        window.location.href = '{% url "support:agent_dashboard" %}';
+    }
+});
+
+// Auto-load first conversation if available
+document.addEventListener('DOMContentLoaded', function() {
+    const firstConv = document.querySelector('.conversation-item');
+    if (firstConv) {
+        const convId = firstConv.getAttribute('data-conversation-id');
+        const userName = firstConv.getAttribute('data-user-name');
+        const userEmail = firstConv.getAttribute('data-user-email');
+        const userAvatar = firstConv.getAttribute('data-user-avatar');
+        if (convId && userName && userEmail) {
+            setTimeout(() => {
+                loadConversation(convId, userName, userEmail, userAvatar);
+            }, 300);
+        }
+    }
+    
+    // Start polling for conversation list updates
+    startConversationListPolling();
+});
+
+// Clean up polling on page unload
+window.addEventListener('beforeunload', function() {
+    if (messagePolling) {
+        clearInterval(messagePolling);
+    }
+    if (conversationListPolling) {
+        clearInterval(conversationListPolling);
+    }
+});
+
+// Prevent multiple clicks on conversation items
+document.addEventListener('click', function(e) {
+    const convItem = e.target.closest('.conversation-item');
+    if (convItem) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const convId = convItem.getAttribute('data-conversation-id');
+        const userName = convItem.getAttribute('data-user-name');
+        const userEmail = convItem.getAttribute('data-user-email');
+        const userAvatar = convItem.getAttribute('data-user-avatar');
+        
+        if (convId && userName && userEmail) {
+            loadConversation(convId, userName, userEmail, userAvatar);
+        }
+    }
+});
+</script>
+{% endblock %}

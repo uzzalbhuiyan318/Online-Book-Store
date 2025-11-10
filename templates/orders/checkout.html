@@ -1,0 +1,392 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Checkout - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Checkout</h2>
+            
+            <!-- Progress Steps -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between">
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">1</div>
+                        <p class="mb-0 small mt-2">Cart</p>
+                    </div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">2</div>
+                        <p class="mb-0 small mt-2">Checkout</p>
+                    </div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">3</div>
+                        <p class="mb-0 small mt-2">Payment</p>
+                    </div>
+                    <div class="text-center flex-fill">
+                        <div class="rounded-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">4</div>
+                        <p class="mb-0 small mt-2">Complete</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="checkout-form">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Left Column - Delivery Details -->
+            <div class="col-md-7">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Delivery Information</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if addresses %}
+                        <div class="mb-3">
+                            <label class="form-label">Select Delivery Address</label>
+                            {% for address in addresses %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="address_id" id="address{{ address.id }}" 
+                                       value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
+                                <label class="form-check-label" for="address{{ address.id }}">
+                                    <strong>{{ address.full_name }}</strong> - {{ address.phone }}<br>
+                                    {{ address.address_line1 }}
+                                    {% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}<br>
+                                    {{ address.city }}, {{ address.state }} - {{ address.postal_code }}
+                                    {% if address.is_default %}<span class="badge bg-primary">Default</span>{% endif %}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            <div class="mt-3">
+                                <a href="{% url 'accounts:add_address' %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Add New Address
+                                </a>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            You don't have any saved addresses. Please add a delivery address.
+                        </div>
+                        <div class="mb-3">
+                            <label for="full_name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address_line1" class="form-label">Address Line 1</label>
+                            <input type="text" class="form-control" id="address_line1" name="address_line1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="address_line2" class="form-label">Address Line 2 (Optional)</label>
+                            <input type="text" class="form-control" id="address_line2" name="address_line2">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="city" class="form-label">City</label>
+                                <input type="text" class="form-control" id="city" name="city" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="state" class="form-label">State/Division</label>
+                                <input type="text" class="form-control" id="state" name="state" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="postal_code" class="form-label">Postal Code</label>
+                            <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Payment Method</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" checked required>
+                                <label class="form-check-label" for="cod">
+                                    <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="bkash" value="bkash" required>
+                                <label class="form-check-label" for="bkash">
+                                    <i class="fas fa-mobile-alt"></i> bKash
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="nagad" value="nagad" required>
+                                <label class="form-check-label" for="nagad">
+                                    <i class="fas fa-mobile-alt"></i> Nagad
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="rocket" value="rocket" required>
+                                <label class="form-check-label" for="rocket">
+                                    <i class="fas fa-mobile-alt"></i> Rocket
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="payment_method" id="card" value="card" required>
+                                <label class="form-check-label" for="card">
+                                    <i class="fas fa-credit-card"></i> Credit/Debit Card (SSLCommerz)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Order Notes (Optional)</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" name="notes" rows="3" placeholder="Any special instructions for delivery?"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Order Summary -->
+            <div class="col-md-5">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if cart_items %}
+                        <div class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                            {% for item in cart_items %}
+                            <div class="d-flex mb-3 pb-3 border-bottom">
+                                {% if item.book.cover_image %}
+                                <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}" class="me-3" style="width: 60px; height: 80px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-secondary me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 80px;">
+                                    <i class="fas fa-book text-white"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ item.book.title|truncatewords:5 }}</h6>
+                                    <small class="text-muted">Qty: {{ item.quantity }}</small>
+                                    <div class="fw-bold">৳{{ item.subtotal }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="border-top pt-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span>৳{{ subtotal }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Shipping:</span>
+                                <span>৳{{ shipping_cost }}</span>
+                            </div>
+                            {% if discount > 0 %}
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Discount:</span>
+                                <span>-৳{{ discount }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between mb-3 fw-bold fs-5 border-top pt-2">
+                                <span>Total:</span>
+                                <span>৳{{ total }}</span>
+                            </div>
+
+                            {% if coupon_code %}
+                            <div class="alert alert-success py-2 mb-3">
+                                <small>Coupon "{{ coupon_code }}" applied!</small>
+                                <button type="button" class="btn-close btn-sm float-end" onclick="removeCoupon()"></button>
+                            </div>
+                            {% else %}
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="coupon_code" placeholder="Coupon code">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="applyCoupon()">Apply</button>
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <button type="submit" class="btn btn-primary w-100 btn-lg">
+                                <i class="fas fa-lock"></i> Place Order
+                            </button>
+                            
+                            <a href="{% url 'books:cart' %}" class="btn btn-link w-100 mt-2">
+                                <i class="fas fa-arrow-left"></i> Back to Cart
+                            </a>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted">Your cart is empty</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+function applyCoupon() {
+    const couponCode = document.getElementById('coupon_code').value.trim();
+    
+    if (!couponCode) {
+        alert('Please enter a coupon code');
+        return;
+    }
+    
+    // Disable button to prevent multiple clicks
+    const applyBtn = event.target;
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Applying...';
+    
+    fetch("{% url 'orders:apply_coupon' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: 'coupon_code=' + encodeURIComponent(couponCode)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Coupon applied successfully, saving form state...');
+            
+            // Save the selected address before reload
+            const selectedAddress = document.querySelector('input[name="address_id"]:checked');
+            console.log('Selected address element:', selectedAddress);
+            if (selectedAddress) {
+                console.log('Saving address ID:', selectedAddress.value);
+                sessionStorage.setItem('selected_address_id', selectedAddress.value);
+            } else {
+                console.log('No address selected');
+            }
+            
+            // Save payment method
+            const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+            console.log('Selected payment:', selectedPayment ? selectedPayment.value : 'none');
+            if (selectedPayment) {
+                sessionStorage.setItem('selected_payment_method', selectedPayment.value);
+            }
+            
+            // Save order notes
+            const notesField = document.querySelector('textarea[name="notes"]');
+            if (notesField && notesField.value) {
+                console.log('Saving notes:', notesField.value);
+                sessionStorage.setItem('order_notes', notesField.value);
+            }
+            
+            console.log('Form state saved, reloading page...');
+            location.reload();
+        } else {
+            alert(data.message || 'Invalid coupon code');
+            applyBtn.disabled = false;
+            applyBtn.textContent = 'Apply';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        applyBtn.disabled = false;
+        applyBtn.textContent = 'Apply';
+    });
+}
+
+function removeCoupon() {
+    if (!confirm('Remove coupon code?')) {
+        return;
+    }
+    
+    // Save the selected address before reload
+    const selectedAddress = document.querySelector('input[name="address_id"]:checked');
+    if (selectedAddress) {
+        sessionStorage.setItem('selected_address_id', selectedAddress.value);
+    }
+    // Save payment method
+    const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+    if (selectedPayment) {
+        sessionStorage.setItem('selected_payment_method', selectedPayment.value);
+    }
+    // Save order notes
+    const notesField = document.querySelector('textarea[name="notes"]');
+    if (notesField) {
+        sessionStorage.setItem('order_notes', notesField.value);
+    }
+    
+    fetch("{% url 'orders:remove_coupon' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(() => location.reload());
+}
+
+// Restore selected values after page reload
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded - checking for saved selections...');
+    
+    // Restore selected address
+    const savedAddressId = sessionStorage.getItem('selected_address_id');
+    console.log('Saved address ID:', savedAddressId);
+    
+    if (savedAddressId) {
+        // First, uncheck all address radios
+        const allAddressRadios = document.querySelectorAll('input[name="address_id"]');
+        allAddressRadios.forEach(radio => radio.checked = false);
+        
+        // Then check the saved one
+        const addressRadio = document.querySelector(`input[name="address_id"][value="${savedAddressId}"]`);
+        console.log('Found address radio:', addressRadio);
+        if (addressRadio) {
+            addressRadio.checked = true;
+            console.log('Address restored successfully');
+        } else {
+            console.log('Address radio not found for ID:', savedAddressId);
+        }
+        sessionStorage.removeItem('selected_address_id');
+    } else {
+        console.log('No saved address ID found');
+    }
+    
+    // Restore payment method
+    const savedPaymentMethod = sessionStorage.getItem('selected_payment_method');
+    console.log('Saved payment method:', savedPaymentMethod);
+    
+    if (savedPaymentMethod) {
+        // First, uncheck all payment radios
+        const allPaymentRadios = document.querySelectorAll('input[name="payment_method"]');
+        allPaymentRadios.forEach(radio => radio.checked = false);
+        
+        // Then check the saved one
+        const paymentRadio = document.querySelector(`input[name="payment_method"][value="${savedPaymentMethod}"]`);
+        console.log('Found payment radio:', paymentRadio);
+        if (paymentRadio) {
+            paymentRadio.checked = true;
+            console.log('Payment method restored successfully');
+        }
+        sessionStorage.removeItem('selected_payment_method');
+    }
+    
+    // Restore order notes
+    const savedNotes = sessionStorage.getItem('order_notes');
+    if (savedNotes) {
+        const notesField = document.querySelector('textarea[name="notes"]');
+        if (notesField) {
+            notesField.value = savedNotes;
+            console.log('Order notes restored successfully');
+        }
+        sessionStorage.removeItem('order_notes');
+    }
+    
+    console.log('Restoration complete');
+});
+</script>
+{% endblock %}

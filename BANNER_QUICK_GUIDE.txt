@@ -1,0 +1,257 @@
+================================================================================
+BANNER URL - QUICK REFERENCE GUIDE
+================================================================================
+
+📌 HOW TO LINK BANNERS TO PRODUCTS OR PAGES
+================================================================================
+
+STEP 1: Access Banner Admin
+----------------------------
+URL: http://127.0.0.1:8000/admin/books/banner/
+Action: Click "Add Banner" or edit existing banner
+
+STEP 2: Fill in Banner Details
+-------------------------------
+- Title: Your banner title
+- Subtitle: (Optional) Additional description  
+- Image: Upload banner image
+- **Link URL: ⭐ THIS IS WHERE YOU SET THE DESTINATION**
+- Button Text: (Optional) Custom button text
+- Is Active: ✓ Check to show banner
+- Order: Set display priority (lower = shows first)
+
+STEP 3: Choose Your Link Type
+------------------------------
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OPTION 1: LINK TO A SPECIFIC BOOK                                      │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Format: /books/<book-slug>/                                            │
+│                                                                         │
+│ Examples:                                                               │
+│ • /books/amar-bangla-boi/     → Links to "Amar Bangla Boi" book       │
+│ • /books/kalpo-galpo/         → Links to "Kalpo Galpo" book           │
+│                                                                         │
+│ How to get slug:                                                        │
+│ 1. Go to book detail page                                              │
+│ 2. Copy slug from URL                                                  │
+│ 3. Use format: /books/that-slug/                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OPTION 2: LINK TO A CATEGORY                                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Format: /category/<category-slug>/                                     │
+│                                                                         │
+│ Examples:                                                               │
+│ • /category/academic-book/    → Shows all Academic books              │
+│ • /category/story-book/       → Shows all Story books                 │
+│                                                                         │
+│ Current categories in your database:                                   │
+│ • Academic Book (slug: academic-book)                                  │
+│ • Story Book (slug: story-book)                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OPTION 3: LINK TO ALL BOOKS                                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│ URL: /books/                                                            │
+│                                                                         │
+│ Use this to show all books in your store                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OPTION 4: LINK TO FILTERED BOOKS                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│ By Language:                                                            │
+│ • /books/?language=Bangla     → Only Bangla books                      │
+│ • /books/?language=English    → Only English books                     │
+│                                                                         │
+│ By Price:                                                               │
+│ • /books/?max_price=250       → Books under ৳250                       │
+│ • /books/?min_price=200&max_price=500  → Books ৳200-500                │
+│                                                                         │
+│ Combined Filters:                                                       │
+│ • /books/?category=story-book&language=Bangla                          │
+│   → Bangla story books only                                            │
+│                                                                         │
+│ • /books/?language=Bangla&max_price=300                                │
+│   → Bangla books under ৳300                                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│ OPTION 5: LINK TO EXTERNAL WEBSITE                                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Examples:                                                               │
+│ • https://www.facebook.com/yourbookstore                               │
+│ • https://www.instagram.com/yourbookstore                              │
+│ • https://wa.me/8801234567890  (WhatsApp)                              │
+│                                                                         │
+│ ⚠️ Important: Use full URL with https://                               │
+└─────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+PRACTICAL EXAMPLES
+================================================================================
+
+Example 1: New Book Arrival
+---------------------------
+Title: "New Arrival - Amar Bangla Boi"
+Link URL: /books/amar-bangla-boi/
+Button Text: View Book
+Result: Takes user directly to that book's detail page
+
+Example 2: Bangla Books Promotion
+----------------------------------
+Title: "বাংলা বইয়ের বিশেষ সংগ্রহ"
+Link URL: /books/?language=Bangla
+Button Text: ব্রাউজ করুন
+Result: Shows all Bangla language books
+
+Example 3: Budget Books Sale
+-----------------------------
+Title: "Books Under ৳250"
+Link URL: /books/?max_price=250
+Button Text: Shop Now
+Result: Shows all books priced under ৳250
+
+Example 4: Story Book Category
+-------------------------------
+Title: "Explore Amazing Stories"
+Link URL: /category/story-book/
+Button Text: Browse Stories
+Result: Shows all books in Story Book category
+
+Example 5: Follow on Facebook
+------------------------------
+Title: "Join Our Community"
+Link URL: https://www.facebook.com/yourbookstore
+Button Text: Follow Us
+Result: Opens your Facebook page
+
+================================================================================
+HOW TO FIND BOOK SLUGS
+================================================================================
+
+Method 1: From Admin Panel
+---------------------------
+1. Go to: http://127.0.0.1:8000/admin/books/book/
+2. Click on any book
+3. Look for "Slug" field
+4. Copy value (e.g., "amar-bangla-boi")
+5. Use as: /books/amar-bangla-boi/
+
+Method 2: From Website
+----------------------
+1. Visit the book detail page
+2. Look at browser URL bar
+3. Copy the slug portion
+   Example: http://127.0.0.1:8000/books/kalpo-galpo/
+   Slug is: kalpo-galpo
+
+Method 3: Quick List
+--------------------
+Your current books:
+• Amar Bangla Boi    → /books/amar-bangla-boi/
+• Kalpo Galpo        → /books/kalpo-galpo/
+
+Your current categories:
+• Academic Book      → /category/academic-book/
+• Story Book         → /category/story-book/
+
+================================================================================
+TESTING YOUR BANNER LINKS
+================================================================================
+
+Before saving banner, TEST the URL:
+
+Step 1: Copy the Link URL you want to use
+Step 2: Paste it in browser: http://127.0.0.1:8000[your-url]
+Step 3: Press Enter
+Step 4: Does the correct page load?
+        ✅ YES → Save banner with this URL
+        ❌ NO  → Check slug spelling, try again
+
+Common Mistakes to Avoid:
+❌ /books/Amar-Bangla-Boi/     (Uppercase letters)
+❌ /books/amar bangla boi/      (Spaces instead of hyphens)
+❌ books/amar-bangla-boi/       (Missing leading slash /)
+✅ /books/amar-bangla-boi/      (CORRECT!)
+
+================================================================================
+URL BUILDING FORMULA
+================================================================================
+
+Internal Pages:
+[base] + [type] + [slug/parameters]
+
+Examples:
+/books/amar-bangla-boi/
+│     │                │
+│     │                └─ slug
+│     └─ type (books)
+└─ always starts with /
+
+/category/story-book/
+│        │           │
+│        │           └─ slug
+│        └─ type (category)
+└─ always starts with /
+
+/books/?language=Bangla
+│     ││                │
+│     │└─ ? starts parameters
+│     └─ type (books)
+└─ always starts with /
+
+================================================================================
+CURRENT BANNER ADMIN
+================================================================================
+
+Access: http://127.0.0.1:8000/admin/books/banner/
+
+You can:
+✅ View all banners
+✅ Add new banner
+✅ Edit existing banner
+✅ Delete banner
+✅ Set display order
+✅ Activate/deactivate banners
+
+View on Homepage: http://127.0.0.1:8000/
+
+================================================================================
+SUMMARY CHECKLIST
+================================================================================
+
+To add a banner link:
+
+□ Step 1: Go to http://127.0.0.1:8000/admin/books/banner/
+□ Step 2: Click "Add Banner" or edit existing
+□ Step 3: Upload banner image
+□ Step 4: Enter title and subtitle
+□ Step 5: Choose link type from options above
+□ Step 6: Enter Link URL (e.g., /books/amar-bangla-boi/)
+□ Step 7: Test URL in browser first
+□ Step 8: Set "Is Active" to checked
+□ Step 9: Set display order
+□ Step 10: Click "Save"
+□ Step 11: Visit homepage to verify
+
+================================================================================
+NEED HELP?
+================================================================================
+
+If banner link doesn't work:
+1. Check if URL starts with / (for internal links)
+2. Verify slug spelling is correct
+3. Test URL manually in browser
+4. Make sure book/category is active
+5. Check if banner itself is marked as "Active"
+
+Common URLs that ALWAYS work:
+✅ /books/           (All books)
+✅ /cart/            (Shopping cart)
+✅ /                 (Homepage)
+
+================================================================================

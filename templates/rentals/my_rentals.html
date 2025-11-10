@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Rentals - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-book-reader"></i> My Rentals</h2>
+            <p class="text-muted">Manage your book rentals</p>
+        </div>
+    </div>
+
+    <!-- Status Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a href="{% url 'rentals:my_rentals' %}" class="btn {% if not request.GET.status %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    All ({{ rentals_count.all }})
+                </a>
+                <a href="?status=active" class="btn {% if request.GET.status == 'active' %}btn-success{% else %}btn-outline-success{% endif %}">
+                    Active ({{ rentals_count.active }})
+                </a>
+                <a href="?status=pending" class="btn {% if request.GET.status == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                    Pending ({{ rentals_count.pending }})
+                </a>
+                <a href="?status=returned" class="btn {% if request.GET.status == 'returned' %}btn-info{% else %}btn-outline-info{% endif %}">
+                    Returned ({{ rentals_count.returned }})
+                </a>
+                <a href="?status=overdue" class="btn {% if request.GET.status == 'overdue' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                    Overdue ({{ rentals_count.overdue }})
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rentals List -->
+    {% if rentals %}
+        <div class="row g-4">
+            {% for rental in rentals %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <small class="text-muted">#{{ rental.rental_number }}</small>
+                        {% if rental.status == 'active' %}
+                            <span class="badge bg-success">Active</span>
+                        {% elif rental.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% elif rental.status == 'returned' %}
+                            <span class="badge bg-info">Returned</span>
+                        {% elif rental.status == 'overdue' %}
+                            <span class="badge bg-danger">Overdue</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ rental.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-4">
+                                {% if rental.book.image %}
+                                <img src="{{ rental.book.image.url }}" class="img-fluid rounded" alt="{{ rental.book.title }}">
+                                {% else %}
+                                <div class="bg-light text-center py-4 rounded">
+                                    <i class="fas fa-book fa-2x text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-8">
+                                <h6 class="card-title">{{ rental.book.title|truncatewords:4 }}</h6>
+                                <p class="text-muted small mb-1">{{ rental.book.author|truncatewords:3 }}</p>
+                                <p class="text-muted small mb-2">{{ rental.rental_plan.name }}</p>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">Start Date:</small>
+                            <div>{{ rental.start_date|date:"d M, Y" }}</div>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">Due Date:</small>
+                            <div class="{% if rental.is_overdue %}text-danger fw-bold{% endif %}">
+                                {{ rental.due_date|date:"d M, Y" }}
+                            </div>
+                        </div>
+                        
+                        {% if rental.status == 'active' %}
+                            {% if rental.is_overdue %}
+                                <div class="alert alert-danger py-2 px-2 mb-2">
+                                    <small><i class="fas fa-exclamation-triangle"></i> Overdue by {{ rental.overdue_days }} day{{ rental.overdue_days|pluralize }}</small>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info py-2 px-2 mb-2">
+                                    <small><i class="fas fa-clock"></i> {{ rental.days_remaining }} day{{ rental.days_remaining|pluralize }} remaining</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if rental.status == 'returned' and rental.return_date %}
+                            <div class="mb-2">
+                                <small class="text-muted">Returned:</small>
+                                <div>{{ rental.return_date|date:"d M, Y" }}</div>
+                            </div>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Total Paid:</span>
+                            <strong class="text-primary">৳{{ rental.total_amount }}</strong>
+                        </div>
+                        
+                        {% if rental.late_fee %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-danger">Late Fee:</span>
+                                <strong class="text-danger">৳{{ rental.late_fee }}</strong>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'rentals:rental_detail' rental.rental_number %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            
+                            {% if rental.status == 'active' %}
+                                {% if rental.can_renew %}
+                                    <form method="post" action="{% url 'rentals:renew_rental' rental.rental_number %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Extend rental by {{ rental.rental_plan.days }} days?')">
+                                            <i class="fas fa-sync-alt"></i> Renew
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <form method="post" action="{% url 'rentals:return_rental' rental.rental_number %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Mark this book as returned?')">
+                                        <i class="fas fa-undo"></i> Return Book
+                                    </button>
+                                </form>
+                            {% elif rental.status == 'pending' %}
+                                <form method="post" action="{% url 'rentals:cancel_rental' rental.rental_number %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Cancel this rental?')">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </button>
+                                </form>
+                            {% elif rental.status == 'returned' %}
+                                {% if not rental.feedback %}
+                                    <a href="{% url 'rentals:submit_feedback' rental.rental_number %}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-star"></i> Submit Feedback
+                                    </a>
+                                {% else %}
+                                    <span class="text-success small">
+                                        <i class="fas fa-check-circle"></i> Feedback submitted
+                                    </span>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-book-reader fa-4x text-muted mb-3"></i>
+                        <h4>No Rentals Found</h4>
+                        <p class="text-muted mb-4">You haven't rented any books yet</p>
+                        <a href="{% url 'books:book_list' %}" class="btn btn-primary">
+                            <i class="fas fa-book"></i> Browse Books
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

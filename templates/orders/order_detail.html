@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }} - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Order Details</h2>
+                <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Orders
+                </a>
+            </div>
+
+            <!-- Order Status -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <small class="text-muted">Order Number</small>
+                            <h5>#{{ order.order_number }}</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Order Date</small>
+                            <h6>{{ order.created_at|date:"M d, Y H:i" }}</h6>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Status</small>
+                            <h6>
+                                {% if order.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif order.status == 'confirmed' %}
+                                <span class="badge bg-info">Confirmed</span>
+                                {% elif order.status == 'processing' %}
+                                <span class="badge bg-primary">Processing</span>
+                                {% elif order.status == 'shipped' %}
+                                <span class="badge bg-info">Shipped</span>
+                                {% elif order.status == 'delivered' %}
+                                <span class="badge bg-success">Delivered</span>
+                                {% elif order.status == 'cancelled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% endif %}
+                            </h6>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Payment Status</small>
+                            <h6>
+                                {% if order.payment_status == 'paid' %}
+                                <span class="badge bg-success">Paid</span>
+                                {% elif order.payment_status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                                {% elif order.payment_status == 'failed' %}
+                                <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Left Column -->
+                <div class="col-md-8">
+                    <!-- Order Items -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Order Items</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for item in order.items.all %}
+                            <div class="d-flex mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                                {% if item.book.cover_image %}
+                                <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}" class="me-3" style="width: 80px; height: 110px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-secondary me-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 110px;">
+                                    <i class="fas fa-book text-white fa-2x"></i>
+                                </div>
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <h6>{{ item.book.title }}</h6>
+                                    <p class="text-muted mb-1">{{ item.book.author }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <small class="text-muted">Price: ৳{{ item.price }}</small><br>
+                                            <small class="text-muted">Quantity: {{ item.quantity }}</small>
+                                        </div>
+                                        <div class="text-end">
+                                            <strong>৳{{ item.subtotal }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Shipping Address -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Shipping Address</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>{{ order.shipping_full_name }}</strong></p>
+                            <p class="mb-1">{{ order.shipping_phone }}</p>
+                            <p class="mb-1">{{ order.shipping_address_line1 }}</p>
+                            {% if order.shipping_address_line2 %}
+                            <p class="mb-1">{{ order.shipping_address_line2 }}</p>
+                            {% endif %}
+                            <p class="mb-0">{{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="col-md-4">
+                    <!-- Order Summary -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Order Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Subtotal:</span>
+                                <span>৳{{ order.subtotal|floatformat:2 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Shipping:</span>
+                                <span>৳{{ order.shipping_cost|floatformat:2 }}</span>
+                            </div>
+                            {% if order.discount > 0 %}
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span>Discount:</span>
+                                <span>-৳{{ order.discount|floatformat:2 }}</span>
+                            </div>
+                            {% endif %}
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold fs-5">
+                                <span>Total:</span>
+                                <span>৳{{ order.total|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Payment Method</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">
+                                {% if order.payment_method == 'cod' %}
+                                <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                {% elif order.payment_method == 'bkash' %}
+                                <i class="fas fa-mobile-alt"></i> bKash
+                                {% elif order.payment_method == 'nagad' %}
+                                <i class="fas fa-mobile-alt"></i> Nagad
+                                {% elif order.payment_method == 'rocket' %}
+                                <i class="fas fa-mobile-alt"></i> Rocket
+                                {% elif order.payment_method == 'card' %}
+                                <i class="fas fa-credit-card"></i> Card Payment
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="card">
+                        <div class="card-body">
+                            {% if order.status not in 'cancelled,delivered' %}
+                            <a href="{% url 'orders:track_order' order.order_number %}" class="btn btn-primary w-100 mb-2">
+                                <i class="fas fa-truck"></i> Track Order
+                            </a>
+                            {% endif %}
+                            {% if order.status == 'pending' %}
+                            <button class="btn btn-danger w-100 mb-2" onclick="cancelOrder('{{ order.order_number }}')">
+                                <i class="fas fa-times"></i> Cancel Order
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'orders:invoice' order.order_number %}" class="btn btn-outline-secondary w-100" target="_blank">
+                                <i class="fas fa-file-invoice"></i> Download Invoice
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function cancelOrder(orderNumber) {
+    if (confirm('Are you sure you want to cancel this order?')) {
+        fetch(`/orders/order/${orderNumber}/cancel/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to cancel order');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while cancelling the order');
+        });
+    }
+}
+</script>
+{% endblock %}

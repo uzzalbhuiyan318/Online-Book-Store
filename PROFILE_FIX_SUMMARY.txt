@@ -1,0 +1,48 @@
+# Profile Editing Fix - Quick Summary
+
+## Problem
+User profile editing was not working because the profile view only handled GET requests, not POST requests.
+
+## Solution
+Updated the `profile` view in `accounts/views.py` to handle both profile updates and password changes.
+
+## Changes Made
+
+### 1. accounts/views.py - Updated profile view
+- Added POST request handling
+- Added profile information update (first_name, last_name, phone, date_of_birth, gender, profile_picture)
+- Added password change handling
+- Added wishlist items to context
+- Fixed context variable names (orders → recent_orders)
+
+### 2. accounts/views.py - Added import
+```python
+from books.models import Wishlist
+```
+
+## What Now Works
+
+✅ First name, last name updates  
+✅ Phone number updates  
+✅ Date of birth updates  
+✅ Gender selection  
+✅ Profile picture upload  
+✅ Password change  
+✅ Success/error messages  
+✅ Session preservation after password change  
+✅ Wishlist display in profile  
+
+## How to Test
+
+1. Login to your account
+2. Go to profile page (http://127.0.0.1:8000/accounts/profile/)
+3. Update any profile information
+4. Click "Update Profile" - should save and show success message
+5. Upload a profile picture - should upload and display
+6. Try changing password - should work and keep you logged in
+
+## Files Modified
+- `accounts/views.py` - profile view function and imports
+
+## No Template Changes Needed
+The template was already correct with proper form structure.

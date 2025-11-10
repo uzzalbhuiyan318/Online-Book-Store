@@ -1,0 +1,251 @@
+# Customer Support System - Visual Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        BOOKSHOP SUPPORT SYSTEM                          │
+└─────────────────────────────────────────────────────────────────────────┘
+
+                              ┌──────────┐
+                              │   USER   │
+                              └────┬─────┘
+                                   │
+                    ┌──────────────┴──────────────┐
+                    │                             │
+             ┌──────▼──────┐              ┌──────▼──────┐
+             │  CUSTOMER   │              │    STAFF    │
+             │ (is_staff=F)│              │ (is_staff=T)│
+             └──────┬──────┘              └──────┬──────┘
+                    │                             │
+                    │                             │
+┌───────────────────┴──────────────┐   ┌─────────┴────────────────────┐
+│     CUSTOMER INTERFACE           │   │     STAFF INTERFACE          │
+├──────────────────────────────────┤   ├──────────────────────────────┤
+│                                  │   │                              │
+│  ┌────────────────────────────┐ │   │  ┌────────────────────────┐ │
+│  │     CHAT WIDGET (Only)     │ │   │  │   Agent Dashboard      │ │
+│  ├────────────────────────────┤ │   │  ├────────────────────────┤ │
+│  │ • Bottom-right corner      │ │   │  │ • All conversations    │ │
+│  │ • Always visible           │ │   │  │ • Manage chats         │ │
+│  │ • Real-time messaging      │ │   │  │ • Quick replies        │ │
+│  │ • File attachments         │ │   │  │ • Statistics           │ │
+│  │ • Conversation history     │ │   │  └────────────────────────┘ │
+│  │ • Auto-save                │ │   │                              │
+│  └────────────────────────────┘ │   │  ┌────────────────────────┐ │
+│                                  │   │  │   Support Messages     │ │
+│  Navigation Menu:                │   │  ├────────────────────────┤ │
+│  ✅ Profile                     │   │  │ • Conversation list    │ │
+│  ✅ My Orders                   │   │  │ • History view         │ │
+│  ✅ My Rentals                  │   │  │ • Filter & search      │ │
+│  ✅ Addresses                   │   │  └────────────────────────┘ │
+│  ❌ Support Conversations       │   │                              │
+│                                  │   │  ┌────────────────────────┐ │
+│  Blocked Access:                 │   │  │  Conversation Detail   │ │
+│  ❌ /support/conversations/     │   │  ├────────────────────────┤ │
+│     → Shows widget guide         │   │  │ • Full chat view       │ │
+│  ❌ /support/conversation/<id>/│   │  │ • Customer info        │ │
+│     → Redirected                 │   │  │ • Status management    │ │
+│                                  │   │  │ • Assign agents        │ │
+│                                  │   │  └────────────────────────┘ │
+│                                  │   │                              │
+│                                  │   │  Navigation Menu:            │
+│                                  │   │  ✅ Profile                 │
+│                                  │   │  ✅ My Orders               │
+│                                  │   │  ✅ My Rentals              │
+│                                  │   │  ✅ Addresses               │
+│                                  │   │  ✅ Support Messages        │
+│                                  │   │  ✅ Agent Dashboard         │
+│                                  │   │  ✅ Admin Panel             │
+│                                  │   │                              │
+└──────────────────────────────────┘   └──────────────────────────────┘
+                    │                             │
+                    │                             │
+                    └──────────────┬──────────────┘
+                                   │
+                          ┌────────▼─────────┐
+                          │   BACKEND API    │
+                          ├──────────────────┤
+                          │ • Conversations  │
+                          │ • Messages       │
+                          │ • File uploads   │
+                          │ • Agents         │
+                          │ • Settings       │
+                          └──────────────────┘
+                                   │
+                          ┌────────▼─────────┐
+                          │    DATABASE      │
+                          ├──────────────────┤
+                          │ • Users          │
+                          │ • Conversations  │
+                          │ • Messages       │
+                          │ • Agents         │
+                          │ • Settings       │
+                          └──────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                          DATA FLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════════════
+
+CUSTOMER SENDS MESSAGE:
+┌─────────┐     ┌────────────┐     ┌─────────┐     ┌──────────┐
+│Customer │────▶│Chat Widget │────▶│   API   │────▶│ Database │
+└─────────┘     └────────────┘     └─────────┘     └──────────┘
+                     │                                    │
+                     │                                    │
+                     ▼                                    ▼
+              ┌────────────┐                      ┌──────────┐
+              │  Polling   │◀─────────────────────│New Msg ID│
+              │ (3 seconds)│                      └──────────┘
+              └────────────┘
+
+AGENT RESPONDS:
+┌──────┐     ┌────────────────┐     ┌─────────┐     ┌──────────┐
+│Agent │────▶│Agent Dashboard │────▶│   API   │────▶│ Database │
+└──────┘     └────────────────┘     └─────────┘     └──────────┘
+                                                           │
+                                                           │
+                                                           ▼
+                                                    ┌────────────┐
+                                      ┌─────────────│Customer's  │
+                                      │             │Widget Polls│
+                                      │             └────────────┘
+                                      │                    │
+                                      ▼                    │
+                               ┌────────────┐             │
+                               │Shows Reply │◀────────────┘
+                               └────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                          ACCESS CONTROL MATRIX
+═══════════════════════════════════════════════════════════════════════════
+
+┌──────────────────────────┬───────────┬──────────┐
+│ Resource                 │ Customer  │  Staff   │
+├──────────────────────────┼───────────┼──────────┤
+│ Chat Widget              │    ✅     │    ✅    │
+│ Widget API endpoints     │    ✅     │    ✅    │
+│ Send messages            │    ✅     │    ✅    │
+│ Upload files             │    ✅     │    ✅    │
+│ View own messages        │    ✅     │    ✅    │
+├──────────────────────────┼───────────┼──────────┤
+│ Support Messages page    │    ❌     │    ✅    │
+│ Conversation Detail page │    ❌     │    ✅    │
+│ Agent Dashboard          │    ❌     │    ✅    │
+│ Manage conversations     │    ❌     │    ✅    │
+│ Assign agents            │    ❌     │    ✅    │
+│ Change status            │    ❌     │    ✅    │
+│ View all conversations   │    ❌     │    ✅    │
+└──────────────────────────┴───────────┴──────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════
+                     CUSTOMER JOURNEY DIAGRAM
+═══════════════════════════════════════════════════════════════════════════
+
+1. Customer visits any page
+   │
+   ├──▶ Sees chat button (bottom-right)
+   │
+   └──▶ Clicks chat button
+        │
+        ├──▶ Widget opens as overlay
+        │
+        ├──▶ Creates/loads conversation
+        │
+        ├──▶ Shows welcome message
+        │
+        ├──▶ Customer types message
+        │
+        ├──▶ Sends message to agent
+        │
+        ├──▶ Widget polls for response
+        │
+        ├──▶ Agent responds
+        │
+        ├──▶ Customer sees response
+        │
+        └──▶ Conversation continues...
+
+
+═══════════════════════════════════════════════════════════════════════════
+                      STAFF JOURNEY DIAGRAM
+═══════════════════════════════════════════════════════════════════════════
+
+1. Staff logs in
+   │
+   ├──▶ Goes to Agent Dashboard
+   │
+   ├──▶ Sees list of conversations
+   │    │
+   │    ├─ Open conversations
+   │    ├─ Pending conversations
+   │    └─ Closed conversations
+   │
+   ├──▶ Clicks on conversation
+   │
+   ├──▶ Opens conversation detail
+   │
+   ├──▶ Reads customer messages
+   │
+   ├──▶ Types response
+   │
+   ├──▶ Sends message
+   │
+   ├──▶ Customer receives in widget
+   │
+   └──▶ Manages conversation (assign/close/etc)
+
+
+═══════════════════════════════════════════════════════════════════════════
+                          FILE STRUCTURE
+═══════════════════════════════════════════════════════════════════════════
+
+BookShop/
+│
+├── support/
+│   ├── models.py
+│   │   ├── SupportAgent
+│   │   ├── Conversation
+│   │   ├── Message
+│   │   ├── QuickReply
+│   │   └── ChatSettings
+│   │
+│   ├── views.py (Customer views)
+│   │   ├── chat_widget_config()
+│   │   ├── get_or_create_conversation()
+│   │   ├── get_messages()
+│   │   ├── send_message()
+│   │   ├── upload_attachment()
+│   │   ├── my_conversations() ← Shows widget guide
+│   │   └── conversation_detail() ← Staff only
+│   │
+│   ├── agent_views.py (Staff views)
+│   │   ├── agent_dashboard()
+│   │   ├── agent_conversation_detail()
+│   │   ├── agent_get_conversations()
+│   │   └── agent_send_message()
+│   │
+│   └── urls.py
+│       ├── /api/config/
+│       ├── /api/conversation/create/
+│       ├── /api/conversation/<id>/messages/
+│       ├── /api/conversation/<id>/send/
+│       ├── /conversations/ ← Widget guide for customers
+│       └── /agent/dashboard/ ← Staff only
+│
+├── templates/
+│   └── support/
+│       ├── my_conversations.html ← Widget guide
+│       ├── conversation_detail.html ← Staff view
+│       └── agent_dashboard.html ← Staff view
+│
+└── static/
+    ├── js/
+    │   └── chat-widget.js ← Main widget functionality
+    └── css/
+        └── chat-widget.css ← Widget styles
+
+
+═══════════════════════════════════════════════════════════════════════════
+```

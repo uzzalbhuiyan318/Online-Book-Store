@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Success - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Success Message -->
+            <div class="text-center mb-5">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 100px;"></i>
+                </div>
+                <h1 class="text-success mb-3">Order Placed Successfully!</h1>
+                <p class="lead text-muted">Thank you for your order. Your order has been received and is being processed.</p>
+            </div>
+
+            <!-- Order Details Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-shopping-bag"></i> Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Order Number:</strong>
+                            <p class="mb-0 text-primary fs-5">#{{ order.order_number }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Order Date:</strong>
+                            <p class="mb-0">{{ order.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Payment Method:</strong>
+                            <p class="mb-0">
+                                {% if order.payment_method == 'cod' %}
+                                <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                {% elif order.payment_method == 'bkash' %}
+                                <i class="fas fa-mobile-alt"></i> bKash
+                                {% elif order.payment_method == 'nagad' %}
+                                <i class="fas fa-mobile-alt"></i> Nagad
+                                {% elif order.payment_method == 'rocket' %}
+                                <i class="fas fa-mobile-alt"></i> Rocket
+                                {% elif order.payment_method == 'card' %}
+                                <i class="fas fa-credit-card"></i> Card Payment
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Order Status:</strong>
+                            <p class="mb-0">
+                                <span class="badge bg-warning">Pending</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Delivery Address:</strong>
+                            <p class="mb-0">
+                                {{ order.shipping_full_name }}<br>
+                                {{ order.shipping_phone }}<br>
+                                {{ order.shipping_address_line1 }}
+                                {% if order.shipping_address_line2 %}, {{ order.shipping_address_line2 }}{% endif %}<br>
+                                {{ order.shipping_city }}, {{ order.shipping_state }} - {{ order.shipping_postal_code }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Price</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in order.items.all %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if item.book.cover_image %}
+                                            <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}" 
+                                                 class="me-3" style="width: 50px; height: 70px; object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-secondary me-3 d-flex align-items-center justify-content-center" 
+                                                 style="width: 50px; height: 70px;">
+                                                <i class="fas fa-book text-white"></i>
+                                            </div>
+                                            {% endif %}
+                                            <div>
+                                                <strong>{{ item.book.title }}</strong><br>
+                                                <small class="text-muted">{{ item.book.author }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>৳{{ item.price }}</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-end">৳{{ item.subtotal }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Subtotal:</strong></td>
+                                    <td class="text-end">৳{{ order.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end"><strong>Shipping:</strong></td>
+                                    <td class="text-end">৳{{ order.shipping_cost|floatformat:2 }}</td>
+                                </tr>
+                                {% if order.discount > 0 %}
+                                <tr class="text-success">
+                                    <td colspan="3" class="text-end"><strong>Discount:</strong></td>
+                                    <td class="text-end">-৳{{ order.discount|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr class="fw-bold fs-5">
+                                    <td colspan="3" class="text-end">Total:</td>
+                                    <td class="text-end text-success">৳{{ order.total|floatformat:2 }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> What's Next?</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            You will receive a confirmation email shortly at <strong>{{ order.user.email }}</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            We will notify you once your order is confirmed and shipped
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            You can track your order status anytime
+                        </li>
+                        {% if order.payment_method == 'cod' %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Please keep cash ready for payment on delivery
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <a href="{% url 'orders:order_detail' order.order_number %}" class="btn btn-primary w-100">
+                        <i class="fas fa-eye"></i> View Order Details
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'orders:track_order' order.order_number %}" class="btn btn-info w-100">
+                        <i class="fas fa-truck"></i> Track Order
+                    </a>
+                </div>
+                <div class="col-md-4">
+                    <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-shopping-cart"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading"><i class="fas fa-question-circle"></i> Need Help?</h6>
+                <p class="mb-0">
+                    If you have any questions about your order, please contact us at 
+                    <strong>support@bookstore.com</strong> or call <strong>+880 1234-567890</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confetti Animation (Optional) -->
+<script>
+// Simple celebration effect
+document.addEventListener('DOMContentLoaded', function() {
+    // You can add confetti or celebration animation here if needed
+    setTimeout(function() {
+        // Optional: Scroll to top smoothly
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+});
+</script>
+
+<style>
+/* Success page specific styles */
+.fa-check-circle {
+    animation: scaleIn 0.5s ease-in-out;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

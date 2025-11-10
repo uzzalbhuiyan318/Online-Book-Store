@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Browse Books - BookStore{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-md-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm">
+                        <!-- Category Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Categories</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat.slug }}" {% if request.GET.category == cat.slug %}selected{% endif %}>
+                                    {{ cat.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Price Range -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Price Range</label>
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text">৳</span>
+                                <input type="number" name="min_price" class="form-control" placeholder="Min" 
+                                       value="{{ request.GET.min_price }}">
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">৳</span>
+                                <input type="number" name="max_price" class="form-control" placeholder="Max"
+                                       value="{{ request.GET.max_price }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Language -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Language</label>
+                            <select name="language" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Languages</option>
+                                <option value="English" {% if request.GET.language == "English" %}selected{% endif %}>English</option>
+                                <option value="Bangla" {% if request.GET.language == "Bangla" %}selected{% endif %}>বাংলা</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Author Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Author</label>
+                            <select name="author" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Authors</option>
+                                {% for author in authors %}
+                                <option value="{{ author }}" {% if request.GET.author == author %}selected{% endif %}>
+                                    {{ author }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Publisher Filter -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Publisher</label>
+                            <select name="publisher" class="form-select" onchange="this.form.submit()">
+                                <option value="">All Publishers</option>
+                                {% for publisher in publishers %}
+                                <option value="{{ publisher }}" {% if request.GET.publisher == publisher %}selected{% endif %}>
+                                    {{ publisher }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                        <a href="{% url 'books:book_list' %}" class="btn btn-outline-secondary w-100 mt-2">Clear Filters</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Books Grid -->
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>All Books ({{ page_obj.paginator.count }})</h2>
+                
+                <!-- Sort Options -->
+                <form method="get" class="d-flex gap-2">
+                    <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()" style="width: 200px;">
+                        <option value="">Sort by</option>
+                        <option value="title" {% if request.GET.sort == "title" %}selected{% endif %}>Title (A-Z)</option>
+                        <option value="-title" {% if request.GET.sort == "-title" %}selected{% endif %}>Title (Z-A)</option>
+                        <option value="price" {% if request.GET.sort == "price" %}selected{% endif %}>Price: Low to High</option>
+                        <option value="-price" {% if request.GET.sort == "-price" %}selected{% endif %}>Price: High to Low</option>
+                        <option value="-created_at" {% if request.GET.sort == "-created_at" %}selected{% endif %}>Newest First</option>
+                        <option value="-sales" {% if request.GET.sort == "-sales" %}selected{% endif %}>Best Selling</option>
+                    </select>
+                </form>
+            </div>
+            
+            {% if books %}
+            <div class="row g-4">
+                {% for book in books %}
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100">
+                        {% if book.discount_percentage %}
+                        <span class="badge bg-danger position-absolute top-0 end-0 m-2">
+                            -{{ book.discount_percentage|floatformat:0 }}%
+                        </span>
+                        {% endif %}
+                        
+                        <a href="{% url 'books:book_detail' book.slug %}">
+                            {% if book.cover_image %}
+                            <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}" style="height: 300px; object-fit: cover;">
+                            {% else %}
+                            <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
+                                <i class="fas fa-book fa-5x text-white"></i>
+                            </div>
+                            {% endif %}
+                        </a>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'books:book_detail' book.slug %}" class="text-decoration-none text-dark">
+                                    {{ book.title|truncatewords:6 }}
+                                </a>
+                            </h5>
+                            <p class="card-text text-muted small">{{ book.author }}</p>
+                            
+                            {% if book.average_rating %}
+                            <div class="mb-2">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= book.average_rating %}
+                                    <i class="fas fa-star text-warning"></i>
+                                    {% else %}
+                                    <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                <small class="text-muted">({{ book.total_reviews }})</small>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="mb-3">
+                                {% if book.discount_price %}
+                                <span class="text-danger fw-bold fs-5">৳{{ book.discount_price|floatformat:2 }}</span>
+                                <small class="text-muted text-decoration-line-through ms-2">৳{{ book.price|floatformat:2 }}</small>
+                                {% else %}
+                                <span class="fw-bold fs-5">৳{{ book.price|floatformat:2 }}</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if book.stock > 0 %}
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary btn-sm flex-grow-1 add-to-cart" data-book-id="{{ book.id }}">
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </button>
+                                <button class="btn btn-sm toggle-wishlist {% if book.id in wishlist_book_ids %}btn-danger{% else %}btn-outline-secondary{% endif %}" 
+                                        data-book-id="{{ book.id }}"
+                                        data-in-wishlist="{% if book.id in wishlist_book_ids %}true{% else %}false{% endif %}">
+                                    <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart"></i>
+                                </button>
+                            </div>
+                            {% else %}
+                            <button class="btn btn-secondary btn-sm w-100" disabled>Out of Stock</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav class="mt-5">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-5x text-muted mb-4"></i>
+                <h3>No books found</h3>
+                <p class="text-muted">Try adjusting your filters or search criteria.</p>
+                <a href="{% url 'books:book_list' %}" class="btn btn-primary">View All Books</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Add to Cart functionality
+document.querySelectorAll('.add-to-cart').forEach(button => {
+    button.addEventListener('click', function() {
+        const bookId = this.dataset.bookId;
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        
+        fetch(`/cart/add/${bookId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success feedback
+                btn.innerHTML = '<i class="fas fa-check"></i> Added!';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                
+                // Update cart count in navbar
+                const cartBadge = document.querySelector('.cart-count');
+                if (cartBadge && data.cart_count) {
+                    cartBadge.textContent = data.cart_count;
+                }
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                    btn.disabled = false;
+                }, 2000);
+            } else {
+                alert(data.message || 'Failed to add to cart');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    });
+});
+
+// Wishlist functionality
+document.querySelectorAll('.toggle-wishlist').forEach(button => {
+    button.addEventListener('click', function() {
+        {% if not user.is_authenticated %}
+        window.location.href = '{% url "accounts:login" %}?next={{ request.path }}';
+        return;
+        {% endif %}
+        
+        const bookId = this.dataset.bookId;
+        const btn = this;
+        const icon = btn.querySelector('i');
+        const isInWishlist = icon.classList.contains('fas');
+        
+        // Determine action
+        const action = isInWishlist ? 'remove' : 'add';
+        const url = action === 'add' ? `/wishlist/add/${bookId}/` : `/wishlist/remove/${bookId}/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Toggle heart icon
+                if (action === 'add') {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-danger');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-outline-secondary');
+                }
+                
+                // Show brief success animation
+                btn.classList.add('animate__animated', 'animate__heartBeat');
+                setTimeout(() => {
+                    btn.classList.remove('animate__animated', 'animate__heartBeat');
+                }, 1000);
+            } else {
+                alert(data.message || 'Operation failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred. Please try again.');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Conversation {{ conversation.conversation_id }} - Staff View{% endblock %}
+
+{% block extra_css %}
+<style>
+    .conversation-messages {
+        max-height: 600px;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f5f5f5;
+        border-radius: 8px;
+    }
+    
+    .message-item {
+        display: flex;
+        margin-bottom: 20px;
+        gap: 12px;
+    }
+    
+    .message-item.user-message {
+        flex-direction: row-reverse;
+    }
+    
+    .message-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    
+    .message-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #008B8B;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    
+    .message-bubble {
+        max-width: 70%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        word-wrap: break-word;
+    }
+    
+    .message-item.agent-message .message-bubble {
+        background: white;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .message-item.user-message .message-bubble {
+        background: #008B8B;
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+    
+    .message-time {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+    }
+    
+    .message-item.user-message .message-time {
+        text-align: right;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Header -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-1">
+                                <i class="fas fa-ticket-alt"></i> {{ conversation.conversation_id }}
+                                <span class="badge bg-secondary ms-2">Staff View</span>
+                            </h4>
+                            <p class="mb-0 text-muted">
+                                Customer: {{ conversation.user.full_name }}
+                                {% if conversation.assigned_agent %}
+                                    Assigned to: {{ conversation.assigned_agent.display_name }}
+                                    {% if conversation.assigned_agent.is_online %}
+                                        <span class="badge bg-success">Online</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Offline</span>
+                                    {% endif %}
+                                {% else %}
+                                    Unassigned
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div>
+                            {% if conversation.status == 'open' %}
+                            <span class="badge bg-success">Open</span>
+                            {% elif conversation.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif conversation.status == 'resolved' %}
+                            <span class="badge bg-info">Resolved</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Closed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Messages -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="conversation-messages" id="messageContainer">
+                        {% for message in messages %}
+                        <div class="message-item {% if message.is_agent %}agent-message{% else %}user-message{% endif %}">
+                            {% if message.sender.profile_image %}
+                            <img src="{{ message.sender.profile_image.url }}" alt="{{ message.sender.full_name }}" class="message-avatar">
+                            {% else %}
+                            <div class="message-avatar-placeholder">
+                                {{ message.sender.full_name|slice:":1"|upper }}
+                            </div>
+                            {% endif %}
+                            
+                            <div>
+                                <div class="message-bubble">
+                                    {{ message.content }}
+                                    
+                                    {% if message.attachment %}
+                                    <div class="mt-2">
+                                        {% if message.message_type == 'image' %}
+                                        <img src="{{ message.attachment.url }}" alt="{{ message.attachment_name }}" 
+                                             class="img-fluid rounded" style="max-width: 300px;">
+                                        {% else %}
+                                        <a href="{{ message.attachment.url }}" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-file"></i> {{ message.attachment_name }}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="message-time">
+                                    {{ message.created_at|date:"M d, Y g:i A" }}
+                                    {% if message.is_read %}
+                                    <i class="fas fa-check-double text-primary"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Reply Form -->
+                    {% if conversation.status != 'closed' %}
+                    <hr>
+                    <form method="post" id="replyForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <textarea class="form-control" name="message" rows="3" 
+                                      placeholder="Type your message..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Message
+                        </button>
+                        <a href="{% url 'support:my_conversations' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Conversations
+                        </a>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> This conversation is closed. You cannot send new messages.
+                    </div>
+                    <a href="{% url 'support:my_conversations' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Conversations
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Scroll to bottom of messages
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageContainer = document.getElementById('messageContainer');
+        if (messageContainer) {
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+    });
+    
+    // Handle form submission via AJAX
+    const replyForm = document.getElementById('replyForm');
+    if (replyForm) {
+        replyForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(replyForm);
+            const messageContent = formData.get('message');
+            
+            if (!messageContent.trim()) return;
+            
+            try {
+                const response = await fetch('{% url "support:send_message" conversation.conversation_id %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                    },
+                    body: JSON.stringify({ content: messageContent })
+                });
+                
+                if (response.ok) {
+                    // Reload page to show new message
+                    location.reload();
+                } else {
+                    alert('Failed to send message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message. Please try again.');
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Submit Feedback - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'rentals:my_rentals' %}">My Rentals</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'rentals:rental_detail' rental.rental_number %}">{{ rental.rental_number }}</a></li>
+            <li class="breadcrumb-item active">Feedback</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h2><i class="fas fa-star text-warning"></i> Submit Feedback</h2>
+                <p class="text-muted">Help us improve by sharing your rental experience</p>
+            </div>
+
+            <!-- Rental Summary -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            {% if rental.book.image %}
+                            <img src="{{ rental.book.image.url }}" class="img-fluid rounded" alt="{{ rental.book.title }}">
+                            {% else %}
+                            <div class="bg-light text-center py-3 rounded">
+                                <i class="fas fa-book fa-2x text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-10">
+                            <h5 class="mb-1">{{ rental.book.title }}</h5>
+                            <p class="text-muted mb-1">by {{ rental.book.author }}</p>
+                            <small class="text-muted">Rental ID: #{{ rental.rental_number }} | {{ rental.rental_plan.name }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Form -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-comment-dots"></i> Your Feedback</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Book Condition Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-book"></i> Book Condition Rating
+                                <span class="text-danger">*</span>
+                            </label>
+                            <p class="text-muted small">How was the physical condition of the book?</p>
+                            <div class="rating-input" data-rating-name="book_condition_rating">
+                                <input type="hidden" name="book_condition_rating" id="book_condition_rating" required>
+                                <div class="star-rating">
+                                    {% for i in "12345" %}
+                                    <i class="far fa-star star" data-rating="{{ i }}"></i>
+                                    {% endfor %}
+                                </div>
+                                <div class="rating-text text-muted small mt-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Service Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-handshake"></i> Service Quality Rating
+                                <span class="text-danger">*</span>
+                            </label>
+                            <p class="text-muted small">How satisfied are you with our rental service?</p>
+                            <div class="rating-input" data-rating-name="service_rating">
+                                <input type="hidden" name="service_rating" id="service_rating" required>
+                                <div class="star-rating">
+                                    {% for i in "12345" %}
+                                    <i class="far fa-star star" data-rating="{{ i }}"></i>
+                                    {% endfor %}
+                                </div>
+                                <div class="rating-text text-muted small mt-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-star"></i> Overall Experience Rating
+                                <span class="text-danger">*</span>
+                            </label>
+                            <p class="text-muted small">How would you rate your overall rental experience?</p>
+                            <div class="rating-input" data-rating-name="overall_rating">
+                                <input type="hidden" name="overall_rating" id="overall_rating" required>
+                                <div class="star-rating">
+                                    {% for i in "12345" %}
+                                    <i class="far fa-star star" data-rating="{{ i }}"></i>
+                                    {% endfor %}
+                                </div>
+                                <div class="rating-text text-muted small mt-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="mb-4">
+                            <label for="comment" class="form-label fw-bold">
+                                <i class="fas fa-comment"></i> Additional Comments (Optional)
+                            </label>
+                            <textarea class="form-control" id="comment" name="comment" rows="5" 
+                                      placeholder="Share more details about your experience..."></textarea>
+                            <small class="text-muted">Tell us what you liked or what we can improve</small>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Feedback
+                            </button>
+                            <a href="{% url 'rentals:rental_detail' rental.rental_number %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle"></i> Why Your Feedback Matters</h6>
+                    <ul class="mb-0 small">
+                        <li>Helps us maintain high-quality book inventory</li>
+                        <li>Improves our rental service for all customers</li>
+                        <li>Assists future readers in making better choices</li>
+                        <li>Shows us what we're doing right and where we can improve</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    font-size: 2rem;
+    cursor: pointer;
+}
+.star-rating .star {
+    transition: all 0.2s;
+    color: #ddd;
+}
+.star-rating .star:hover,
+.star-rating .star.active {
+    color: #ffc107;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ratingLabels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    
+    document.querySelectorAll('.rating-input').forEach(ratingDiv => {
+        const inputName = ratingDiv.dataset.ratingName;
+        const hiddenInput = document.getElementById(inputName);
+        const stars = ratingDiv.querySelectorAll('.star');
+        const ratingText = ratingDiv.querySelector('.rating-text');
+        
+        stars.forEach(star => {
+            // Hover effect
+            star.addEventListener('mouseenter', function() {
+                const rating = parseInt(this.dataset.rating);
+                updateStars(stars, rating);
+                ratingText.textContent = ratingLabels[rating - 1];
+            });
+            
+            // Click to select
+            star.addEventListener('click', function() {
+                const rating = parseInt(this.dataset.rating);
+                hiddenInput.value = rating;
+                this.closest('.star-rating').dataset.selected = rating;
+                ratingText.textContent = ratingLabels[rating - 1];
+                ratingText.classList.add('fw-bold');
+            });
+        });
+        
+        // Reset on mouse leave if not selected
+        ratingDiv.addEventListener('mouseleave', function() {
+            const selected = this.querySelector('.star-rating').dataset.selected;
+            if (selected) {
+                updateStars(stars, parseInt(selected));
+                ratingText.textContent = ratingLabels[parseInt(selected) - 1];
+            } else {
+                updateStars(stars, 0);
+                ratingText.textContent = '';
+            }
+        });
+    });
+    
+    function updateStars(stars, rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.remove('far');
+                star.classList.add('fas', 'active');
+            } else {
+                star.classList.remove('fas', 'active');
+                star.classList.add('far');
+            }
+        });
+    }
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const bookRating = document.getElementById('book_condition_rating').value;
+        const serviceRating = document.getElementById('service_rating').value;
+        const overallRating = document.getElementById('overall_rating').value;
+        
+        if (!bookRating || !serviceRating || !overallRating) {
+            e.preventDefault();
+            alert('Please provide all three ratings before submitting.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

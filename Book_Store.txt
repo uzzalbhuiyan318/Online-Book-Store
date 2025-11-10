@@ -1,0 +1,112 @@
+This project is a web-based e-commerce platform dedicated to selling books online. It is designed for a single administrator (store owner) who manages all books, orders, and customers, and for customers who browse and purchase books. The goal is to provide a smooth, secure, and user-friendly online bookstore experience tailored for Bangladesh — supporting BDT currency, local payment gateways (bKash, Nagad, Rocket), and Cash on Delivery (COD).
+
+Actors
+
+Customer/User
+
+Admin (Store Owner)
+
+Key Functional Modules
+1. Customer Portal
+
+Registration & Login: Using email or phone number.
+
+Profile Management: Edit profile, view order history, manage addresses.
+
+Browse & Search Books: Search by title, author, category, price, or language.
+
+Book Details Page: Show cover image, description, author, price, availability, reviews.
+
+Shopping Cart: Add, update, or remove books.
+
+Checkout Process: Select shipping address, payment method (bKash/Nagad/COD), confirm order.
+
+Order Tracking: View current order status (Pending → Confirmed → Shipped → Delivered).
+
+Wishlist: Save favorite books for later.
+
+Ratings & Reviews: Submit reviews and star ratings after delivery.
+
+Email Notifications: Order confirmation, shipping updates, delivery confirmation.
+
+2. Admin Portal
+
+Secure Login: Role-based access for admin/staff.
+
+Dashboard: Overview of sales, top-selling books, and customer statistics.
+
+Book Management: Add, edit, or delete books with categories, author, stock, and pricing.
+
+Category Management: Manage genres (e.g., Fiction, Education, Islamic, Children’s Books).
+
+Order Management: View and process orders, update shipping status, cancel or refund.
+
+Customer Management: View user accounts, order history, and communication.
+
+Payment Management: Record payments (bKash, Nagad, COD).
+
+Promotions: Create discount codes or special offers.
+
+Reports & Analytics: Generate sales, order, and customer activity reports.
+
+Content Management: Manage banners, home page sliders, featured books, blog/news section.
+
+Security Logs: Track admin actions for transparency.
+
+Technical Features
+
+Backend Framework: Django + Django REST Framework
+
+Frontend: Django Templates (for dynamic UI)
+
+Database: MySQL (Database name: bookstore_db, timezone: Asia/Dhaka)
+
+Payment Gateways: bKash, Nagad, Rocket, SSLCommerz + COD
+
+Performance: Optimized queries, caching (Redis), image compression.
+
+Localization: Full support for Bangla and English languages.
+
+Security: HTTPS, CSRF protection, input validation, data backup.
+
+Order Flow
+
+Customer adds book(s) to cart
+
+Proceeds to checkout and selects payment option
+
+Admin receives and confirms the order
+
+Admin marks as “Shipped” and updates tracking
+
+Customer receives order and can leave review
+
+Non-Functional Requirements
+
+Performance: Load time < 3 seconds
+
+Availability: 99.9% uptime
+
+Mobile-Friendly: Fully responsive design
+
+Data Security: SSL/TLS encryption
+
+SEO Ready: Optimized URLs, meta descriptions, sitemap
+
+Localization: BDT currency, Bangla language, Dhaka timezone
+
+Deliverables
+
+Functional web application (Customer + Admin)
+
+Database schema (ER diagram)
+
+API documentation
+
+Admin manual (managing books, orders, payments)
+
+Test report and deployment guide
+
+Example Reference
+
+Rokomari.com (Bangladeshi Online Bookstore)
