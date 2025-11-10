@@ -14,10 +14,23 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    padding-top: 0;
 }
 
 main {
     flex: 1;
+}
+
+/* Sticky Navbar */
+.navbar.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    transition: box-shadow 0.3s ease;
+}
+
+.navbar.sticky-top.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
 }
 
 /* Navbar */
@@ -138,6 +151,73 @@ footer a:hover {
 @media (max-width: 768px) {
     .book-card img {
         height: 200px;
+    }
+}
+
+/* Fixed Filter Sidebar */
+.filter-sidebar {
+    position: sticky;
+    top: 70px;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 100;
+}
+
+.filter-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filter-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Filter Card Styling */
+.filter-sidebar .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 0;
+}
+
+.filter-sidebar .card-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border-bottom: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.filter-sidebar .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.filter-sidebar .form-select,
+.filter-sidebar .form-control {
+    font-size: 0.9rem;
+}
+
+/* Mobile Responsive for Filters */
+@media (max-width: 768px) {
+    .filter-sidebar {
+        position: relative;
+        top: 0;
+        max-height: none;
+        margin-bottom: 1.5rem;
+    }
+    
+    .filter-sidebar .card-header {
+        position: relative;
     }
 }
 
