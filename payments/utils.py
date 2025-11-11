@@ -162,86 +162,65 @@ def initiate_rocket_payment(order):
 
 def initiate_sslcommerz_payment(order):
     """
-    Initiate SSLCommerz payment
+    Initiate SSLCommerz payment using custom implementation
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
-        from sslcommerz_python.payment import SSLCSession
+        from .sslcommerz import SSLCommerzPayment
+        from django.http import HttpRequest
         
-        config = settings.PAYMENT_GATEWAYS['sslcommerz']
+        logger.info(f"Initiating SSLCommerz payment for order {order.order_number}")
         
-        # Generate transaction ID
+        # Generate transaction ID (use order number + UUID for uniqueness)
         transaction_id = f"SSL-{order.order_number}-{uuid.uuid4().hex[:8]}"
+        logger.info(f"Generated transaction ID: {transaction_id}")
         
-        # Initialize SSLCommerz
-        sslcz = SSLCSession(
-            sslc_is_sandbox=config['is_sandbox'],
-            sslc_store_id=config['store_id'],
-            sslc_store_pass=config['store_password']
+        # Create payment record first
+        Payment.objects.create(
+            order=order,
+            payment_method='sslcommerz',
+            transaction_id=transaction_id,
+            amount=order.total,
         )
+        logger.info(f"Payment record created for transaction {transaction_id}")
         
-        # Set URLs
-        sslcz.set_urls(
-            success_url=settings.SITE_URL + reverse('payments:sslcommerz_success'),
-            fail_url=settings.SITE_URL + reverse('payments:sslcommerz_fail'),
-            cancel_url=settings.SITE_URL + reverse('payments:sslcommerz_cancel'),
-            ipn_url=settings.SITE_URL + reverse('payments:sslcommerz_ipn'),
-        )
+        # Update order with transaction ID
+        order.transaction_id = transaction_id
+        order.save()
         
-        # Set product and customer info
-        sslcz.set_product_integration(
-            total_amount=float(order.total),
-            currency='BDT',
-            product_category='books',
-            product_name=f"Order {order.order_number}",
-            num_of_item=order.items.count(),
-            shipping_method='Courier',
-            product_profile='general',
-        )
+        # Initialize SSLCommerz payment gateway
+        ssl = SSLCommerzPayment()
+        logger.info("SSLCommerzPayment class initialized")
         
-        sslcz.set_customer_info(
-            name=order.shipping_full_name,
-            email=order.shipping_email or order.user.email,
-            address1=order.shipping_address_line1,
-            address2=order.shipping_address_line2,
-            city=order.shipping_city,
-            postcode=order.shipping_postal_code,
-            country='Bangladesh',
-            phone=order.shipping_phone,
-        )
+        # Pass the transaction_id to create_session
+        # Create a minimal request object for URL building
+        # In actual use, this will be called from a view with real request object
+        # For now, we'll build the URLs manually
+        session_data = ssl.create_session(order, None, transaction_id)
+        logger.info(f"SSLCommerz session response: {session_data.get('status')}")
         
-        sslcz.set_shipping_info(
-            shipping_method='Courier',
-            num_of_item=order.items.count(),
-            name=order.shipping_full_name,
-            address1=order.shipping_address_line1,
-            address2=order.shipping_address_line2,
-            city=order.shipping_city,
-            postcode=order.shipping_postal_code,
-            country='Bangladesh',
-        )
-        
-        # Initiate payment
-        response = sslcz.init_payment(transaction_id, 'BDT', float(order.total))
-        
-        if response.get('status') == 'SUCCESS':
-            # Create payment record
-            Payment.objects.create(
-                order=order,
-                payment_method='sslcommerz',
-                transaction_id=transaction_id,
-                amount=order.total,
-                gateway_response=response,
-            )
+        if session_data.get('status') == 'SUCCESS':
+            # Update payment record with session data
+            payment = Payment.objects.get(transaction_id=transaction_id)
+            payment.gateway_response = session_data
+            payment.save()
             
-            # Update order
-            order.transaction_id = transaction_id
-            order.save()
-            
-            return response.get('GatewayPageURL')
+            gateway_url = session_data.get('GatewayPageURL')
+            logger.info(f"SSLCommerz payment URL generated: {gateway_url}")
+            return gateway_url
+        else:
+            error_msg = session_data.get('failedreason', 'Unknown error')
+            logger.error(f"SSLCommerz session creation failed: {error_msg}")
+            print(f"SSLCommerz session creation failed: {session_data}")
+            return None
         
-        return None
     except Exception as e:
+        logger.error(f"SSLCommerz payment error: {str(e)}", exc_info=True)
         print(f"SSLCommerz payment error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

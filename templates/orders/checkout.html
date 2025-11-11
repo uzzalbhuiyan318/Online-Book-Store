@@ -134,8 +134,8 @@
                                 </label>
                             </div>
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="payment_method" id="card" value="card" required>
-                                <label class="form-check-label" for="card">
+                                <input class="form-check-input" type="radio" name="payment_method" id="sslcommerz" value="sslcommerz" required>
+                                <label class="form-check-label" for="sslcommerz">
                                     <i class="fas fa-credit-card"></i> Credit/Debit Card (SSLCommerz)
                                 </label>
                             </div>
@@ -148,7 +148,7 @@
                         <h5 class="mb-0">Order Notes (Optional)</h5>
                     </div>
                     <div class="card-body">
-                        <textarea class="form-control" name="notes" rows="3" placeholder="Any special instructions for delivery?"></textarea>
+                        <textarea class="form-control" name="customer_notes" rows="3" placeholder="Any special instructions for delivery?"></textarea>
                     </div>
                 </div>
             </div>
@@ -277,7 +277,7 @@ function applyCoupon() {
             }
             
             // Save order notes
-            const notesField = document.querySelector('textarea[name="notes"]');
+            const notesField = document.querySelector('textarea[name="customer_notes"]');
             if (notesField && notesField.value) {
                 console.log('Saving notes:', notesField.value);
                 sessionStorage.setItem('order_notes', notesField.value);
@@ -315,7 +315,7 @@ function removeCoupon() {
         sessionStorage.setItem('selected_payment_method', selectedPayment.value);
     }
     // Save order notes
-    const notesField = document.querySelector('textarea[name="notes"]');
+    const notesField = document.querySelector('textarea[name="customer_notes"]');
     if (notesField) {
         sessionStorage.setItem('order_notes', notesField.value);
     }
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Restore order notes
     const savedNotes = sessionStorage.getItem('order_notes');
     if (savedNotes) {
-        const notesField = document.querySelector('textarea[name="notes"]');
+        const notesField = document.querySelector('textarea[name="customer_notes"]');
         if (notesField) {
             notesField.value = savedNotes;
             console.log('Order notes restored successfully');

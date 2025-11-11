@@ -17,6 +17,9 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
+# Site URL for payment callbacks and absolute URLs
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -201,6 +204,8 @@ CACHES = {
 # Session Settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_AGE = 86400  # 1 day
+SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cookies on redirects from payment gateways
+SESSION_SAVE_EVERY_REQUEST = True  # Ensure session is saved on every request
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -233,6 +238,11 @@ PAYMENT_GATEWAYS = {
         'is_sandbox': config('SSLCOMMERZ_IS_SANDBOX', default=True, cast=bool),
     }
 }
+
+# SSLCommerz Settings (direct access for payment module)
+SSLCOMMERZ_STORE_ID = config('SSLCOMMERZ_STORE_ID', default='')
+SSLCOMMERZ_STORE_PASSWORD = config('SSLCOMMERZ_STORE_PASSWORD', default='')
+SSLCOMMERZ_IS_SANDBOX = config('SSLCOMMERZ_IS_SANDBOX', default=True, cast=bool)
 
 # Security Settings
 SECURE_BROWSER_XSS_FILTER = True

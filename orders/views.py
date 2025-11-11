@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django.conf import settings
 from decimal import Decimal
 from .models import Order, OrderItem, OrderStatusHistory
 from .forms import CheckoutForm, OrderTrackingForm
@@ -174,10 +175,35 @@ def checkout(request):
     return render(request, 'orders/checkout.html', context)
 
 
-@login_required
 def order_success(request, order_number):
-    """Order success page"""
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    """Order success page - accessible without login for payment callbacks"""
+    # Try to get order - allow access for payment callbacks even if user is not logged in
+    try:
+        if request.user.is_authenticated:
+            # If user is logged in, verify they own the order
+            order = get_object_or_404(Order, order_number=order_number, user=request.user)
+        else:
+            # If not logged in (coming from payment gateway), just get the order
+            # This is safe because order_number is unique and hard to guess
+            order = get_object_or_404(Order, order_number=order_number)
+            
+            # Additional security: only allow access to recently confirmed orders (within last hour)
+            # This prevents old orders from being accessed without login
+            if order.confirmed_at:
+                time_since_confirmation = timezone.now() - order.confirmed_at
+                if time_since_confirmation.total_seconds() > 3600:  # 1 hour
+                    # Order is too old, require login
+                    messages.warning(request, 'Please log in to view your order.')
+                    return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+            elif order.created_at:
+                time_since_creation = timezone.now() - order.created_at
+                if time_since_creation.total_seconds() > 3600:  # 1 hour
+                    # Order is too old, require login
+                    messages.warning(request, 'Please log in to view your order.')
+                    return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+    except Order.DoesNotExist:
+        messages.error(request, 'Order not found.')
+        return redirect('books:home')
     
     context = {
         'order': order,
