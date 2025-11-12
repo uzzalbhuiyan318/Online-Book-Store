@@ -7,9 +7,13 @@ from django.conf import settings
 from decimal import Decimal
 from .models import Order, OrderItem, OrderStatusHistory
 from .forms import CheckoutForm, OrderTrackingForm
+from .email_utils import send_order_confirmation_email
 from books.models import Cart
 from accounts.models import Address
 from payments.utils import initiate_payment
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -144,8 +148,26 @@ def checkout(request):
             payment_method = form.cleaned_data['payment_method']
             
             if payment_method == 'cod':
-                # Cash on Delivery - just confirm order
-                messages.success(request, 'Order placed successfully!')
+                # Cash on Delivery - confirm order and send email
+                order.status = 'confirmed'
+                order.confirmed_at = timezone.now()
+                order.save()
+                
+                logger.info(f"COD order {order.order_number} confirmed, attempting to send email to {order.user.email}")
+                
+                # Send order confirmation email with invoice
+                try:
+                    result = send_order_confirmation_email(order)
+                    if result:
+                        logger.info(f"✅ Order confirmation email sent successfully for COD order {order.order_number}")
+                    else:
+                        logger.warning(f"⚠️ Email function returned False for order {order.order_number}")
+                except Exception as e:  # noqa: broad-except
+                    logger.error(f"❌ Failed to send confirmation email for order {order.order_number}: {str(e)}")
+                    logger.exception("Full exception traceback:")
+                    # Don't fail the order if email fails
+                
+                messages.success(request, 'Order placed successfully! Check your email for order confirmation.')
                 return redirect('orders:order_success', order_number=order.order_number)
             else:
                 # Redirect to payment gateway

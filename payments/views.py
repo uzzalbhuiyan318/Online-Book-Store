@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from .models import Payment
 from orders.models import Order, OrderStatusHistory
+from orders.email_utils import send_order_confirmation_email
 from .sslcommerz import SSLCommerzPayment
 import logging
 
@@ -127,6 +128,19 @@ def sslcommerz_success(request):
         )
         
         logger.info(f"Payment successful for order {order.order_number}, transaction {transaction_id}")
+        
+        # Send order confirmation email with invoice
+        logger.info(f"SSLCommerz payment successful, attempting to send email to {order.user.email}")
+        try:
+            result = send_order_confirmation_email(order)
+            if result:
+                logger.info(f"✅ Order confirmation email sent successfully for order {order.order_number}")
+            else:
+                logger.warning(f"⚠️ Email function returned False for order {order.order_number}")
+        except Exception as e:  # noqa: broad-except
+            logger.error(f"❌ Failed to send confirmation email for order {order.order_number}: {str(e)}")
+            logger.exception("Full exception traceback:")
+            # Don't fail the transaction if email fails
         
         # Store success message in session (if session exists) or just redirect
         messages.success(request, 'Payment completed successfully!')

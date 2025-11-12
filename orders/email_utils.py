@@ -5,27 +5,72 @@ from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import strip_tags
+from xhtml2pdf import pisa
+import logging
+from io import BytesIO
+
+logger = logging.getLogger(__name__)
 
 
 def send_order_confirmation_email(order):
-    """Send order confirmation email"""
-    subject = f'Order Confirmation - {order.order_number}'
+    """Send order confirmation email with invoice PDF"""
+    subject = f'Order Confirmation #{order.order_number} - BookStore'
     
+    # Get site URL for links in email
+    site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+    
+    # Render email HTML
     html_message = render_to_string('emails/order_confirmation.html', {
         'order': order,
         'order_items': order.items.all(),
+        'site_url': site_url,
     })
     
     plain_message = strip_tags(html_message)
     
-    send_mail(
-        subject,
-        plain_message,
-        settings.DEFAULT_FROM_EMAIL,
-        [order.user.email],
-        html_message=html_message,
-        fail_silently=False,
+    # Create email with HTML content
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[order.user.email],
     )
+    email.attach_alternative(html_message, "text/html")
+    
+    # Generate invoice PDF
+    try:
+        invoice_html = render_to_string('orders/invoice.html', {
+            'order': order,
+        })
+        
+        # Convert HTML to PDF using xhtml2pdf
+        pdf_file = BytesIO()
+        pisa_status = pisa.CreatePDF(invoice_html, dest=pdf_file)
+        
+        if not pisa_status.err:
+            pdf_file.seek(0)
+            
+            # Attach PDF to email
+            email.attach(
+                filename=f'Invoice_{order.order_number}.pdf',
+                content=pdf_file.read(),
+                mimetype='application/pdf'
+            )
+            logger.info("Invoice PDF generated successfully for order %s", order.order_number)
+        else:
+            logger.error("Error generating invoice PDF for order %s", order.order_number)
+    except Exception as e:  # noqa: broad-except
+        logger.error("Error generating invoice PDF for order %s: %s", order.order_number, str(e))
+        # Continue without PDF attachment if generation fails
+    
+    # Send email
+    try:
+        email.send(fail_silently=False)
+        logger.info("Order confirmation email sent successfully for order %s", order.order_number)
+        return True
+    except Exception as e:  # noqa: broad-except
+        logger.error("Error sending order confirmation email for order %s: %s", order.order_number, str(e))
+        return False
 
 
 def send_order_status_update_email(order, old_status, new_status):

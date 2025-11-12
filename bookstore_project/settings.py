@@ -208,13 +208,28 @@ SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cookies on redirects from payment gatew
 SESSION_SAVE_EVERY_REQUEST = True  # Ensure session is saved on every request
 
 # Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# You can switch between console (for testing) and SMTP (for real emails)
+# Set USE_CONSOLE_EMAIL=True in .env to see emails in terminal
+# Set USE_CONSOLE_EMAIL=False in .env to send real emails via SMTP
+USE_CONSOLE_EMAIL = config('USE_CONSOLE_EMAIL', default=True, cast=bool)
+
+if USE_CONSOLE_EMAIL:
+    # Console backend - emails printed in terminal (good for development/testing)
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    DEFAULT_FROM_EMAIL = 'noreply@bookstore.com'
+else:
+    # SMTP backend - real emails sent via Gmail or other SMTP server
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+    EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+    EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+    EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='uzzalbhuiyan905@gmail.com')
+    EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='aawx flgg besg rmxe')
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+    
+    # Additional SMTP settings for better reliability
+    EMAIL_USE_SSL = False  # Use TLS instead of SSL
+    EMAIL_TIMEOUT = 30  # Timeout in seconds
 
 # Payment Gateway Settings
 PAYMENT_GATEWAYS = {
