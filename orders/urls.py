@@ -23,4 +23,5 @@ urlpatterns = [
     
     # Invoice
     path('invoice/<str:order_number>/', views.invoice, name='invoice'),
+    path('invoice/<str:order_number>/email/', views.email_invoice, name='email_invoice'),
 ]

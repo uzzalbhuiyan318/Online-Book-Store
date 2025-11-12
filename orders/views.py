@@ -426,10 +426,55 @@ def remove_coupon(request):
 
 @login_required
 def invoice(request, order_number):
-    """Generate order invoice"""
+    """Generate and download order invoice as PDF"""
+    from django.http import HttpResponse
+    from .pdf_generator import generate_invoice_pdf
+    
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
     
-    context = {
-        'order': order,
-    }
-    return render(request, 'orders/invoice.html', context)
+    # Generate PDF using ReportLab
+    pdf_content = generate_invoice_pdf(order)
+    
+    # Create HTTP response with PDF
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="Invoice_{order.order_number}.pdf"'
+    
+    return response
+
+
+@login_required
+def email_invoice(request, order_number):
+    """Email invoice to customer"""
+    from django.http import JsonResponse
+    
+    # Verify this is a POST request and AJAX
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'}, status=405)
+    
+    # Get the order
+    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    
+    try:
+        # Send the email with invoice
+        result = send_order_confirmation_email(order)
+        
+        if result:
+            logger.info(f"✅ Invoice email sent successfully for order {order.order_number} to {order.user.email}")
+            return JsonResponse({
+                'success': True,
+                'message': f'Invoice has been sent to {order.user.email}'
+            })
+        else:
+            logger.warning(f"⚠️ Email function returned False for order {order.order_number}")
+            return JsonResponse({
+                'success': False,
+                'message': 'Failed to send invoice email. Please try again later.'
+            }, status=500)
+    
+    except Exception as e:
+        logger.error(f"❌ Failed to send invoice email for order {order.order_number}: {str(e)}")
+        logger.exception("Full exception traceback:")
+        return JsonResponse({
+            'success': False,
+            'message': 'An error occurred while sending the invoice. Please try again later.'
+        }, status=500)

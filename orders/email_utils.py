@@ -5,9 +5,8 @@ from django.core.mail import send_mail, EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils.html import strip_tags
-from xhtml2pdf import pisa
 import logging
-from io import BytesIO
+from .pdf_generator import generate_invoice_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -37,28 +36,17 @@ def send_order_confirmation_email(order):
     )
     email.attach_alternative(html_message, "text/html")
     
-    # Generate invoice PDF
+    # Generate invoice PDF using ReportLab
     try:
-        invoice_html = render_to_string('orders/invoice.html', {
-            'order': order,
-        })
+        pdf_content = generate_invoice_pdf(order)
         
-        # Convert HTML to PDF using xhtml2pdf
-        pdf_file = BytesIO()
-        pisa_status = pisa.CreatePDF(invoice_html, dest=pdf_file)
-        
-        if not pisa_status.err:
-            pdf_file.seek(0)
-            
-            # Attach PDF to email
-            email.attach(
-                filename=f'Invoice_{order.order_number}.pdf',
-                content=pdf_file.read(),
-                mimetype='application/pdf'
-            )
-            logger.info("Invoice PDF generated successfully for order %s", order.order_number)
-        else:
-            logger.error("Error generating invoice PDF for order %s", order.order_number)
+        # Attach PDF to email
+        email.attach(
+            filename=f'Invoice_{order.order_number}.pdf',
+            content=pdf_content,
+            mimetype='application/pdf'
+        )
+        logger.info("Invoice PDF generated successfully for order %s", order.order_number)
     except Exception as e:  # noqa: broad-except
         logger.error("Error generating invoice PDF for order %s: %s", order.order_number, str(e))
         # Continue without PDF attachment if generation fails
