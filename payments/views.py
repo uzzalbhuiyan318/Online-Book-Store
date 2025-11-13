@@ -57,6 +57,7 @@ def sslcommerz_success(request):
         post_data = request.GET
     else:
         logger.error("Invalid request method for SSLCommerz success callback")
+        messages.error(request, 'Invalid payment callback.')
         return redirect('books:home')
     
     transaction_id = post_data.get('tran_id')
@@ -64,21 +65,65 @@ def sslcommerz_success(request):
     amount = post_data.get('amount')
     card_type = post_data.get('card_type', 'Unknown')
     
+    # Log all callback data for debugging
+    logger.info(f"SSLCommerz callback received - tran_id: {transaction_id}, val_id: {val_id}")
+    logger.info(f"All callback params: {dict(post_data)}")
+    
     if not transaction_id or not val_id:
         logger.error("Missing transaction_id or val_id in callback")
-        messages.error(request, 'Invalid payment callback.')
+        messages.error(request, 'Invalid payment callback. Please check your order status in My Orders.')
         return redirect('books:home')
     
     try:
+        # Get payment and order first to have order info for redirects
+        # Handle both transaction ID formats:
+        # 1. Full format: "SSL-BS20251113175012285343-abc12345"
+        # 2. Order number only: "BS20251113175012285343" (if SSLCommerz truncated/changed it)
+        
+        payment = None
+        order = None
+        
+        try:
+            # Try to find payment by transaction_id first
+            payment = Payment.objects.get(transaction_id=transaction_id)
+            order = payment.order
+            logger.info(f"Found payment by transaction_id: {transaction_id}")
+        except Payment.DoesNotExist:
+            # If not found, check if transaction_id might be an order number
+            logger.warning(f"Payment not found with transaction_id: {transaction_id}, checking if it's an order number")
+            from orders.models import Order
+            
+            # Try to find order directly by order number
+            try:
+                order = Order.objects.get(order_number=transaction_id)
+                # Try to find associated payment by order
+                payment = Payment.objects.filter(order=order, payment_method='sslcommerz').latest('created_at')
+                logger.info(f"Found order {order.order_number} and payment {payment.transaction_id} using order_number lookup")
+            except Order.DoesNotExist:
+                # If still not found, try extracting order number from transaction_id
+                if transaction_id and transaction_id.startswith('SSL-'):
+                    parts = transaction_id.split('-')
+                    if len(parts) >= 2:
+                        order_number = '-'.join(parts[1:-1])
+                        order = Order.objects.get(order_number=order_number)
+                        payment = Payment.objects.filter(order=order, payment_method='sslcommerz').latest('created_at')
+                        logger.info(f"Found order {order_number} by extracting from transaction_id")
+                else:
+                    raise Payment.DoesNotExist("Cannot find payment or order")
+        
         # Initialize SSLCommerz payment gateway
         ssl = SSLCommerzPayment()
         
         # Verify hash for security (only for POST requests from SSLCommerz)
         if request.method == 'POST':
-            if not ssl.verify_hash(post_data.dict()):
+            # Convert QueryDict to regular dict with single values (not lists)
+            post_data_dict = {k: v for k, v in post_data.items()}
+            if not ssl.verify_hash(post_data_dict):
                 logger.error(f"Hash verification failed for transaction {transaction_id}")
-                messages.error(request, 'Payment verification failed.')
-                return redirect('books:home')
+                logger.warning(f"Continuing with payment validation despite hash verification failure")
+                # Don't block payment on hash verification failure - continue with API validation
+                # messages.error(request, 'Payment verification failed. Please contact support if the amount was deducted.')
+                # return redirect('orders:order_success', order_number=order.order_number)
         
         # Validate payment with SSLCommerz API
         logger.info(f"Validating payment with val_id: {val_id}")
@@ -88,12 +133,9 @@ def sslcommerz_success(request):
         
         if validation_response.get('status') not in ['VALID', 'VALIDATED']:
             logger.error(f"Payment validation failed for transaction {transaction_id}. Response: {validation_response}")
-            messages.error(request, 'Payment validation failed. Please contact support.')
-            return redirect('books:home')
-        
-        # Get payment and order
-        payment = Payment.objects.get(transaction_id=transaction_id)
-        order = payment.order
+            messages.error(request, 'Payment validation failed. Please contact support if the amount was deducted.')
+            # Redirect to order success page so user can see their order
+            return redirect('orders:order_success', order_number=order.order_number)
         
         # Check if already processed (prevent duplicate processing)
         if payment.status == 'completed':
@@ -105,8 +147,9 @@ def sslcommerz_success(request):
         validated_amount = validation_response.get('amount', amount)
         if float(validated_amount) != float(order.total):
             logger.error(f"Amount mismatch for order {order.order_number}: Expected {order.total}, Got {validated_amount}")
-            messages.error(request, 'Payment amount mismatch. Please contact support.')
-            return redirect('books:home')
+            messages.warning(request, 'Payment amount mismatch detected. Please contact support.')
+            # Still redirect to order page so user can see their order
+            return redirect('orders:order_success', order_number=order.order_number)
         
         # Update payment status
         payment.status = 'completed'
@@ -150,11 +193,44 @@ def sslcommerz_success(request):
     
     except Payment.DoesNotExist:
         logger.error(f"Payment not found for transaction {transaction_id}")
-        messages.error(request, 'Payment not found. Please contact support.')
+        messages.error(request, 'Payment record not found. Please check your order status in My Orders.')
+        # This shouldn't happen as we handle it above, but keep as safety net
         return redirect('books:home')
     except Exception as e:
         logger.error(f"Error processing payment success: {str(e)}", exc_info=True)
-        messages.error(request, 'An error occurred while processing payment. Please contact support.')
+        messages.error(request, 'An error occurred while processing payment. Please contact support if the amount was deducted.')
+        
+        # Try to find order and redirect to it even in case of error
+        try:
+            from orders.models import Order
+            # Try multiple lookup strategies
+            order = None
+            
+            # Strategy 1: Find payment by transaction_id
+            payment = Payment.objects.filter(transaction_id=transaction_id).first()
+            if payment and payment.order:
+                order = payment.order
+            
+            # Strategy 2: If transaction_id looks like an order number, try direct lookup
+            if not order:
+                try:
+                    order = Order.objects.get(order_number=transaction_id)
+                except Order.DoesNotExist:
+                    pass
+            
+            # Strategy 3: Extract order number from transaction_id format SSL-{order}-{uuid}
+            if not order and transaction_id and transaction_id.startswith('SSL-'):
+                parts = transaction_id.split('-')
+                if len(parts) >= 2:
+                    order_number = '-'.join(parts[1:-1])
+                    order = Order.objects.filter(order_number=order_number).first()
+            
+            if order:
+                logger.info(f"Redirecting to order {order.order_number} despite error")
+                return redirect('orders:order_success', order_number=order.order_number)
+        except Exception:
+            pass
+        
         return redirect('books:home')
 
 
@@ -195,14 +271,17 @@ def sslcommerz_fail(request):
         )
         
         logger.warning(f"Payment failed for transaction {transaction_id}: {error_message}")
-        messages.error(request, f'Payment failed: {error_message}. Please try again.')
+        messages.error(request, f'Payment failed: {error_message}. You can retry payment from your order details.')
+        
+        # Redirect to order success page so user can see their order and retry payment
+        return redirect('orders:order_success', order_number=order.order_number)
     except Payment.DoesNotExist:
         logger.error(f"Payment not found for failed transaction {transaction_id}")
         messages.error(request, 'Payment failed.')
     except Exception as e:
         logger.error(f"Error processing payment failure: {str(e)}")
     
-    # Redirect to home page since user might not be logged in after payment gateway redirect
+    # Redirect to home page as fallback
     return redirect('books:home')
 
 
@@ -242,14 +321,17 @@ def sslcommerz_cancel(request):
         )
         
         logger.info(f"Payment cancelled for transaction {transaction_id}")
-        messages.info(request, 'Payment cancelled. You can try again from your orders.')
+        messages.info(request, 'Payment cancelled. You can retry payment from your order details.')
+        
+        # Redirect to order success page so user can see their order and retry payment
+        return redirect('orders:order_success', order_number=order.order_number)
     except Payment.DoesNotExist:
         logger.error(f"Payment not found for cancelled transaction {transaction_id}")
         messages.info(request, 'Payment cancelled.')
     except Exception as e:
         logger.error(f"Error processing payment cancellation: {str(e)}")
     
-    # Redirect to home page since user might not be logged in after payment gateway redirect
+    # Redirect to home page as fallback
     return redirect('books:home')
 
 

@@ -199,15 +199,25 @@ def checkout(request):
 
 def order_success(request, order_number):
     """Order success page - accessible without login for payment callbacks"""
+    logger.info(f"order_success called for order_number: {order_number}, user authenticated: {request.user.is_authenticated}")
+    
     # Try to get order - allow access for payment callbacks even if user is not logged in
     try:
         if request.user.is_authenticated:
             # If user is logged in, verify they own the order
-            order = get_object_or_404(Order, order_number=order_number, user=request.user)
+            try:
+                order = Order.objects.get(order_number=order_number, user=request.user)
+                logger.info(f"Found order {order_number} for authenticated user {request.user.id}")
+            except Order.DoesNotExist:
+                # Order not found for this user, try without user filter (for payment callbacks)
+                logger.warning(f"Order {order_number} not found for user {request.user.id}, trying without user filter")
+                order = Order.objects.get(order_number=order_number)
+                logger.info(f"Found order {order_number} without user filter (belongs to user {order.user.id})")
         else:
             # If not logged in (coming from payment gateway), just get the order
             # This is safe because order_number is unique and hard to guess
-            order = get_object_or_404(Order, order_number=order_number)
+            order = Order.objects.get(order_number=order_number)
+            logger.info(f"Found order {order_number} for non-authenticated request")
             
             # Additional security: only allow access to recently confirmed orders (within last hour)
             # This prevents old orders from being accessed without login
@@ -215,15 +225,22 @@ def order_success(request, order_number):
                 time_since_confirmation = timezone.now() - order.confirmed_at
                 if time_since_confirmation.total_seconds() > 3600:  # 1 hour
                     # Order is too old, require login
+                    logger.warning(f"Order {order_number} is too old (confirmed), redirecting to login")
                     messages.warning(request, 'Please log in to view your order.')
-                    return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+                    from django.urls import reverse
+                    login_url = reverse(settings.LOGIN_URL)
+                    return redirect(f"{login_url}?next={request.path}")
             elif order.created_at:
                 time_since_creation = timezone.now() - order.created_at
                 if time_since_creation.total_seconds() > 3600:  # 1 hour
                     # Order is too old, require login
+                    logger.warning(f"Order {order_number} is too old (created), redirecting to login")
                     messages.warning(request, 'Please log in to view your order.')
-                    return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+                    from django.urls import reverse
+                    login_url = reverse(settings.LOGIN_URL)
+                    return redirect(f"{login_url}?next={request.path}")
     except Order.DoesNotExist:
+        logger.error(f"Order {order_number} not found in database")
         messages.error(request, 'Order not found.')
         return redirect('books:home')
     
@@ -253,7 +270,54 @@ def my_orders(request):
 @login_required
 def order_detail(request, order_number):
     """Order detail view"""
-    order = get_object_or_404(Order, order_number=order_number, user=request.user)
+    logger.info(f"order_detail called for order_number: {order_number}, user authenticated: {request.user.is_authenticated}")
+    
+    # Allow access to order details even without login for recent orders (payment callback scenario)
+    try:
+        if request.user.is_authenticated:
+            # If user is logged in, verify they own the order
+            try:
+                order = Order.objects.get(order_number=order_number, user=request.user)
+                logger.info(f"Found order {order_number} for authenticated user {request.user.id}")
+            except Order.DoesNotExist:
+                # Order not found for this user, try without user filter (for payment callbacks)
+                logger.warning(f"Order {order_number} not found for user {request.user.id}, trying without user filter")
+                order = Order.objects.get(order_number=order_number)
+                logger.info(f"Found order {order_number} without user filter (belongs to user {order.user.id})")
+                # If order belongs to different user, require login
+                if order.user != request.user:
+                    messages.warning(request, 'Please log in with the correct account to view this order.')
+                    from django.urls import reverse
+                    login_url = reverse(settings.LOGIN_URL)
+                    return redirect(f"{login_url}?next={request.path}")
+        else:
+            # If not logged in (coming from payment gateway), allow access to recent orders
+            order = Order.objects.get(order_number=order_number)
+            logger.info(f"Found order {order_number} for non-authenticated request")
+            
+            # Additional security: only allow access to recently created orders (within last hour)
+            # This prevents old orders from being accessed without login
+            if order.confirmed_at:
+                time_since_confirmation = timezone.now() - order.confirmed_at
+                if time_since_confirmation.total_seconds() > 3600:  # 1 hour
+                    logger.warning(f"Order {order_number} is too old (confirmed), redirecting to login")
+                    messages.warning(request, 'Please log in to view your order.')
+                    from django.urls import reverse
+                    login_url = reverse(settings.LOGIN_URL)
+                    return redirect(f"{login_url}?next={request.path}")
+            elif order.created_at:
+                time_since_creation = timezone.now() - order.created_at
+                if time_since_creation.total_seconds() > 3600:  # 1 hour
+                    logger.warning(f"Order {order_number} is too old (created), redirecting to login")
+                    messages.warning(request, 'Please log in to view your order.')
+                    from django.urls import reverse
+                    login_url = reverse(settings.LOGIN_URL)
+                    return redirect(f"{login_url}?next={request.path}")
+    except Order.DoesNotExist:
+        logger.error(f"Order {order_number} not found in database")
+        messages.error(request, 'Order not found.')
+        return redirect('books:home')
+    
     order_items = OrderItem.objects.filter(order=order)
     status_history = OrderStatusHistory.objects.filter(order=order)
     
