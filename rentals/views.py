@@ -136,7 +136,8 @@ def create_rental(request, slug):
         )
         
         messages.success(request, f'Rental request created successfully! Rental Number: {rental.rental_number}')
-        return redirect('rentals:rental_detail', rental_number=rental.rental_number)
+        # Redirect to rental checkout for payment
+        return redirect('rentals:rental_checkout', rental_number=rental.rental_number)
     
     return redirect('books:book_detail', slug=slug)
 
@@ -392,3 +393,185 @@ def cancel_rental(request, rental_number):
         return redirect('rentals:my_rentals')
     
     return redirect('rentals:rental_detail', rental_number=rental_number)
+
+
+@login_required
+def rental_checkout(request, rental_number):
+    """Rental checkout with payment method selection"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    rental = get_object_or_404(
+        BookRental,
+        rental_number=rental_number,
+        user=request.user,
+        status='pending',
+        payment_status='pending'
+    )
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        
+        if not payment_method:
+            messages.error(request, 'Please select a payment method.')
+            return redirect('rentals:rental_checkout', rental_number=rental_number)
+        
+        # Update rental with payment method
+        rental.payment_method = payment_method
+        rental.save()
+        
+        logger.info(f"Processing rental payment for {rental_number} via {payment_method}")
+        
+        if payment_method == 'cod':
+            # Cash on Delivery - activate rental immediately
+            from payments.models import Payment
+            import uuid
+            
+            # Generate transaction ID for COD
+            transaction_id = f"COD-{rental.rental_number}-{uuid.uuid4().hex[:8]}"
+            
+            # Create payment record for tracking
+            Payment.objects.create(
+                rental=rental,
+                order=None,
+                payment_method='cod',
+                transaction_id=transaction_id,
+                amount=rental.total_amount,
+                status='pending'  # Will be updated to 'completed' when cash is received
+            )
+            
+            rental.status = 'active'
+            rental.payment_status = 'pending'  # Will change to 'paid' when cash is received
+            rental.start_date = timezone.now()
+            if rental.rental_plan:
+                from datetime import timedelta
+                rental.due_date = rental.start_date + timedelta(days=rental.rental_plan.days)
+            rental.save()
+            
+            # Create status history
+            RentalStatusHistory.objects.create(
+                rental=rental,
+                status='active',
+                notes='Rental activated - Payment via Cash on Delivery',
+                changed_by=request.user
+            )
+            
+            # Create notification
+            RentalNotification.objects.create(
+                rental=rental,
+                user=request.user,
+                notification_type='rental_active',
+                title='Rental Activated',
+                message=f'Your rental for "{rental.book.title}" is now active. Due date: {rental.due_date.strftime("%Y-%m-%d")}'
+            )
+            
+            logger.info(f"COD rental {rental_number} activated")
+            messages.success(request, 'Rental activated successfully! Please pay cash on delivery.')
+            return redirect('rentals:rental_success', rental_number=rental.rental_number)
+        
+        else:
+            # Online payment methods (SSLCommerz, bKash, etc.)
+            from payments.utils import initiate_payment
+            
+            # Create a temporary Payment record for the rental
+            from payments.models import Payment
+            import uuid
+            
+            # Generate transaction ID
+            transaction_id = f"SSL-{rental.rental_number}-{uuid.uuid4().hex[:8]}"
+            
+            # Create payment record for rental (not order)
+            payment = Payment.objects.create(
+                rental=rental,  # Link to rental instead of order
+                order=None,  # No order for rentals
+                payment_method=payment_method,
+                transaction_id=transaction_id,
+                amount=rental.total_amount,
+                status='pending'
+            )
+            
+            logger.info(f"Created payment record {payment.id} for rental {rental_number}")
+            
+            # For SSLCommerz, we need to create a payment session
+            if payment_method == 'sslcommerz':
+                from payments.sslcommerz import SSLCommerzPayment
+                
+                ssl = SSLCommerzPayment()
+                session_data = ssl.create_session(rental, request, transaction_id)
+                
+                if session_data.get('status') == 'SUCCESS':
+                    payment_url = session_data.get('GatewayPageURL')
+                    logger.info(f"SSLCommerz payment URL generated for rental {rental_number}")
+                    return redirect(payment_url)
+                else:
+                    error_msg = session_data.get('failedreason', 'Unknown error')
+                    logger.error(f"SSLCommerz session creation failed: {error_msg}")
+                    messages.error(request, 'Payment initialization failed. Please try again.')
+                    return redirect('rentals:rental_checkout', rental_number=rental_number)
+            else:
+                # Redirect to other payment gateways (to be implemented)
+                messages.info(request, f'{payment_method} payment is not yet implemented. Please use COD or SSLCommerz.')
+                return redirect('rentals:rental_checkout', rental_number=rental_number)
+    
+    context = {
+        'rental': rental,
+    }
+    return render(request, 'rentals/rental_checkout.html', context)
+
+
+def rental_success(request, rental_number):
+    """Rental success page after payment"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"rental_success called for rental_number: {rental_number}, user authenticated: {request.user.is_authenticated}")
+    
+    # Try to get rental - allow access for payment callbacks even if user is not logged in
+    try:
+        if request.user.is_authenticated:
+            # If user is logged in, verify they own the rental
+            try:
+                rental = BookRental.objects.get(rental_number=rental_number, user=request.user)
+                logger.info(f"Found rental {rental_number} for authenticated user {request.user.id}")
+            except BookRental.DoesNotExist:
+                # Rental not found for this user, try without user filter (for payment callbacks)
+                logger.warning(f"Rental {rental_number} not found for user {request.user.id}, trying without user filter")
+                rental = BookRental.objects.get(rental_number=rental_number)
+                logger.info(f"Found rental {rental_number} without user filter (belongs to user {rental.user.id})")
+                # If rental belongs to different user, require login
+                if rental.user != request.user:
+                    messages.warning(request, 'Please log in with the correct account to view this rental.')
+                    from django.urls import reverse
+                    login_url = reverse('accounts:login')
+                    return redirect(f"{login_url}?next={request.path}")
+        else:
+            # If not logged in (coming from payment gateway), just get the rental
+            rental = BookRental.objects.get(rental_number=rental_number)
+            logger.info(f"Found rental {rental_number} for non-authenticated request")
+            
+            # Additional security: only allow access to recently created rentals (within last hour)
+            if rental.start_date:
+                time_since_start = timezone.now() - rental.start_date
+                if time_since_start.total_seconds() > 3600:  # 1 hour
+                    logger.warning(f"Rental {rental_number} is too old (started), redirecting to login")
+                    messages.warning(request, 'Please log in to view your rental.')
+                    from django.urls import reverse
+                    login_url = reverse('accounts:login')
+                    return redirect(f"{login_url}?next={request.path}")
+            elif rental.rental_date:
+                time_since_creation = timezone.now() - rental.rental_date
+                if time_since_creation.total_seconds() > 3600:  # 1 hour
+                    logger.warning(f"Rental {rental_number} is too old (created), redirecting to login")
+                    messages.warning(request, 'Please log in to view your rental.')
+                    from django.urls import reverse
+                    login_url = reverse('accounts:login')
+                    return redirect(f"{login_url}?next={request.path}")
+    except BookRental.DoesNotExist:
+        logger.error(f"Rental {rental_number} not found in database")
+        messages.error(request, 'Rental not found.')
+        return redirect('books:home')
+    
+    context = {
+        'rental': rental,
+    }
+    return render(request, 'rentals/rental_success.html', context)

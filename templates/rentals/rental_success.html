@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rental Confirmation - BookStore{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Success Message -->
+            <div class="text-center mb-5">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle text-success" style="font-size: 100px;"></i>
+                </div>
+                <h1 class="text-success mb-3">Rental {% if rental.payment_status == 'paid' %}Confirmed{% else %}Created{% endif %} Successfully!</h1>
+                <p class="lead text-muted">
+                    {% if rental.payment_status == 'paid' %}
+                    Your payment has been received and your rental is now active.
+                    {% else %}
+                    Your rental has been created. Please complete the payment to activate your rental.
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Rental Details Card -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-book-reader"></i> Rental Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Rental Number:</strong>
+                            <p class="mb-0 text-primary fs-5">#{{ rental.rental_number }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Rental Date:</strong>
+                            <p class="mb-0">{{ rental.created_at|date:"F d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Payment Status:</strong>
+                            <p class="mb-0">
+                                {% if rental.payment_status == 'paid' %}
+                                <span class="badge bg-success"><i class="fas fa-check"></i> Paid</span>
+                                {% elif rental.payment_status == 'pending' %}
+                                <span class="badge bg-warning"><i class="fas fa-clock"></i> Pending</span>
+                                {% else %}
+                                <span class="badge bg-danger"><i class="fas fa-times"></i> {{ rental.payment_status|title }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Rental Status:</strong>
+                            <p class="mb-0">
+                                {% if rental.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif rental.status == 'pending' %}
+                                <span class="badge bg-warning">Pending Payment</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ rental.status|title }}</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Start Date:</strong>
+                            <p class="mb-0">{{ rental.start_date|date:"F d, Y" }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <strong>Due Date:</strong>
+                            <p class="mb-0 text-danger fw-bold">{{ rental.due_date|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Payment Method:</strong>
+                            <p class="mb-0">
+                                {% if rental.payment_method == 'cod' %}
+                                <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                {% elif rental.payment_method == 'sslcommerz' %}
+                                <i class="fas fa-credit-card"></i> SSLCommerz (Online Payment)
+                                {% else %}
+                                {{ rental.payment_method|title }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Book Details -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-book"></i> Rented Book</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            {% if rental.book.cover_image %}
+                            <img src="{{ rental.book.cover_image.url }}" alt="{{ rental.book.title }}" 
+                                 class="img-fluid rounded shadow-sm">
+                            {% else %}
+                            <div class="bg-secondary d-flex align-items-center justify-content-center rounded" 
+                                 style="height: 200px;">
+                                <i class="fas fa-book text-white fa-4x"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-9">
+                            <h4>{{ rental.book.title }}</h4>
+                            <p class="text-muted mb-3">by {{ rental.book.author }}</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>ISBN:</strong> {{ rental.book.isbn }}</p>
+                                    <p><strong>Publisher:</strong> {{ rental.book.publisher }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Rental Plan:</strong> {{ rental.plan.name }}</p>
+                                    <p><strong>Duration:</strong> {{ rental.plan.duration_days }} days</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Breakdown -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-receipt"></i> Cost Breakdown</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>Rental Price ({{ rental.plan.duration_days }} days)</td>
+                                    <td class="text-end">৳{{ rental.rental_price }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Security Deposit</td>
+                                    <td class="text-end">৳{{ rental.security_deposit }}</td>
+                                </tr>
+                                {% if rental.late_fee > 0 %}
+                                <tr class="text-danger">
+                                    <td>Late Fee</td>
+                                    <td class="text-end">৳{{ rental.late_fee }}</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr class="fw-bold fs-5">
+                                    <td>Total Amount</td>
+                                    <td class="text-end text-success">৳{{ rental.total_amount }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Information -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Important Information</h5>
+                    <ul class="list-unstyled mb-0">
+                        {% if rental.payment_status == 'paid' %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Your book will be delivered to you within 2-3 business days
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Please return the book on or before <strong>{{ rental.due_date|date:"F d, Y" }}</strong>
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Late returns will incur a fee of ৳{{ rental_settings.late_fee_per_day }} per day
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Security deposit will be refunded upon successful return
+                        </li>
+                        {% else %}
+                        <li class="mb-2">
+                            <i class="fas fa-exclamation-triangle text-warning"></i> 
+                            Please complete the payment to activate your rental
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-exclamation-triangle text-warning"></i> 
+                            Book will be delivered only after payment confirmation
+                        </li>
+                        {% endif %}
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            You can track your rental status anytime from your account
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row g-3">
+                {% if rental.payment_status != 'paid' %}
+                <div class="col-md-6">
+                    <a href="{% url 'rentals:rental_checkout' rental.rental_number %}" class="btn btn-success w-100">
+                        <i class="fas fa-credit-card"></i> Complete Payment
+                    </a>
+                </div>
+                {% endif %}
+                <div class="col-md-{% if rental.payment_status == 'paid' %}4{% else %}6{% endif %}">
+                    <a href="{% url 'rentals:rental_detail' rental.rental_number %}" class="btn btn-primary w-100">
+                        <i class="fas fa-eye"></i> View Rental Details
+                    </a>
+                </div>
+                {% if rental.payment_status == 'paid' %}
+                <div class="col-md-4">
+                    <a href="{% url 'rentals:my_rentals' %}" class="btn btn-info w-100">
+                        <i class="fas fa-list"></i> My Rentals
+                    </a>
+                </div>
+                {% endif %}
+                <div class="col-md-{% if rental.payment_status == 'paid' %}4{% else %}12{% endif %}">
+                    <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary w-100">
+                        <i class="fas fa-book"></i> Browse More Books
+                    </a>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="alert alert-info mt-4">
+                <h6 class="alert-heading"><i class="fas fa-question-circle"></i> Need Help?</h6>
+                <p class="mb-0">
+                    If you have any questions about your rental, please contact us at 
+                    <strong>support@bookstore.com</strong> or call <strong>+880 1234-567890</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Animation -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Scroll to top smoothly
+    setTimeout(function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+});
+</script>
+
+<style>
+/* Success page specific styles */
+.fa-check-circle {
+    animation: scaleIn 0.5s ease-in-out;
+}
+
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

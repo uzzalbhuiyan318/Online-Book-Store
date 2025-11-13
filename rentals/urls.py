@@ -15,6 +15,10 @@ urlpatterns = [
     path('my-rentals/', views.my_rentals, name='my_rentals'),
     path('rental/<str:rental_number>/', views.rental_detail, name='rental_detail'),
     
+    # Rental Payment
+    path('checkout/<str:rental_number>/', views.rental_checkout, name='rental_checkout'),
+    path('success/<str:rental_number>/', views.rental_success, name='rental_success'),
+    
     # Rental Actions
     path('rental/<str:rental_number>/renew/', views.renew_rental, name='renew_rental'),
     path('rental/<str:rental_number>/return/', views.return_rental, name='return_rental'),
