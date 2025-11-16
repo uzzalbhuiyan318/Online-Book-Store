@@ -129,67 +129,71 @@
     {% if books %}
     <div class="row g-4">
         {% for book in books %}
-        <div class="col-md-4 col-sm-6">
-            <div class="card h-100">
+        <div class="col-lg-3 col-md-4 col-sm-6 col-6">
+            <div class="card book-card-premium">
                 {% if book.discount_percentage %}
-                <span class="badge bg-danger position-absolute top-0 end-0 m-2">
-                    -{{ book.discount_percentage|floatformat:0 }}%
+                <span class="badge badge-discount">
+                    <strong>{{ book.discount_percentage|floatformat:0 }}%</strong>
+                    <span style="font-size: 10px; font-weight: 600;">OFF</span>
                 </span>
                 {% endif %}
                 
-                <a href="{% url 'books:book_detail' book.slug %}">
-                    {% if book.cover_image %}
-                    <img src="{{ book.cover_image.url }}" class="card-img-top" alt="{{ book.title }}" style="height: 300px; object-fit: cover;">
-                    {% else %}
-                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 300px;">
-                        <i class="fas fa-book fa-5x text-white"></i>
-                    </div>
-                    {% endif %}
-                </a>
+                <div class="book-image-container">
+                    <a href="{% url 'books:book_detail' book.slug %}">
+                        {% if book.cover_image %}
+                        <img src="{{ book.cover_image.url }}" class="book-cover-img" alt="{{ book.title }}">
+                        {% else %}
+                        <div class="book-cover-placeholder">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        {% endif %}
+                    </a>
+                    <button class="btn btn-wishlist-quick toggle-wishlist {% if book.id in wishlist_book_ids %}active{% endif %}" 
+                            data-book-id="{{ book.id }}"
+                            data-in-wishlist="{% if book.id in wishlist_book_ids %}true{% else %}false{% endif %}">
+                        <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart"></i>
+                    </button>
+                </div>
                 
-                <div class="card-body">
-                    <h6 class="card-title">
-                        <a href="{% url 'books:book_detail' book.slug %}" class="text-decoration-none text-dark">
-                            {{ book.title|truncatewords:6 }}
-                        </a>
-                    </h6>
-                    <p class="card-text text-muted small">{{ book.author }}</p>
+                <div class="card-body book-card-body">
+                    <h5 class="book-title">
+                        <a href="{% url 'books:book_detail' book.slug %}" class="text-decoration-none">{{ book.title|truncatewords:5 }}</a>
+                    </h5>
+                    
+                    <p class="book-author">{{ book.author }}</p>
                     
                     {% if book.average_rating %}
-                    <div class="mb-2">
-                        {% for i in "12345" %}
-                            {% if forloop.counter <= book.average_rating %}
-                            <i class="fas fa-star text-warning"></i>
-                            {% else %}
-                            <i class="far fa-star text-warning"></i>
-                            {% endif %}
-                        {% endfor %}
-                        <small class="text-muted">({{ book.total_reviews }})</small>
+                    <div class="book-rating mb-2">
+                        <div class="rating-stars">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= book.average_rating %}
+                                <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <small class="review-count">({{ book.total_reviews }})</small>
                     </div>
                     {% endif %}
                     
-                    <div class="mb-3">
+                    <div class="price-section mb-3">
                         {% if book.discount_price %}
-                        <span class="text-danger fw-bold fs-5">৳{{ book.discount_price|floatformat:2 }}</span>
-                        <small class="text-muted text-decoration-line-through ms-2">৳{{ book.price|floatformat:2 }}</small>
+                        <span class="price-current">৳{{ book.discount_price|floatformat:2 }}</span>
+                        <span class="price-original">৳{{ book.price|floatformat:2 }}</span>
                         {% else %}
-                        <span class="fw-bold fs-5">৳{{ book.price|floatformat:2 }}</span>
+                        <span class="price-current">৳{{ book.price|floatformat:2 }}</span>
                         {% endif %}
                     </div>
                     
                     {% if book.stock > 0 %}
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm flex-grow-1 add-to-cart" data-book-id="{{ book.id }}">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
-                        </button>
-                        <button class="btn btn-sm toggle-wishlist {% if book.id in wishlist_book_ids %}btn-danger{% else %}btn-outline-secondary{% endif %}" 
-                                data-book-id="{{ book.id }}"
-                                data-in-wishlist="{% if book.id in wishlist_book_ids %}true{% else %}false{% endif %}">
-                            <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart"></i>
-                        </button>
-                    </div>
+                    <button class="btn btn-add-to-cart w-100 add-to-cart" data-book-id="{{ book.id }}">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
                     {% else %}
-                    <button class="btn btn-secondary btn-sm w-100" disabled>Out of Stock</button>
+                    <button class="btn btn-out-of-stock w-100" disabled>
+                        <i class="fas fa-times-circle"></i> Out of Stock
+                    </button>
                     {% endif %}
                 </div>
             </div>

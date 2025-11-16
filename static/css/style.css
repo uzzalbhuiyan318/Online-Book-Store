@@ -614,7 +614,7 @@ main {
 .book-card-premium {
     border: none;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     height: 100%;
@@ -663,10 +663,10 @@ main {
 /* Discount Badge */
 .badge-discount {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    width: 60px;
-    height: 60px;
+    top: -16px;
+    left: -16px;
+    width: 45px;
+    height: 45px;
     background: linear-gradient(135deg, #ff4757 0%, #ee5a6f 100%);
     border-radius: 50%;
     display: flex;
