@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overdue Notice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .warning-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .overdue-notice {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .overdue-days {
+            font-size: 36px;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 10px 0;
+        }
+        .late-fee-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+            border: 2px solid #ffc107;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .late-fee-amount {
+            font-size: 42px;
+            font-weight: bold;
+            color: #dc3545;
+            margin: 15px 0;
+        }
+        .calculation {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .rental-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-row {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .urgent-action {
+            background: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .urgent-action h3 {
+            margin-top: 0;
+        }
+        .button {
+            display: inline-block;
+            background: #dc3545;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button.white {
+            background: white;
+            color: #dc3545;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #dc3545;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>⚠️ OVERDUE NOTICE</h1>
+            <p>Your rental is past the due date</p>
+        </div>
+        
+        <div class="content">
+            <div class="warning-icon">🚨</div>
+            
+            <p>Dear {{ rental.user.full_name }},</p>
+            
+            <p><strong>This is an urgent notice that your rented book is overdue.</strong></p>
+            
+            <div class="overdue-notice">
+                <p style="margin: 0; font-size: 18px; color: #721c24;">OVERDUE BY</p>
+                <div class="overdue-days">{{ overdue_days }} DAY{% if overdue_days != 1 %}S{% endif %}</div>
+                <p style="margin: 0; color: #721c24;">Due Date was: {{ rental.due_date|date:"F d, Y" }}</p>
+            </div>
+            
+            <div class="late-fee-box">
+                <h3 style="margin: 0 0 10px 0; color: #856404;">💰 Current Late Fee</h3>
+                <div class="late-fee-amount">৳{{ late_fee }}</div>
+                <div class="calculation">
+                    {{ overdue_days }} day{% if overdue_days != 1 %}s{% endif %} × ৳{{ daily_late_fee }} per day = ৳{{ late_fee }}
+                </div>
+                <p style="margin: 10px 0 0 0; color: #856404; font-size: 14px;">
+                    <strong>Note:</strong> This amount will be deducted from your security deposit of ৳{{ rental.security_deposit }}
+                </p>
+            </div>
+            
+            <div class="rental-info">
+                <h3 style="margin-top: 0; color: #dc3545;">Rental Information</h3>
+                <div class="info-row">
+                    <strong>Book:</strong> {{ rental.book.title }}
+                </div>
+                <div class="info-row">
+                    <strong>Author:</strong> {{ rental.book.author }}
+                </div>
+                <div class="info-row">
+                    <strong>Rental Number:</strong> {{ rental.rental_number }}
+                </div>
+                <div class="info-row">
+                    <strong>Original Due Date:</strong> <strong style="color: #dc3545;">{{ rental.due_date|date:"F d, Y" }}</strong>
+                </div>
+                <div class="info-row">
+                    <strong>Days Overdue:</strong> <strong style="color: #dc3545;">{{ overdue_days }}</strong>
+                </div>
+                <div class="info-row">
+                    <strong>Late Fee Per Day:</strong> ৳{{ daily_late_fee }}
+                </div>
+            </div>
+            
+            <div class="urgent-action">
+                <h3>🔴 IMMEDIATE ACTION REQUIRED</h3>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Please return the book <strong>immediately</strong> to avoid additional late fees</li>
+                    <li>Each additional day will add ৳{{ daily_late_fee }} to your late fee</li>
+                    <li>Late fees will be deducted from your security deposit</li>
+                    <li>If late fees exceed your security deposit, you will need to pay the difference</li>
+                </ul>
+            </div>
+            
+            <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <strong>📍 Return Instructions:</strong>
+                <p style="margin: 10px 0 5px 0;">Please return the book to:</p>
+                <p style="margin: 5px 0;"><strong>BookStore Office</strong><br>
+                [Address]<br>
+                Business Hours: 9:00 AM - 6:00 PM (Mon-Sat)</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ site_url }}{% url 'rentals:rental_detail' rental.rental_number %}" class="button">View Rental Details</a>
+                <br>
+                <a href="{{ site_url }}{% url 'support:create_ticket' %}" class="button white">Contact Support</a>
+            </div>
+            
+            <p><strong>If you have already returned the book, please disregard this email and contact our support team.</strong></p>
+            
+            <p>We appreciate your prompt attention to this matter.</p>
+            
+            <p>Best regards,<br>
+            <strong>BookStore Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated overdue notice.</p>
+            <p><a href="{{ site_url }}">Visit BookStore</a> | <a href="{{ site_url }}{% url 'support:create_ticket' %}">Contact Support</a></p>
+            <p>&copy; {{ "now"|date:"Y" }} BookStore. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

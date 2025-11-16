@@ -1,6 +1,10 @@
 // Custom JavaScript for BookStore
 
 $(document).ready(function() {
+    console.log('Main.js loaded and ready');
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('Mega dropdowns found:', $('.mega-dropdown').length);
+    
     // Add to cart with AJAX
     $('.add-to-cart-form').on('submit', function(e) {
         e.preventDefault();
@@ -141,3 +145,123 @@ $('#price-range').on('change', function() {
     $('#max_price').val(range[1]);
     $(this).closest('form').submit();
 });
+
+// Mega Menu Hover Functionality - Simple and Direct
+console.log('Setting up mega menu hover');
+
+// Remove any conflicting Bootstrap dropdown behavior
+$('.mega-dropdown .dropdown-toggle').on('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Dropdown toggle clicked - prevented default');
+});
+
+// Simple hover with mouseenter and mouseleave
+$('.mega-dropdown').on('mouseenter', function() {
+    console.log('Mouse entered mega dropdown');
+    $(this).addClass('show');
+    $(this).find('.mega-menu').addClass('show');
+}).on('mouseleave', function() {
+    console.log('Mouse left mega dropdown');
+    $(this).removeClass('show');
+    $(this).find('.mega-menu').removeClass('show');
+});
+
+// Prevent menu from closing when clicking inside
+$('.mega-menu').on('click', function(e) {
+    e.stopPropagation();
+});
+
+console.log('Mega menu setup complete');
+
+// ========== Real-Time Page Search/Filter ==========
+const searchInput = $('#searchInput');
+let searchTimeout = null;
+
+// Only enable on pages with book cards
+if ($('.book-card, .card').length > 0) {
+    searchInput.on('input', function() {
+        const query = $(this).val().trim().toLowerCase();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
+        // Debounce - wait 200ms after user stops typing
+        searchTimeout = setTimeout(function() {
+            filterBooksOnPage(query);
+        }, 200);
+    });
+}
+
+function filterBooksOnPage(query) {
+    // Get all book cards
+    const bookCards = $('.card');
+    let visibleCount = 0;
+    
+    if (!query || query.length === 0) {
+        // Show all books if search is empty
+        bookCards.closest('.col-md-3, .col-md-4, .col-sm-6').show();
+        updateSearchStatus(bookCards.length, bookCards.length);
+        return;
+    }
+    
+    // Filter books
+    bookCards.each(function() {
+        const card = $(this);
+        const cardContainer = card.closest('.col-md-3, .col-md-4, .col-sm-6');
+        
+        // Get text content from the card
+        const title = card.find('.card-title').text().toLowerCase();
+        const author = card.find('.card-text.text-muted').first().text().toLowerCase();
+        const allText = card.text().toLowerCase();
+        
+        // Check if query matches title, author, or any text in the card
+        if (title.includes(query) || author.includes(query) || allText.includes(query)) {
+            cardContainer.show();
+            
+            // Highlight matching text (optional)
+            highlightCardText(card, query);
+            visibleCount++;
+        } else {
+            cardContainer.hide();
+        }
+    });
+    
+    // Update search status
+    updateSearchStatus(visibleCount, bookCards.length);
+}
+
+function highlightCardText(card, query) {
+    // Add a subtle highlight effect to visible cards
+    card.addClass('search-highlight');
+    setTimeout(function() {
+        card.removeClass('search-highlight');
+    }, 300);
+}
+
+function updateSearchStatus(visibleCount, totalCount) {
+    // Remove existing search status
+    $('#searchStatus').remove();
+    // Alert removed - no status message shown while filtering
+}
+
+// Clear search when clicking the search clear button (if present)
+searchInput.on('search', function() {
+    if (this.value === '') {
+        filterBooksOnPage('');
+    }
+});
+
+// Prevent form submission if on a page with books (for filtering)
+// Allow submission on other pages
+if ($('.book-card, .card').length > 0) {
+    $('#searchForm').on('submit', function(e) {
+        const query = searchInput.val().trim();
+        // If already on a book page and has results, prevent submission
+        if (query && $('.card:visible').length > 0) {
+            e.preventDefault();
+            filterBooksOnPage(query.toLowerCase());
+        }
+        // Otherwise allow normal form submission to search page
+    });
+}

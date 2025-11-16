@@ -465,6 +465,14 @@ def rental_checkout(request, rental_number):
                 message=f'Your rental for "{rental.book.title}" is now active. Due date: {rental.due_date.strftime("%Y-%m-%d")}'
             )
             
+            # Send confirmation email
+            from .email_utils import send_rental_confirmation_email
+            try:
+                send_rental_confirmation_email(rental)
+                logger.info(f"Sent confirmation email for rental {rental_number}")
+            except Exception as e:
+                logger.error(f"Failed to send confirmation email for rental {rental_number}: {e}")
+            
             logger.info(f"COD rental {rental_number} activated")
             messages.success(request, 'Rental activated successfully! Please pay cash on delivery.')
             return redirect('rentals:rental_success', rental_number=rental.rental_number)

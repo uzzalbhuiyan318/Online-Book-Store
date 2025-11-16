@@ -1,7 +1,8 @@
 """
 Context processors for books app
 """
-from .models import Cart, Category
+from .models import Cart, Category, Book
+from django.db.models import Count
 
 
 def cart_context(request):
@@ -26,8 +27,23 @@ def cart_context(request):
 
 
 def categories_context(request):
-    """Add active categories to context"""
+    """Add active categories, authors, and publishers to context"""
     categories = Category.objects.filter(is_active=True)
+    
+    # Get unique authors with book count
+    authors = Book.objects.filter(is_active=True).values('author').annotate(
+        book_count=Count('id')
+    ).order_by('author')[:50]  # Limit to 50 authors
+    
+    # Get unique publishers with book count
+    publishers = Book.objects.filter(is_active=True, publisher__isnull=False).exclude(
+        publisher=''
+    ).values('publisher').annotate(
+        book_count=Count('id')
+    ).order_by('publisher')[:50]  # Limit to 50 publishers
+    
     return {
         'categories': categories,
+        'authors': authors,
+        'publishers': publishers,
     }

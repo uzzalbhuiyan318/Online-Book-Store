@@ -72,6 +72,8 @@ def book_list(request):
         books = books.order_by('title')
     elif sort_by == 'popular':
         books = books.order_by('-views', '-sales')
+    elif sort_by == 'newest':
+        books = books.order_by('-created_at')
     else:
         books = books.order_by('-created_at')
     
@@ -222,6 +224,33 @@ def search_books(request):
         'books': page_obj.object_list,
     }
     return render(request, 'books/search_results.html', context)
+
+
+def live_search_api(request):
+    """Live search API for autocomplete"""
+    query = request.GET.get('q', '').strip()
+    results = []
+    
+    if query and len(query) >= 1:  # Start searching from first character
+        books = Book.objects.filter(
+            Q(title__icontains=query) |
+            Q(author__icontains=query) |
+            Q(publisher__icontains=query)
+        ).filter(is_active=True)[:10]  # Limit to 10 results
+        
+        for book in books:
+            results.append({
+                'id': book.id,
+                'title': book.title,
+                'author': book.author,
+                'publisher': book.publisher or '',
+                'price': str(book.price),
+                'image': book.cover_image.url if book.cover_image else '',
+                'url': book.get_absolute_url(),
+                'slug': book.slug,
+            })
+    
+    return JsonResponse({'results': results, 'count': len(results)})
 
 
 def cart(request):

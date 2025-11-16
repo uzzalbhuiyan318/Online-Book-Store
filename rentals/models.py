@@ -165,21 +165,34 @@ class BookRental(models.Model):
     
     def mark_as_returned(self):
         """Mark rental as returned"""
+        from .email_utils import send_rental_returned_email
+        
         self.return_date = timezone.now()
         self.status = 'returned'
         
         # Calculate late fee if overdue
         if self.is_overdue:
-            self.calculate_late_fee()
+            settings = RentalSettings.get_settings()
+            self.calculate_late_fee(settings.daily_late_fee)
         
         self.save()
         
         # Return book to stock
         self.book.stock += 1
         self.book.save()
+        
+        # Send return confirmation email
+        try:
+            send_rental_returned_email(self)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending return email for rental {self.rental_number}: {str(e)}")
     
     def renew(self, additional_days=None):
         """Renew rental for additional days"""
+        from .email_utils import send_rental_renewal_email
+        
         if not self.can_renew:
             return False, "This rental cannot be renewed"
         
@@ -200,6 +213,15 @@ class BookRental(models.Model):
                 self.can_renew = False
             
             self.save()
+            
+            # Send renewal confirmation email
+            try:
+                send_rental_renewal_email(self, additional_days)
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error sending renewal email for rental {self.rental_number}: {str(e)}")
+            
             return True, f"Rental renewed for {additional_days} days"
         
         return False, "Invalid renewal period"

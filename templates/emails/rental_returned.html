@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Return Confirmed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .success-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .rental-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .summary-box {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .alert-box {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .alert-box.warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .alert-box.info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+        .button {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #28a745;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>✅ Return Confirmed</h1>
+            <p>Thank you for returning the book</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">📚</div>
+            
+            <p>Dear {{ rental.user.full_name }},</p>
+            
+            <p>We confirm that we have received the returned book. Thank you for being a responsible renter!</p>
+            
+            <div class="rental-info">
+                <h3 style="margin-top: 0; color: #28a745;">Rental Summary</h3>
+                <div class="info-row">
+                    <span><strong>Book:</strong></span>
+                    <span>{{ rental.book.title }}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Rental Number:</strong></span>
+                    <span>{{ rental.rental_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Rental Start:</strong></span>
+                    <span>{{ rental.start_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Due Date:</strong></span>
+                    <span>{{ rental.due_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Return Date:</strong></span>
+                    <span>{{ rental.return_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span><strong>Status:</strong></span>
+                    <span style="color: #28a745; font-weight: bold;">Returned</span>
+                </div>
+            </div>
+            
+            {% if has_late_fee %}
+            <div class="alert-box warning">
+                <h4 style="margin-top: 0;">⚠️ Late Fee Applied</h4>
+                <div style="background: white; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0;">
+                        <span>Security Deposit:</span>
+                        <span><strong>৳{{ rental.security_deposit }}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 5px 0; color: #dc3545;">
+                        <span>Late Fee ({{ rental.late_days }} days):</span>
+                        <span><strong>- ৳{{ rental.late_fee }}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding: 10px 0; border-top: 2px solid #e0e0e0; font-size: 18px;">
+                        <span><strong>Refund Amount:</strong></span>
+                        <span><strong style="color: #28a745;">৳{{ rental.security_deposit|add:rental.late_fee|floatformat:2 }}</strong></span>
+                    </div>
+                </div>
+                <p style="margin: 10px 0 0 0; font-size: 14px;">
+                    The late fee has been deducted from your security deposit. The remaining amount will be refunded to your account within 3-5 business days.
+                </p>
+            </div>
+            {% else %}
+            <div class="summary-box">
+                <h3 style="margin-top: 0; color: #28a745;">🎉 No Late Fee!</h3>
+                <p style="margin: 10px 0;">Thank you for returning the book on time! Your full security deposit will be refunded.</p>
+                <div style="background: white; padding: 15px; border-radius: 5px; margin: 10px 0; text-align: center;">
+                    <p style="margin: 0; font-size: 14px;">Refund Amount</p>
+                    <p style="margin: 5px 0; font-size: 32px; font-weight: bold; color: #28a745;">৳{{ rental.security_deposit }}</p>
+                    <p style="margin: 0; font-size: 12px; color: #666;">Will be processed within 3-5 business days</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="alert-box info">
+                <h4 style="margin-top: 0;">📝 Share Your Feedback</h4>
+                <p style="margin: 5px 0;">We'd love to hear about your rental experience! Your feedback helps us improve our service.</p>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="{{ site_url }}{% url 'rentals:submit_feedback' rental.rental_number %}" style="display: inline-block; background: #17a2b8; color: white; padding: 10px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Leave Feedback</a>
+                </div>
+            </div>
+            
+            <p>We hope you enjoyed reading! Browse our collection to find your next book.</p>
+            
+            <div style="text-align: center;">
+                <a href="{{ site_url }}{% url 'books:book_list' %}" class="button">Browse Books</a>
+            </div>
+            
+            <p>Thank you for choosing BookStore!</p>
+            
+            <p>Best regards,<br>
+            <strong>BookStore Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated confirmation email.</p>
+            <p><a href="{{ site_url }}">Visit BookStore</a> | <a href="{{ site_url }}{% url 'support:create_ticket' %}">Contact Support</a></p>
+            <p>&copy; {{ "now"|date:"Y" }} BookStore. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

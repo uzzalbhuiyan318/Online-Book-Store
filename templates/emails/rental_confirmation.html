@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .success-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .rental-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .info-value {
+            color: #333;
+            text-align: right;
+        }
+        .book-details {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .book-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0 0 10px 0;
+        }
+        .alert-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .alert-box.info {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        .alert-box.success {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>📚 Rental Confirmed!</h1>
+            <p>Your book rental is confirmed</p>
+        </div>
+        
+        <div class="content">
+            <div class="success-icon">✅</div>
+            
+            <p>Dear {{ rental.user.full_name }},</p>
+            
+            <p>Thank you for renting from BookStore! Your rental has been confirmed and is now active.</p>
+            
+            <div class="book-details">
+                <p class="book-title">{{ rental.book.title }}</p>
+                <p><strong>Author:</strong> {{ rental.book.author }}</p>
+                {% if rental.book.isbn %}
+                <p><strong>ISBN:</strong> {{ rental.book.isbn }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="rental-info">
+                <h3 style="margin-top: 0; color: #667eea;">Rental Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Rental Number:</span>
+                    <span class="info-value"><strong>{{ rental.rental_number }}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rental Plan:</span>
+                    <span class="info-value">{{ rental.rental_plan.name }} ({{ rental.rental_plan.days }} days)</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Start Date:</span>
+                    <span class="info-value">{{ rental.start_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Due Date:</span>
+                    <span class="info-value"><strong style="color: #dc3545;">{{ rental.due_date|date:"F d, Y" }}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Rental Price:</span>
+                    <span class="info-value">৳{{ rental.rental_price }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Security Deposit:</span>
+                    <span class="info-value">৳{{ rental.security_deposit }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Total Amount:</span>
+                    <span class="info-value"><strong>৳{{ rental.total_amount }}</strong></span>
+                </div>
+            </div>
+            
+            <div class="alert-box info">
+                <strong>📅 Important Dates:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Book will be delivered within 2-3 business days</li>
+                    <li>Please return the book on or before <strong>{{ rental.due_date|date:"F d, Y" }}</strong></li>
+                    <li>You will receive email reminders 3 days before the due date</li>
+                </ul>
+            </div>
+            
+            <div class="alert-box" style="background: #fff3cd;">
+                <strong>⚠️ Late Fee Policy:</strong>
+                <p style="margin: 5px 0;">If you return the book after the due date, a late fee of <strong>৳10 per day</strong> will be charged. Your security deposit will be adjusted accordingly.</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <a href="{{ site_url }}{% url 'rentals:rental_detail' rental.rental_number %}" class="button">View Rental Details</a>
+            </div>
+            
+            <p>If you have any questions or concerns, please don't hesitate to contact us.</p>
+            
+            <p>Happy Reading!<br>
+            <strong>BookStore Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated email. Please do not reply to this email.</p>
+            <p><a href="{{ site_url }}">Visit BookStore</a> | <a href="{{ site_url }}{% url 'support:create_ticket' %}">Contact Support</a></p>
+            <p>&copy; {{ "now"|date:"Y" }} BookStore. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

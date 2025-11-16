@@ -196,6 +196,18 @@ def sslcommerz_success(request):
                 notes=f'Payment successful via SSLCommerz. Transaction ID: {transaction_id}, Method: {card_type}',
             )
             
+            # Send rental confirmation email
+            from rentals.email_utils import send_rental_confirmation_email
+            logger.info(f"Attempting to send rental confirmation email to {reference_obj.user.email}")
+            try:
+                result = send_rental_confirmation_email(reference_obj)
+                if result:
+                    logger.info(f"✅ Rental confirmation email sent successfully for rental {reference_obj.rental_number}")
+                else:
+                    logger.warning(f"⚠️ Email function returned False for rental {reference_obj.rental_number}")
+            except Exception as e:
+                logger.error(f"❌ Failed to send rental confirmation email: {str(e)}")
+            
             logger.info(f"Payment successful for rental {reference_obj.rental_number}, transaction {transaction_id}")
             messages.success(request, 'Payment completed successfully! Your rental is now active.')
             

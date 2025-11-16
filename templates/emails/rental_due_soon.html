@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reminder: Book Return Due Soon</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .reminder-icon {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+        .countdown {
+            background: linear-gradient(135deg, #ff9a56 0%, #ff6a00 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .countdown-number {
+            font-size: 48px;
+            font-weight: bold;
+            display: block;
+            margin: 10px 0;
+        }
+        .countdown-text {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .rental-info {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .info-row {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .alert-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .button {
+            display: inline-block;
+            background: #ff6a00;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer a {
+            color: #ff6a00;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>⏰ Rental Due Soon!</h1>
+            <p>Return reminder for your rented book</p>
+        </div>
+        
+        <div class="content">
+            <div class="reminder-icon">📚</div>
+            
+            <p>Dear {{ rental.user.full_name }},</p>
+            
+            <p>This is a friendly reminder that your rented book is due for return soon.</p>
+            
+            <div class="countdown">
+                <span class="countdown-number">{{ days_remaining }}</span>
+                <span class="countdown-text">DAY{% if days_remaining != 1 %}S{% endif %} REMAINING</span>
+            </div>
+            
+            <div class="rental-info">
+                <h3 style="margin-top: 0; color: #ff6a00;">Rental Information</h3>
+                <div class="info-row">
+                    <strong>Book:</strong> {{ rental.book.title }}
+                </div>
+                <div class="info-row">
+                    <strong>Rental Number:</strong> {{ rental.rental_number }}
+                </div>
+                <div class="info-row">
+                    <strong>Due Date:</strong> <span style="color: #dc3545; font-weight: bold;">{{ rental.due_date|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <strong>Current Status:</strong> <span style="color: #28a745;">Active</span>
+                </div>
+            </div>
+            
+            <div class="alert-box">
+                <strong>⚠️ Important:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px;">
+                    <li>Please return the book on or before <strong>{{ rental.due_date|date:"F d, Y" }}</strong></li>
+                    <li>Late returns will incur a fee of <strong>৳10 per day</strong></li>
+                    <li>Keep the book in good condition to receive your full security deposit refund</li>
+                </ul>
+            </div>
+            
+            {% if rental.can_renew %}
+            <div style="background: #d4edda; border-left: 4px solid #28a745; padding: 15px; border-radius: 4px; margin: 20px 0;">
+                <strong>💡 Need More Time?</strong>
+                <p style="margin: 5px 0;">You can renew your rental if you need more time with the book!</p>
+            </div>
+            {% endif %}
+            
+            <div style="text-align: center;">
+                <a href="{{ site_url }}{% url 'rentals:rental_detail' rental.rental_number %}" class="button">View Rental Details</a>
+            </div>
+            
+            <p>Thank you for being a responsible renter!</p>
+            
+            <p>Best regards,<br>
+            <strong>BookStore Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated reminder email.</p>
+            <p><a href="{{ site_url }}">Visit BookStore</a> | <a href="{{ site_url }}{% url 'support:create_ticket' %}">Contact Support</a></p>
+            <p>&copy; {{ "now"|date:"Y" }} BookStore. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
