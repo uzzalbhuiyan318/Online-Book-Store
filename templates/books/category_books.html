@@ -63,9 +63,9 @@
                         </div>
                         
                         <!-- Author Filter -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Author</label>
-                            <select name="author" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Author</label>
+                            <select name="author" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Authors</option>
                                 {% for author in authors %}
                                 <option value="{{ author }}" {% if request.GET.author == author %}selected{% endif %}>
@@ -76,9 +76,9 @@
                         </div>
                         
                         <!-- Publisher Filter -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Publisher</label>
-                            <select name="publisher" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Publisher</label>
+                            <select name="publisher" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Publishers</option>
                                 {% for publisher in publishers %}
                                 <option value="{{ publisher }}" {% if request.GET.publisher == publisher %}selected{% endif %}>
@@ -88,8 +88,14 @@
                             </select>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-                        <a href="{% url 'books:category_books' category.slug %}" class="btn btn-outline-secondary w-100 mt-2">Clear Filters</a>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn-filter-apply">
+                                <i class="fas fa-check"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'books:category_books' category.slug %}" class="btn-filter-clear">
+                                <i class="fas fa-redo"></i> Clear Filters
+                            </a>
+                        </div>
                     </form>
                 </div>
             </div>

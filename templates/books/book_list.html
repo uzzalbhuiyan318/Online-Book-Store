@@ -10,16 +10,16 @@
         <!-- Filters Sidebar -->
         <div class="col-md-3">
             <div class="filter-sidebar">
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+            <div class="filter-card">
+                <div class="filter-header">
+                    <i class="fas fa-sliders-h"></i> Filters
                 </div>
-                <div class="card-body">
+                <div class="filter-body">
                     <form method="get" id="filterForm">
                         <!-- Category Filter -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Category</label>
-                            <select name="category" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Category</label>
+                            <select name="category" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Categories</option>
                                 {% for cat in categories %}
                                 <option value="{{ cat.slug }}" {% if request.GET.category == cat.slug %}selected{% endif %}>
@@ -30,24 +30,26 @@
                         </div>
                         
                         <!-- Price Range -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Price Range</label>
-                            <div class="input-group input-group-sm mb-2">
-                                <span class="input-group-text">৳</span>
-                                <input type="number" name="min_price" class="form-control" placeholder="Min" 
-                                       value="{{ request.GET.min_price }}">
-                            </div>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text">৳</span>
-                                <input type="number" name="max_price" class="form-control" placeholder="Max"
-                                       value="{{ request.GET.max_price }}">
+                        <div class="filter-group">
+                            <label class="filter-label">Price Range</label>
+                            <div class="price-inputs">
+                                <div class="price-input-group">
+                                    <span class="currency-symbol">৳</span>
+                                    <input type="number" name="min_price" class="filter-input" placeholder="Min" 
+                                           value="{{ request.GET.min_price }}">
+                                </div>
+                                <div class="price-input-group">
+                                    <span class="currency-symbol">৳</span>
+                                    <input type="number" name="max_price" class="filter-input" placeholder="Max"
+                                           value="{{ request.GET.max_price }}">
+                                </div>
                             </div>
                         </div>
                         
                         <!-- Language -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Language</label>
-                            <select name="language" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Language</label>
+                            <select name="language" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Languages</option>
                                 <option value="English" {% if request.GET.language == "English" %}selected{% endif %}>English</option>
                                 <option value="Bangla" {% if request.GET.language == "Bangla" %}selected{% endif %}>বাংলা</option>
@@ -55,9 +57,9 @@
                         </div>
                         
                         <!-- Author Filter -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Author</label>
-                            <select name="author" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Author</label>
+                            <select name="author" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Authors</option>
                                 {% for author in authors %}
                                 <option value="{{ author }}" {% if request.GET.author == author %}selected{% endif %}>
@@ -68,9 +70,9 @@
                         </div>
                         
                         <!-- Publisher Filter -->
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Publisher</label>
-                            <select name="publisher" class="form-select" onchange="this.form.submit()">
+                        <div class="filter-group">
+                            <label class="filter-label">Publisher</label>
+                            <select name="publisher" class="filter-select" onchange="this.form.submit()">
                                 <option value="">All Publishers</option>
                                 {% for publisher in publishers %}
                                 <option value="{{ publisher }}" {% if request.GET.publisher == publisher %}selected{% endif %}>
@@ -80,8 +82,14 @@
                             </select>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-                        <a href="{% url 'books:book_list' %}" class="btn btn-outline-secondary w-100 mt-2">Clear Filters</a>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn-filter-apply">
+                                <i class="fas fa-check"></i> Apply Filters
+                            </button>
+                            <a href="{% url 'books:book_list' %}" class="btn-filter-clear">
+                                <i class="fas fa-redo"></i> Clear Filters
+                            </a>
+                        </div>
                     </form>
                 </div>
             </div>

@@ -32,125 +32,202 @@
         </div>
         
         <!-- Book Details -->
-        <div class="col-md-8">
-            <h1 class="mb-3">{{ book.title }}</h1>
-            
-            <div class="mb-3">
-                <span class="text-muted">by</span> <strong>{{ book.author }}</strong>
-            </div>
-            
-            <!-- Rating -->
-            {% if book.average_rating %}
-            <div class="mb-3">
-                {% for i in "12345" %}
-                    {% if forloop.counter <= book.average_rating %}
-                    <i class="fas fa-star text-warning"></i>
-                    {% else %}
-                    <i class="far fa-star text-warning"></i>
-                    {% endif %}
-                {% endfor %}
-                <span class="ms-2">({{ book.total_reviews }} reviews)</span>
-            </div>
-            {% endif %}
-            
-            <!-- Price -->
-            <div class="mb-4">
-                {% if book.discount_price %}
-                <h2 class="text-danger mb-0">৳{{ book.discount_price|floatformat:2 }}</h2>
-                <p class="text-muted">
-                    <del>৳{{ book.price|floatformat:2 }}</del>
-                    <span class="badge bg-danger ms-2">Save {{ book.discount_percentage|floatformat:0 }}%</span>
-                </p>
-                {% else %}
-                <h2 class="mb-0">৳{{ book.price|floatformat:2 }}</h2>
-                {% endif %}
-            </div>
-            
-            <!-- Book Info -->
-            <table class="table table-sm mb-4">
-                <tr>
-                    <th style="width: 150px;">Publisher:</th>
-                    <td>{{ book.publisher }}</td>
-                </tr>
-                <tr>
-                    <th>Language:</th>
-                    <td>{{ book.language }}</td>
-                </tr>
-                <tr>
-                    <th>ISBN:</th>
-                    <td>{{ book.isbn|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th>Pages:</th>
-                    <td>{{ book.pages|default:"N/A" }}</td>
-                </tr>
-                <tr>
-                    <th>Category:</th>
-                    <td>
-                        {% if book.category %}
-                        <a href="{% url 'books:category_books' book.category.slug %}">{{ book.category.name }}</a>
-                        {% else %}
-                        N/A
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <th>Availability:</th>
-                    <td>
-                        {% if book.stock > 10 %}
-                        <span class="badge bg-success">In Stock ({{ book.stock }} available)</span>
-                        {% elif book.stock > 0 %}
-                        <span class="badge bg-warning">Limited Stock ({{ book.stock }} left)</span>
-                        {% else %}
-                        <span class="badge bg-danger">Out of Stock</span>
-                        {% endif %}
-                    </td>
-                </tr>
-            </table>
-            
-            <!-- Actions -->
-            {% if book.stock > 0 %}
-            <div class="d-flex gap-3 mb-4">
-                <form method="post" action="{% url 'books:add_to_cart' book.id %}" class="flex-grow-1">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-primary btn-lg w-100">
-                        <i class="fas fa-shopping-cart"></i> Add to Cart
-                    </button>
-                </form>
-                
-                {% if user.is_authenticated %}
-                <form method="post" action="{% url 'books:add_to_wishlist' book.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-secondary btn-lg">
-                        <i class="far fa-heart"></i>
-                    </button>
-                </form>
-                {% endif %}
-            </div>
-            
-            <!-- Rent Option -->
-            <div class="alert alert-info mb-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="fas fa-book-reader fa-2x text-primary"></i>
-                        <strong class="ms-2">Want to rent instead?</strong>
-                        <p class="mb-0 small text-muted ms-2">Rent this book for as low as 10% of the price!</p>
+        <div class="col-md-5">
+            <div class="book-detail-section">
+                <!-- Title and Author -->
+                <div class="detail-header mb-4">
+                    <h1 class="book-detail-title">{{ book.title }}</h1>
+                    <div class="book-detail-author">
+                        <span class="text-muted">by</span>
+                        <strong>{{ book.author }}</strong>
                     </div>
-                    <a href="{% url 'rentals:book_rental_detail' book.slug %}" class="btn btn-success">
-                        <i class="fas fa-hand-holding"></i> Rent This Book
-                    </a>
+                </div>
+                
+                <!-- Rating -->
+                {% if book.average_rating %}
+                <div class="detail-rating mb-4">
+                    <div class="rating-display">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= book.average_rating %}
+                            <i class="fas fa-star"></i>
+                            {% else %}
+                            <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <span class="review-count">{{ book.total_reviews }} {{ book.total_reviews|pluralize:"review" }}</span>
+                </div>
+                {% endif %}
+                
+                <!-- Price Section -->
+                <div class="price-section mb-5">
+                    {% if book.discount_price %}
+                    <div class="price-display">
+                        <span class="current-price">৳{{ book.discount_price|floatformat:2 }}</span>
+                        <span class="original-price">৳{{ book.price|floatformat:2 }}</span>
+                        <span class="save-badge">Save {{ book.discount_percentage|floatformat:0 }}%</span>
+                    </div>
+                    {% else %}
+                    <div class="price-display">
+                        <span class="current-price">৳{{ book.price|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Book Info Grid -->
+                <div class="book-info-grid mb-5">
+                    <div class="info-item">
+                        <span class="info-label">Publisher</span>
+                        <span class="info-value">{{ book.publisher }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Language</span>
+                        <span class="info-value">{{ book.language }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">ISBN</span>
+                        <span class="info-value">{{ book.isbn|default:"N/A" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Pages</span>
+                        <span class="info-value">{{ book.pages|default:"N/A" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Category</span>
+                        <span class="info-value">
+                            {% if book.category %}
+                            <a href="{% url 'books:category_books' book.category.slug %}" class="category-link">{{ book.category.name }}</a>
+                            {% else %}
+                            N/A
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Availability</span>
+                        <span class="info-value">
+                            {% if book.stock > 10 %}
+                            <span class="badge-stock stock-available">✓ In Stock ({{ book.stock }})</span>
+                            {% elif book.stock > 0 %}
+                            <span class="badge-stock stock-limited">⚠ Limited ({{ book.stock }} left)</span>
+                            {% else %}
+                            <span class="badge-stock stock-unavailable">✕ Out of Stock</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons & Rental -->
+                {% if book.stock > 0 %}
+                <div class="action-rental-section mb-5">
+                    <form method="post" action="{% url 'books:add_to_cart' book.id %}" class="add-to-cart-form">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-add-to-cart-detail">
+                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                        </button>
+                    </form>
+                    
+                    <div class="rental-section">
+                        <div class="rental-info">
+                            <div class="rental-icon">
+                                <i class="fas fa-book-reader"></i>
+                            </div>
+                            <div class="rental-text">
+                                <h5>Want to rent instead?</h5>
+                                <p>Rent this book for as low as 10% of the price!</p>
+                            </div>
+                        </div>
+                        <a href="{% url 'rentals:book_rental_detail' book.slug %}" class="btn-rent-book">
+                            <i class="fas fa-hand-holding"></i> Rent This Book
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Wishlist Button -->
+                {% if user.is_authenticated %}
+                <div class="wishlist-section mb-4">
+                    <form method="post" action="{% url 'books:add_to_wishlist' book.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-wishlist-detail">
+                            <i class="far fa-heart"></i> Add to Wishlist
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+                {% else %}
+                <button class="btn-out-of-stock-detail" disabled>Out of Stock</button>
+                {% endif %}
+                
+                <!-- Share Section -->
+                <div class="share-section pt-4 border-top">
+                    <span class="share-label">Share:</span>
+                    <div class="share-buttons">
+                        <a href="#" class="share-btn facebook" title="Share on Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="share-btn twitter" title="Share on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="share-btn whatsapp" title="Share on WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            {% else %}
-            <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
-            {% endif %}
-            
-            <!-- Share -->
-            <div class="mt-4">
-                <strong>Share:</strong>
-                <a href="#" class="btn btn-sm btn-outline-primary"><i class="fab fa-facebook"></i></a>
-                <a href="#" class="btn btn-sm btn-outline-info"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="btn btn-sm btn-outline-success"><i class="fab fa-whatsapp"></i></a>
+        </div>
+        
+        <!-- Suggestion Section -->
+        <div class="col-md-3">
+            <div class="suggestion-section">
+                <h5 class="suggestion-title">এই জাতীয় আরও বই দেখুন</h5>
+                
+                {% if related_books %}
+                    {% for related_book in related_books|slice:":4" %}
+                    <div class="suggestion-item">
+                        <a href="{% url 'books:book_detail' related_book.slug %}" class="suggestion-link">
+                            <div class="suggestion-image">
+                                {% if related_book.cover_image %}
+                                <img src="{{ related_book.cover_image.url }}" alt="{{ related_book.title }}">
+                                {% else %}
+                                <div class="placeholder-image">
+                                    <i class="fas fa-book"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="suggestion-content">
+                                <h6 class="suggestion-book-title">{{ related_book.title }}</h6>
+                                <p class="suggestion-author">{{ related_book.author }}</p>
+                                
+                                {% if related_book.average_rating %}
+                                <div class="suggestion-rating">
+                                    <div class="rating-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= related_book.average_rating %}
+                                            <i class="fas fa-star"></i>
+                                            {% else %}
+                                            <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="rating-count">({{ related_book.total_reviews }})</span>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="suggestion-price">
+                                    {% if related_book.discount_price %}
+                                    <span class="suggestion-current-price">৳{{ related_book.discount_price|floatformat:0 }}</span>
+                                    <span class="suggestion-original-price">৳{{ related_book.price|floatformat:0 }}</span>
+                                    {% else %}
+                                    <span class="suggestion-current-price">৳{{ related_book.price|floatformat:0 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">এই ক্যাটাগরিতে আর কোনো বই নেই</p>
+                {% endif %}
             </div>
         </div>
     </div>
