@@ -6,6 +6,58 @@
 {% block page_title %}Books Management{% endblock %}
 
 {% block content %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card border-primary">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Total Books</h6>
+                <h4 class="mb-0">{{ stats.total_books }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-success">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Active</h6>
+                <h4 class="mb-0 text-success">{{ stats.active_books }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-warning">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Featured</h6>
+                <h4 class="mb-0 text-warning">{{ stats.featured_books }}/4</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-info">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Low Stock</h6>
+                <h4 class="mb-0 text-info">{{ stats.low_stock_books }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-danger">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Out of Stock</h6>
+                <h4 class="mb-0 text-danger">{{ stats.out_of_stock_books }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-secondary">
+            <div class="card-body text-center p-2">
+                <h6 class="text-muted mb-1 small">Filtered</h6>
+                <h4 class="mb-0">{{ total_count }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <h5><i class="fas fa-book"></i> All Books ({{ page_obj.paginator.count }})</h5>
@@ -17,7 +69,63 @@
     </div>
     
     <div class="admin-card-body">
-        <!-- Search and Filters -->
+        <!-- Advanced Search and Filters -->
+        <form method="get" class="mb-4">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <input type="text" name="q" class="form-control form-control-sm" placeholder="Search: Title, Author, ISBN..." value="{{ request.GET.q }}">
+                </div>
+                <div class="col-md-2">
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="language" class="form-select form-select-sm">
+                        <option value="">All Languages</option>
+                        {% for code, name in language_choices %}
+                        <option value="{{ code }}" {% if request.GET.language == code %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>✓ Active</option>
+                        <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>✗ Inactive</option>
+                        <option value="low_stock" {% if request.GET.status == 'low_stock' %}selected{% endif %}>⚠ Low Stock</option>
+                        <option value="out_of_stock" {% if request.GET.status == 'out_of_stock' %}selected{% endif %}>⊘ Out of Stock</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="is_featured" class="form-select form-select-sm" title="Featured">
+                        <option value="">Featured</option>
+                        <option value="1" {% if request.GET.is_featured == '1' %}selected{% endif %}>⭐ Yes</option>
+                        <option value="0" {% if request.GET.is_featured == '0' %}selected{% endif %}>☆ No</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="is_bestseller" class="form-select form-select-sm" title="Bestseller">
+                        <option value="">Best</option>
+                        <option value="1" {% if request.GET.is_bestseller == '1' %}selected{% endif %}>🏆 Yes</option>
+                        <option value="0" {% if request.GET.is_bestseller == '0' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-sm btn-admin-primary w-100"><i class="fas fa-search"></i></button>
+                </div>
+            </div>
+            {% if request.GET.q or request.GET.category or request.GET.language or request.GET.status or request.GET.is_featured or request.GET.is_bestseller %}
+            <div class="mt-2">
+                <a href="{% url 'admin_panel:book_list' %}" class="btn btn-sm btn-admin-secondary"><i class="fas fa-redo"></i> Clear All Filters</a>
+            </div>
+            {% endif %}
+        </form>
+
+        <!-- Bulk Actions -->
         <form method="get" class="row g-3 mb-4">
             <div class="col-md-4">
                 <input type="text" name="q" class="form-control" placeholder="Search by title, author..." value="{{ request.GET.q }}">
@@ -54,16 +162,29 @@
             {% csrf_token %}
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                    <select name="action" class="form-select form-select-sm d-inline-block w-auto me-2">
-                        <option value="">Bulk Actions</option>
-                        <option value="activate">Activate</option>
-                        <option value="deactivate">Deactivate</option>
-                        <option value="delete">Delete</option>
+                    <select name="action" class="form-select form-select-sm d-inline-block w-auto me-2" required>
+                        <option value="">Bulk Actions...</option>
+                        <optgroup label="Status">
+                            <option value="activate">✓ Activate</option>
+                            <option value="deactivate">✗ Deactivate</option>
+                        </optgroup>
+                        <optgroup label="Featured">
+                            <option value="mark_featured">⭐ Mark Featured</option>
+                            <option value="unmark_featured">☆ Unmark Featured</option>
+                        </optgroup>
+                        <optgroup label="Bestseller">
+                            <option value="mark_bestseller">🏆 Mark Bestseller</option>
+                            <option value="unmark_bestseller">Unmark Bestseller</option>
+                        </optgroup>
+                        <optgroup label="Danger">
+                            <option value="delete" style="color: red;">🗑️ Delete</option>
+                        </optgroup>
                     </select>
-                    <button type="submit" class="btn btn-sm btn-admin-primary">Apply</button>
+                    <button type="submit" class="btn btn-sm btn-admin-primary" onclick="return confirmBulkAction()">Apply</button>
+                    <span class="text-muted ms-2"><span id="selectedCount">0</span> selected</span>
                 </div>
                 <div class="text-muted">
-                    <small>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} books</small>
+                    <small>{{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</small>
                 </div>
             </div>
 
@@ -72,18 +193,18 @@
                 <table class="admin-table">
                     <thead>
                         <tr>
-                            <th style="width: 30px;">
-                                <input type="checkbox" id="selectAll" class="form-check-input">
-                            </th>
-                            <th style="width: 80px;">Cover</th>
-                            <th>Title</th>
-                            <th>Author</th>
+                            <th width="30"><input type="checkbox" id="selectAll" class="form-check-input"></th>
+                            <th width="70">Cover</th>
+                            <th>Title / Author</th>
                             <th>Category</th>
+                            <th>Lang</th>
                             <th>Price</th>
-                            <th>Stock</th>
+                            <th>Stock<br><small class="text-muted fw-normal">(editable)</small></th>
+                            <th>Views</th>
                             <th>Sales</th>
-                            <th>Status</th>
-                            <th style="width: 150px;">Actions</th>
+                            <th>Active<br><small class="text-muted fw-normal">(toggle)</small></th>
+                            <th>Flags</th>
+                            <th width="120">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -93,50 +214,46 @@
                                 <input type="checkbox" name="selected_books" value="{{ book.id }}" class="form-check-input select-item">
                             </td>
                             <td>
-                                {% if book.cover %}
-                                <img src="{{ book.cover.url }}" alt="{{ book.title }}" class="img-thumbnail" style="width: 60px; height: 80px; object-fit: cover;">
+                                {% if book.cover_image %}
+                                <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" style="width:60px;height:80px;object-fit:cover;" class="img-thumbnail">
                                 {% else %}
-                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 80px;">
-                                    <i class="fas fa-book text-muted"></i>
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width:60px;height:80px;"><i class="fas fa-book text-muted"></i></div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-bold text-truncate" style="max-width:300px;">{{ book.title }}</div>
+                                <small class="text-muted">{{ book.author }}</small>
+                                {% if book.isbn %}<br><small class="text-muted">ISBN: {{ book.isbn }}</small>{% endif %}
+                            </td>
+                            <td>{% if book.category %}<span class="badge bg-secondary">{{ book.category.name }}</span>{% else %}-{% endif %}</td>
+                            <td><span class="badge bg-info">{{ book.get_language_display }}</span></td>
+                            <td>
+                                <div>৳{{ book.price|floatformat:0 }}</div>
+                                {% if book.discount_price %}
+                                <small class="text-success">৳{{ book.discount_price|floatformat:0 }}</small>
+                                <span class="badge bg-success">-{{ book.discount_percentage }}%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm inline-edit-stock" data-book-id="{{ book.id }}" value="{{ book.stock }}" min="0" style="width:70px;">
+                                {% if book.stock == 0 %}<span class="badge bg-danger mt-1">Out</span>
+                                {% elif book.stock < 5 %}<span class="badge bg-warning mt-1">Low</span>{% endif %}
+                            </td>
+                            <td><span class="badge bg-light text-dark">{{ book.views|intcomma }}</span></td>
+                            <td><span class="badge bg-primary">{{ book.sales|intcomma }}</span></td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input inline-edit-status" type="checkbox" data-book-id="{{ book.id }}" {% if book.is_active %}checked{% endif %}>
                                 </div>
-                                {% endif %}
                             </td>
                             <td>
-                                <strong>{{ book.title }}</strong>
-                                {% if book.isbn %}
-                                <br><small class="text-muted">ISBN: {{ book.isbn }}</small>
-                                {% endif %}
-                            </td>
-                            <td>{{ book.author }}</td>
-                            <td>
-                                <span class="badge bg-light text-dark">{{ book.category.name }}</span>
-                            </td>
-                            <td><strong>৳{{ book.price|floatformat:2 }}</strong></td>
-                            <td>
-                                {% if book.stock == 0 %}
-                                <span class="badge bg-danger">Out of Stock</span>
-                                {% elif book.stock < 5 %}
-                                <span class="badge bg-warning text-dark">{{ book.stock }}</span>
-                                {% else %}
-                                <span class="badge bg-success">{{ book.stock }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ book.sales|default:0 }}</td>
-                            <td>
-                                {% if book.is_active %}
-                                <span class="status-badge status-active">Active</span>
-                                {% else %}
-                                <span class="status-badge status-inactive">Inactive</span>
-                                {% endif %}
+                                {% if book.is_featured %}<span class="badge bg-warning mb-1">⭐ Featured</span><br>{% endif %}
+                                {% if book.is_bestseller %}<span class="badge bg-success">🏆 Best</span>{% endif %}
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'admin_panel:book_edit' book.id %}" class="btn btn-outline-primary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'admin_panel:book_delete' book.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this book?')">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'admin_panel:book_edit' book.id %}" class="btn btn-outline-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                                    <a href="{% url 'admin_panel:book_delete' book.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Delete this book?')"><i class="fas fa-trash"></i></a>
                                 </div>
                             </td>
                         </tr>
@@ -144,8 +261,9 @@
                     </tbody>
                 </table>
             </div>
+        </form>
 
-            <!-- Pagination -->
+        <!-- Pagination -->
             {% if page_obj.has_other_pages %}
             <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
@@ -181,46 +299,92 @@
             {% endif %}
 
             {% else %}
-            <div class="admin-empty-state">
-                <i class="fas fa-book"></i>
-                <h5>No books found</h5>
-                {% if request.GET.q or request.GET.category or request.GET.status %}
-                <p>Try adjusting your search criteria</p>
-                <a href="{% url 'admin_panel:book_list' %}" class="btn btn-admin-primary">Clear Filters</a>
-                {% else %}
-                <p>Get started by adding your first book</p>
-                <a href="{% url 'admin_panel:book_add' %}" class="btn btn-admin-primary">Add Book</a>
-                {% endif %}
-            </div>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No books found. 
+            {% if request.GET.q or request.GET.category or request.GET.language or request.GET.status %}
+            <a href="{% url 'admin_panel:book_list' %}" class="btn btn-sm btn-admin-primary">Clear Filters</a>
+            {% else %}
+            <a href="{% url 'admin_panel:book_add' %}" class="btn btn-sm btn-admin-primary">Add First Book</a>
             {% endif %}
-        </form>
+        </div>
+        {% endif %}
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
 <script>
-document.getElementById('bulkActionForm').addEventListener('submit', function(e) {
-    const action = this.querySelector('select[name="action"]').value;
-    const selected = this.querySelectorAll('input[name="selected_books"]:checked');
-    
-    if (!action) {
-        e.preventDefault();
-        alert('Please select an action');
-        return;
-    }
-    
-    if (selected.length === 0) {
-        e.preventDefault();
-        alert('Please select at least one book');
-        return;
-    }
-    
-    if (action === 'delete') {
-        if (!confirm(`Are you sure you want to delete ${selected.length} book(s)?`)) {
-            e.preventDefault();
+// Select All
+document.getElementById('selectAll').addEventListener('change', function() {
+    document.querySelectorAll('.select-item').forEach(cb => cb.checked = this.checked);
+    updateCount();
+});
+document.querySelectorAll('.select-item').forEach(cb => cb.addEventListener('change', updateCount));
+
+function updateCount() {
+    document.getElementById('selectedCount').textContent = document.querySelectorAll('.select-item:checked').length;
+}
+
+function confirmBulkAction() {
+    const action = document.querySelector('select[name="action"]').value;
+    const count = document.querySelectorAll('.select-item:checked').length;
+    if (!action) { alert('Select an action'); return false; }
+    if (!count) { alert('Select at least one book'); return false; }
+    if (action === 'delete') return confirm(`Delete ${count} book(s)?`);
+    if (action === 'mark_featured') {
+        const currentFeatured = {{ stats.featured_books }};
+        if (currentFeatured + count > 4) {
+            alert(`Cannot mark ${count} books. Max 4 featured (${currentFeatured} current).`);
+            return false;
         }
     }
+    return confirm(`Apply this action to ${count} book(s)?`);
+}
+
+// Inline Stock Edit
+document.querySelectorAll('.inline-edit-stock').forEach(input => {
+    let orig = input.value;
+    input.addEventListener('change', function() {
+        const id = this.dataset.bookId;
+        fetch(`/admin-panel/books/${id}/quick-edit/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: `field=stock&value=${this.value}`
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                this.style.borderColor = '#28a745';
+                setTimeout(() => this.style.borderColor = '', 1000);
+                orig = this.value;
+            } else {
+                alert('Error: ' + d.message);
+                this.value = orig;
+            }
+        })
+        .catch(() => { alert('Error'); this.value = orig; });
+    });
 });
+
+// Inline Status Edit
+document.querySelectorAll('.inline-edit-status').forEach(input => {
+    input.addEventListener('change', function() {
+        const id = this.dataset.bookId;
+        const val = this.checked;
+        fetch(`/admin-panel/books/${id}/quick-edit/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': '{{ csrf_token }}'},
+            body: `field=is_active&value=${val}`
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (!d.success) {
+                alert('Error: ' + d.message);
+                this.checked = !val;
+            }
+        })
+        .catch(() => { alert('Error'); this.checked = !val; });
+    });
+});
+
+updateCount();
 </script>
 {% endblock %}

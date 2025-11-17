@@ -147,22 +147,28 @@ def dashboard(request):
 
 @staff_member_required
 def book_list(request):
-    """List all books with filtering"""
+    """List all books with filtering (matching Django admin features)"""
     books = Book.objects.all().select_related('category').order_by('-created_at')
     
-    # Search
+    # Search (title, author, isbn, publisher)
     query = request.GET.get('q')
     if query:
         books = books.filter(
             Q(title__icontains=query) |
             Q(author__icontains=query) |
-            Q(isbn__icontains=query)
+            Q(isbn__icontains=query) |
+            Q(publisher__icontains=query)
         )
     
     # Filter by category
     category_id = request.GET.get('category')
     if category_id:
         books = books.filter(category_id=category_id)
+    
+    # Filter by language
+    language = request.GET.get('language')
+    if language:
+        books = books.filter(language=language)
     
     # Filter by status
     status = request.GET.get('status')
@@ -175,6 +181,28 @@ def book_list(request):
     elif status == 'out_of_stock':
         books = books.filter(stock=0)
     
+    # Filter by featured
+    is_featured = request.GET.get('is_featured')
+    if is_featured == '1':
+        books = books.filter(is_featured=True)
+    elif is_featured == '0':
+        books = books.filter(is_featured=False)
+    
+    # Filter by bestseller
+    is_bestseller = request.GET.get('is_bestseller')
+    if is_bestseller == '1':
+        books = books.filter(is_bestseller=True)
+    elif is_bestseller == '0':
+        books = books.filter(is_bestseller=False)
+    
+    # Filter by date range
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    if date_from:
+        books = books.filter(created_at__gte=date_from)
+    if date_to:
+        books = books.filter(created_at__lte=date_to)
+    
     # Pagination
     paginator = Paginator(books, 20)
     page_number = request.GET.get('page')
@@ -182,11 +210,22 @@ def book_list(request):
     
     categories = Category.objects.all()
     
+    # Statistics
+    stats = {
+        'total_books': Book.objects.count(),
+        'active_books': Book.objects.filter(is_active=True).count(),
+        'featured_books': Book.objects.filter(is_featured=True).count(),
+        'low_stock_books': Book.objects.filter(stock__lt=5, stock__gt=0).count(),
+        'out_of_stock_books': Book.objects.filter(stock=0).count(),
+    }
+    
     context = {
         'page_obj': page_obj,
         'books': page_obj.object_list,
         'categories': categories,
         'total_count': books.count(),
+        'stats': stats,
+        'language_choices': Book.LANGUAGE_CHOICES,
     }
     return render(request, 'admin_panel/book_list.html', context)
 
@@ -197,9 +236,17 @@ def book_add(request):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES)
         if form.is_valid():
-            book = form.save()
-            messages.success(request, f'Book "{book.title}" added successfully!')
-            return redirect('admin_panel:book_list')
+            try:
+                book = form.save()
+                # Check featured count
+                if book.is_featured:
+                    featured_count = Book.objects.filter(is_featured=True).count()
+                    messages.success(request, f'Book "{book.title}" added successfully! (Featured books: {featured_count}/4)')
+                else:
+                    messages.success(request, f'Book "{book.title}" added successfully!')
+                return redirect('admin_panel:book_list')
+            except Exception as e:
+                messages.error(request, str(e))
     else:
         form = BookForm()
     
@@ -215,9 +262,17 @@ def book_edit(request, pk):
     if request.method == 'POST':
         form = BookForm(request.POST, request.FILES, instance=book)
         if form.is_valid():
-            book = form.save()
-            messages.success(request, f'Book "{book.title}" updated successfully!')
-            return redirect('admin_panel:book_list')
+            try:
+                book = form.save()
+                # Check featured count
+                if book.is_featured:
+                    featured_count = Book.objects.filter(is_featured=True).count()
+                    messages.success(request, f'Book "{book.title}" updated successfully! (Featured books: {featured_count}/4)')
+                else:
+                    messages.success(request, f'Book "{book.title}" updated successfully!')
+                return redirect('admin_panel:book_list')
+            except Exception as e:
+                messages.error(request, str(e))
     else:
         form = BookForm(instance=book)
     
@@ -244,28 +299,75 @@ def book_bulk_action(request):
     """Bulk actions for books"""
     if request.method == 'POST':
         action = request.POST.get('action')
-        book_ids = request.POST.getlist('book_ids')
+        book_ids = request.POST.getlist('selected_books')
         
         if not book_ids:
             messages.error(request, 'No books selected!')
             return redirect('admin_panel:book_list')
         
         books = Book.objects.filter(id__in=book_ids)
+        count = books.count()
         
-        if action == 'activate':
-            books.update(is_active=True)
-            messages.success(request, f'{books.count()} books activated successfully!')
-        elif action == 'deactivate':
-            books.update(is_active=False)
-            messages.success(request, f'{books.count()} books deactivated successfully!')
-        elif action == 'delete':
-            count = books.count()
-            books.delete()
-            messages.success(request, f'{count} books deleted successfully!')
+        try:
+            if action == 'activate':
+                books.update(is_active=True)
+                messages.success(request, f'{count} books activated successfully!')
+            elif action == 'deactivate':
+                books.update(is_active=False)
+                messages.success(request, f'{count} books deactivated successfully!')
+            elif action == 'mark_featured':
+                # Check featured limit
+                current_featured = Book.objects.filter(is_featured=True).exclude(id__in=book_ids).count()
+                if current_featured + count > 4:
+                    messages.error(request, f'Cannot mark {count} books as featured. Maximum 4 books can be featured. Currently {current_featured} featured.')
+                else:
+                    books.update(is_featured=True)
+                    messages.success(request, f'{count} books marked as featured!')
+            elif action == 'unmark_featured':
+                books.update(is_featured=False)
+                messages.success(request, f'{count} books unmarked as featured!')
+            elif action == 'mark_bestseller':
+                books.update(is_bestseller=True)
+                messages.success(request, f'{count} books marked as bestseller!')
+            elif action == 'unmark_bestseller':
+                books.update(is_bestseller=False)
+                messages.success(request, f'{count} books unmarked as bestseller!')
+            elif action == 'delete':
+                books.delete()
+                messages.success(request, f'{count} books deleted successfully!')
+            else:
+                messages.error(request, 'Invalid action selected!')
+        except Exception as e:
+            messages.error(request, f'Error: {str(e)}')
         
         return redirect('admin_panel:book_list')
     
     return redirect('admin_panel:book_list')
+
+
+@staff_member_required
+def book_quick_edit(request, pk):
+    """Quick inline edit for book stock and status (AJAX)"""
+    if request.method == 'POST':
+        book = get_object_or_404(Book, pk=pk)
+        field = request.POST.get('field')
+        value = request.POST.get('value')
+        
+        try:
+            if field == 'stock':
+                book.stock = int(value)
+                book.save()
+                return JsonResponse({'success': True, 'message': 'Stock updated'})
+            elif field == 'is_active':
+                book.is_active = value == 'true'
+                book.save()
+                return JsonResponse({'success': True, 'message': 'Status updated'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Invalid field'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
 
 
 # ==================== CATEGORY MANAGEMENT ====================

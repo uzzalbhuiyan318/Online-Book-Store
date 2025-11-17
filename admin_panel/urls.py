@@ -12,6 +12,7 @@ urlpatterns = [
     path('books/add/', views.book_add, name='book_add'),
     path('books/<int:pk>/edit/', views.book_edit, name='book_edit'),
     path('books/<int:pk>/delete/', views.book_delete, name='book_delete'),
+    path('books/<int:pk>/quick-edit/', views.book_quick_edit, name='book_quick_edit'),
     path('books/bulk-action/', views.book_bulk_action, name='book_bulk_action'),
     
     # Category Management
@@ -44,13 +45,13 @@ urlpatterns = [
     
     # Rental Management
     path('rentals/', views.rental_list, name='rental_list'),
-    path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
-    path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
     path('rentals/plans/', views.rental_plan_list, name='rental_plan_list'),
     path('rentals/plans/add/', views.rental_plan_add, name='rental_plan_add'),
     path('rentals/plans/<int:pk>/edit/', views.rental_plan_edit, name='rental_plan_edit'),
     path('rentals/plans/<int:pk>/delete/', views.rental_plan_delete, name='rental_plan_delete'),
     path('rentals/settings/', views.rental_settings, name='rental_settings'),
+    path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
+    path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
     
     # Banner Management
     path('banners/', views.banner_list, name='banner_list'),
