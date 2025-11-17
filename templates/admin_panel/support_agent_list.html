@@ -1,0 +1,60 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Support Agents - Admin Panel{% endblock %}
+{% block page_title %}Support Agents{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-user-headset"></i> Support Agents</h5>
+        <a href="{% url 'admin_panel:support_agent_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Agent
+        </a>
+    </div>
+    <div class="admin-card-body">
+        {% if agents %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for agent in agents %}
+                    <tr>
+                        <td><strong>{{ agent.user.full_name|default:agent.user.email }}</strong></td>
+                        <td>{{ agent.user.email }}</td>
+                        <td>
+                            {% if agent.is_available %}
+                            <span class="status-badge status-active">Available</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Unavailable</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'admin_panel:support_agent_edit' agent.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-user-headset"></i>
+            <h5>No agents found</h5>
+            <a href="{% url 'admin_panel:support_agent_add' %}" class="btn btn-admin-primary">Add Agent</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

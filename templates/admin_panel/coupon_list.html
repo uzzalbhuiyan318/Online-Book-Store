@@ -1,0 +1,123 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Coupons - Admin Panel{% endblock %}
+{% block page_title %}Coupons Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-ticket-alt"></i> All Coupons ({{ page_obj.paginator.count }})</h5>
+        <a href="{% url 'admin_panel:coupon_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Coupon
+        </a>
+    </div>
+    
+    <div class="admin-card-body">
+        <!-- Search -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-9">
+                <input type="text" name="q" class="form-control" placeholder="Search coupons..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:coupon_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        {% if coupons %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Type</th>
+                        <th>Discount</th>
+                        <th>Valid From</th>
+                        <th>Valid Until</th>
+                        <th>Usage</th>
+                        <th>Status</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for coupon in coupons %}
+                    <tr>
+                        <td><code>{{ coupon.code }}</code></td>
+                        <td><span class="badge bg-info">{{ coupon.get_discount_type_display }}</span></td>
+                        <td>
+                            {% if coupon.discount_type == 'percentage' %}
+                            <strong>{{ coupon.discount_value }}%</strong>
+                            {% else %}
+                            <strong>৳{{ coupon.discount_value }}</strong>
+                            {% endif %}
+                        </td>
+                        <td>{{ coupon.valid_from|date:"M d, Y" }}</td>
+                        <td>{{ coupon.valid_to|date:"M d, Y" }}</td>
+                        <td>{{ coupon.usage_count }} / {{ coupon.max_usage|default:"∞" }}</td>
+                        <td>
+                            {% if coupon.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'admin_panel:coupon_edit' coupon.id %}" class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:coupon_delete' coupon.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-ticket-alt"></i>
+            <h5>No coupons found</h5>
+            <a href="{% url 'admin_panel:coupon_add' %}" class="btn btn-admin-primary">Add Coupon</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

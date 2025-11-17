@@ -1,0 +1,69 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Banners - Admin Panel{% endblock %}
+{% block page_title %}Banners Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-image"></i> All Banners</h5>
+        <a href="{% url 'admin_panel:banner_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Banner
+        </a>
+    </div>
+    <div class="admin-card-body">
+        {% if banners %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Title</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for banner in banners %}
+                    <tr>
+                        <td>
+                            {% if banner.image %}
+                            <img src="{{ banner.image.url }}" alt="{{ banner.title }}" style="width: 100px; height: 50px; object-fit: cover;">
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ banner.title }}</strong></td>
+                        <td>{{ banner.order }}</td>
+                        <td>
+                            {% if banner.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'admin_panel:banner_edit' banner.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:banner_delete' banner.id %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-image"></i>
+            <h5>No banners found</h5>
+            <a href="{% url 'admin_panel:banner_add' %}" class="btn btn-admin-primary">Add Banner</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Reviews - Admin Panel{% endblock %}
+{% block page_title %}Reviews Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-star"></i> All Reviews ({{ page_obj.paginator.count }})</h5>
+    </div>
+    
+    <div class="admin-card-body">
+        <!-- Filters -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-6">
+                <input type="text" name="q" class="form-control" placeholder="Search reviews..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:review_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        <!-- Bulk Actions -->
+        <form method="post" action="{% url 'admin_panel:review_bulk_action' %}" id="bulkForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <select name="action" class="form-select form-select-sm d-inline-block w-auto me-2">
+                    <option value="">Bulk Actions</option>
+                    <option value="approve">Approve</option>
+                    <option value="delete">Delete</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-admin-primary">Apply</button>
+            </div>
+
+            {% if reviews %}
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th>Book</th>
+                            <th>Customer</th>
+                            <th>Rating</th>
+                            <th>Review</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for review in reviews %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_reviews" value="{{ review.id }}" class="form-check-input select-item">
+                            </td>
+                            <td><strong>{{ review.book.title|truncatewords:5 }}</strong></td>
+                            <td>{{ review.user.full_name|default:review.user.email }}</td>
+                            <td>
+                                <span class="text-warning">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                    <i class="fas fa-star"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </td>
+                            <td>{{ review.review|truncatewords:10 }}</td>
+                            <td>{{ review.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                {% if review.is_approved %}
+                                <span class="status-badge status-active">Approved</span>
+                                {% else %}
+                                <span class="status-badge status-pending">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if not review.is_approved %}
+                                    <a href="{% url 'admin_panel:review_approve' review.id %}" class="btn btn-outline-success" title="Approve">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{% url 'admin_panel:review_delete' review.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="admin-empty-state">
+                <i class="fas fa-star"></i>
+                <h5>No reviews found</h5>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

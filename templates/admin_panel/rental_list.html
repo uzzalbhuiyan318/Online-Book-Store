@@ -1,0 +1,100 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Rentals - Admin Panel{% endblock %}
+{% block page_title %}Rentals Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-book-reader"></i> All Rentals ({{ page_obj.paginator.count }})</h5>
+    </div>
+    
+    <div class="admin-card-body">
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="returned" {% if request.GET.status == 'returned' %}selected{% endif %}>Returned</option>
+                    <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:rental_list' %}" class="btn btn-admin-secondary">Reset</a>
+            </div>
+        </form>
+
+        {% if rentals %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Rental ID</th>
+                        <th>Customer</th>
+                        <th>Book</th>
+                        <th>Plan</th>
+                        <th>Start Date</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rental in rentals %}
+                    <tr>
+                        <td><strong>#{{ rental.id }}</strong></td>
+                        <td>{{ rental.user.full_name|default:rental.user.email }}</td>
+                        <td>{{ rental.book.title|truncatewords:5 }}</td>
+                        <td>{{ rental.plan.name }}</td>
+                        <td>{{ rental.start_date|date:"M d, Y" }}</td>
+                        <td>{{ rental.due_date|date:"M d, Y" }}</td>
+                        <td>
+                            <span class="status-badge status-{{ rental.status }}">{{ rental.get_status_display }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'admin_panel:rental_detail' rental.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-book-reader"></i>
+            <h5>No rentals found</h5>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

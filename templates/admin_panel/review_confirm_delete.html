@@ -1,0 +1,49 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Delete Review - Admin Panel{% endblock %}
+{% block page_title %}Delete Review{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+            </div>
+            <div class="admin-card-body text-center p-4">
+                <h4>Delete Review?</h4>
+                
+                <div class="card my-3">
+                    <div class="card-body text-start">
+                        <p><strong>Book:</strong> {{ review.book.title }}</p>
+                        <p><strong>Customer:</strong> {{ review.user.full_name|default:review.user.email }}</p>
+                        <p><strong>Rating:</strong> 
+                            <span class="text-warning">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                                {% endfor %}
+                            </span>
+                        </p>
+                        <p><strong>Review:</strong> {{ review.review }}</p>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-lg me-2">
+                        <i class="fas fa-trash"></i> Yes, Delete
+                    </button>
+                    <a href="{% url 'admin_panel:review_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

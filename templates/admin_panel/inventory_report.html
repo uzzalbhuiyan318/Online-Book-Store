@@ -1,0 +1,87 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Inventory Report - Admin Panel{% endblock %}
+{% block page_title %}Inventory Report{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-boxes"></i> Inventory Report</h5>
+        <a href="{% url 'admin_panel:export_books' %}" class="btn btn-admin-success">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
+    <div class="admin-card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Total Books</h6>
+                    <h3>{{ total_books }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card warning">
+                    <h6>Low Stock</h6>
+                    <h3>{{ low_stock }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card danger">
+                    <h6>Out of Stock</h6>
+                    <h3>{{ out_of_stock }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Total Stock Value</h6>
+                    <h3>৳{{ total_value|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        {% if books %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Sales</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td><strong>{{ book.title }}</strong></td>
+                        <td>{{ book.category.name }}</td>
+                        <td>৳{{ book.price|floatformat:2 }}</td>
+                        <td>
+                            {% if book.stock == 0 %}
+                            <span class="badge bg-danger">{{ book.stock }}</span>
+                            {% elif book.stock < 5 %}
+                            <span class="badge bg-warning text-dark">{{ book.stock }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ book.stock }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ book.sales|default:0 }}</td>
+                        <td>
+                            {% if book.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

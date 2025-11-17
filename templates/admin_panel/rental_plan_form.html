@@ -1,0 +1,39 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Plan - Admin Panel{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Rental Plan{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="admin-form-group">
+                        <label>Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Duration (Days)</label>
+                        {{ form.duration_days }}
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Price</label>
+                        {{ form.price }}
+                    </div>
+                    <div class="admin-form-group">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label">Active</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-admin-primary">Save</button>
+                    <a href="{% url 'admin_panel:rental_plan_list' %}" class="btn btn-admin-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

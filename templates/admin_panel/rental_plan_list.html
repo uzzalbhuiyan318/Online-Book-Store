@@ -1,0 +1,65 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Rental Plans - Admin Panel{% endblock %}
+{% block page_title %}Rental Plans{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-calendar-alt"></i> Rental Plans</h5>
+        <a href="{% url 'admin_panel:rental_plan_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Plan
+        </a>
+    </div>
+    <div class="admin-card-body">
+        {% if plans %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Duration</th>
+                        <th>Price</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for plan in plans %}
+                    <tr>
+                        <td><strong>{{ plan.name }}</strong></td>
+                        <td>{{ plan.duration_days }} days</td>
+                        <td>৳{{ plan.price|floatformat:2 }}</td>
+                        <td>
+                            {% if plan.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'admin_panel:rental_plan_edit' plan.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:rental_plan_delete' plan.id %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-calendar-alt"></i>
+            <h5>No plans found</h5>
+            <a href="{% url 'admin_panel:rental_plan_add' %}" class="btn btn-admin-primary">Add Plan</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

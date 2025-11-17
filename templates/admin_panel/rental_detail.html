@@ -1,0 +1,41 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Rental Detail - Admin Panel{% endblock %}
+{% block page_title %}Rental #{{ rental.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-book-reader"></i> Rental Information</h5>
+                <span class="status-badge status-{{ rental.status }}">{{ rental.get_status_display }}</span>
+            </div>
+            <div class="admin-card-body">
+                <p><strong>Book:</strong> {{ rental.book.title }}</p>
+                <p><strong>Customer:</strong> {{ rental.user.full_name|default:rental.user.email }}</p>
+                <p><strong>Plan:</strong> {{ rental.plan.name }} ({{ rental.plan.duration_days }} days)</p>
+                <p><strong>Start Date:</strong> {{ rental.start_date|date:"F d, Y" }}</p>
+                <p><strong>Due Date:</strong> {{ rental.due_date|date:"F d, Y" }}</p>
+                {% if rental.return_date %}
+                <p><strong>Return Date:</strong> {{ rental.return_date|date:"F d, Y" }}</p>
+                {% endif %}
+                <p><strong>Amount:</strong> ৳{{ rental.amount|floatformat:2 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h6>Update Status</h6>
+            </div>
+            <div class="admin-card-body">
+                <a href="{% url 'admin_panel:rental_update_status' rental.id %}" class="btn btn-admin-primary w-100">
+                    <i class="fas fa-edit"></i> Update Status
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Delete Category - Admin Panel{% endblock %}
+{% block page_title %}Delete Category{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+            </div>
+            <div class="admin-card-body text-center p-4">
+                {% if category.icon %}
+                <img src="{{ category.icon.url }}" alt="{{ category.name }}" class="img-thumbnail mb-3" style="max-width: 100px;">
+                {% endif %}
+                
+                <h4>{{ category.name }}</h4>
+                
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Category has:</strong></p>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-primary">{{ category.book_set.count }} books</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if category.book_set.count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    This category has {{ category.book_set.count }} book(s). They will need to be reassigned.
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <p class="mb-4">Are you sure you want to delete <strong>"{{ category.name }}"</strong>?</p>
+                    
+                    <button type="submit" class="btn btn-danger btn-lg me-2">
+                        <i class="fas fa-trash"></i> Yes, Delete Category
+                    </button>
+                    <a href="{% url 'admin_panel:category_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

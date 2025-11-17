@@ -1,0 +1,120 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Customers - Admin Panel{% endblock %}
+{% block page_title %}Customers Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-users"></i> All Customers ({{ page_obj.paginator.count }})</h5>
+        <a href="{% url 'admin_panel:export_customers' %}" class="btn btn-admin-success">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
+    
+    <div class="admin-card-body">
+        <!-- Search -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-9">
+                <input type="text" name="q" class="form-control" placeholder="Search by name, email..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:customer_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Joined</th>
+                        <th>Orders</th>
+                        <th>Total Spent</th>
+                        <th style="width: 120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>
+                            <strong>{{ customer.full_name|default:customer.email }}</strong>
+                        </td>
+                        <td>{{ customer.email }}</td>
+                        <td>{{ customer.phone|default:"-" }}</td>
+                        <td>{{ customer.date_joined|date:"M d, Y" }}</td>
+                        <td><span class="badge bg-primary">{{ customer.order_set.count }}</span></td>
+                        <td><strong>৳{{ customer.total_spent|default:0|floatformat:2 }}</strong></td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'admin_panel:customer_detail' customer.id %}" class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:customer_edit' customer.id %}" class="btn btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">First</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Last</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-users"></i>
+            <h5>No customers found</h5>
+            {% if request.GET.q %}
+            <p>Try adjusting your search</p>
+            <a href="{% url 'admin_panel:customer_list' %}" class="btn btn-admin-primary">Clear Search</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

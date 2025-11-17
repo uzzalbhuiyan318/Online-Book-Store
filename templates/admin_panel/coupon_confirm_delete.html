@@ -1,0 +1,46 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Delete Coupon - Admin Panel{% endblock %}
+{% block page_title %}Delete Coupon{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+            </div>
+            <div class="admin-card-body text-center p-4">
+                <h4><code>{{ coupon.code }}</code></h4>
+                
+                <div class="card my-3">
+                    <div class="card-body">
+                        <p><strong>Discount:</strong> 
+                            {% if coupon.discount_type == 'percentage' %}
+                            {{ coupon.discount_value }}%
+                            {% else %}
+                            ৳{{ coupon.discount_value }}
+                            {% endif %}
+                        </p>
+                        <p><strong>Used:</strong> {{ coupon.usage_count }} times</p>
+                        <p><strong>Valid:</strong> {{ coupon.valid_from|date:"M d" }} - {{ coupon.valid_to|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <p>Are you sure you want to delete this coupon?</p>
+                    
+                    <button type="submit" class="btn btn-danger btn-lg me-2">
+                        <i class="fas fa-trash"></i> Yes, Delete
+                    </button>
+                    <a href="{% url 'admin_panel:coupon_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

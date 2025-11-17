@@ -1,0 +1,25 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Update Rental Status - Admin Panel{% endblock %}
+{% block page_title %}Update Rental Status{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>Update Rental #{{ rental.id }}</h5>
+            </div>
+            <div class="admin-card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-admin-primary">Save</button>
+                    <a href="{% url 'admin_panel:rental_detail' rental.id %}" class="btn btn-admin-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

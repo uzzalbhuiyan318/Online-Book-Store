@@ -1,0 +1,93 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Sales Report - Admin Panel{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-line"></i> Sales Report</h5>
+        <a href="{% url 'admin_panel:export_orders' %}" class="btn btn-admin-success">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
+    <div class="admin-card-body">
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-5">
+                <label>From Date</label>
+                <input type="date" name="from_date" class="form-control" value="{{ request.GET.from_date }}">
+            </div>
+            <div class="col-md-5">
+                <label>To Date</label>
+                <input type="date" name="to_date" class="form-control" value="{{ request.GET.to_date }}">
+            </div>
+            <div class="col-md-2">
+                <label>&nbsp;</label>
+                <button type="submit" class="btn btn-admin-primary w-100">Generate</button>
+            </div>
+        </form>
+
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Total Orders</h6>
+                    <h3>{{ total_orders }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Total Revenue</h6>
+                    <h3>৳{{ total_revenue|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Average Order</h6>
+                    <h3>৳{{ average_order|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="admin-stat-card">
+                    <h6>Total Items</h6>
+                    <h3>{{ total_items }}</h3>
+                </div>
+            </div>
+        </div>
+
+        {% if orders %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Date</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td><strong>#{{ order.order_number|slice:":12" }}</strong></td>
+                        <td>{{ order.created_at|date:"M d, Y" }}</td>
+                        <td>{{ order.user.full_name|default:order.user.email }}</td>
+                        <td>{{ order.items.count }}</td>
+                        <td><strong>৳{{ order.total|floatformat:2 }}</strong></td>
+                        <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-chart-line"></i>
+            <h5>No orders in selected period</h5>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
