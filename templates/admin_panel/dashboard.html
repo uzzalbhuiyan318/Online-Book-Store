@@ -1,265 +1,301 @@
-{% extends 'base.html' %}
+{% extends 'admin_panel/base.html' %}
 {% load static %}
+{% load humanize %}
 
-{% block title %}Admin Dashboard - BookStore{% endblock %}
+{% block title %}Dashboard - Admin Panel{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid my-4">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 bg-light">
-            <div class="list-group list-group-flush">
-                <a href="{% url 'admin_panel:dashboard' %}" class="list-group-item list-group-item-action active">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a href="{% url 'admin_panel:book_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-book"></i> Books
-                </a>
-                <a href="{% url 'admin_panel:category_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-tags"></i> Categories
-                </a>
-                <a href="{% url 'admin_panel:order_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-shopping-cart"></i> Orders
-                </a>
-                <a href="{% url 'admin_panel:user_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-users"></i> Users
-                </a>
-                <a href="{% url 'admin_panel:review_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-star"></i> Reviews
-                </a>
-                <a href="{% url 'admin_panel:banner_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-image"></i> Banners
-                </a>
-                <a href="{% url 'admin_panel:coupon_list' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-ticket-alt"></i> Coupons
-                </a>
-                <a href="{% url 'admin_panel:reports' %}" class="list-group-item list-group-item-action">
-                    <i class="fas fa-chart-bar"></i> Reports
-                </a>
+<!-- Statistics Cards -->
+<div class="admin-stats-grid">
+    <div class="admin-stat-card">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
+                <h6>Total Revenue</h6>
+                <div class="stat-value">৳{{ total_revenue|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon">
+                <i class="fas fa-dollar-sign"></i>
             </div>
         </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-arrow-up stat-increase"></i>
+            Monthly: ৳{{ monthly_revenue|floatformat:2|intcomma }}
+        </div>
+    </div>
+    
+    <div class="admin-stat-card success">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
+                <h6>Total Orders</h6>
+                <div class="stat-value">{{ total_orders|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon success">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+        </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-clock"></i>
+            Pending: {{ pending_orders }}
+        </div>
+    </div>
+    
+    <div class="admin-stat-card info">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
+                <h6>Total Books</h6>
+                <div class="stat-value">{{ total_books|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon info">
+                <i class="fas fa-book"></i>
+            </div>
+        </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-exclamation-triangle text-warning"></i>
+            Low Stock: {{ low_stock_books }}
+        </div>
+    </div>
+    
+    <div class="admin-stat-card warning">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
+                <h6>Total Customers</h6>
+                <div class="stat-value">{{ total_customers|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon warning">
+                <i class="fas fa-users"></i>
+            </div>
+        </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-user-plus stat-increase"></i>
+            New this month: {{ new_customers_month }}
+        </div>
+    </div>
+</div>
 
-        <!-- Main Content -->
-        <div class="col-md-10">
-            <h2 class="mb-4">Dashboard</h2>
-
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-primary">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-title mb-0">Total Sales</h6>
-                                    <h3 class="mb-0">৳{{ total_sales|default:"0" }}</h3>
-                                </div>
-                                <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
-                            </div>
-                            <small>This month</small>
-                        </div>
-                    </div>
+<!-- Additional Stats Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card danger">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Active Rentals</h6>
+                    <div class="stat-value">{{ active_rentals }}</div>
                 </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-success">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-title mb-0">Total Orders</h6>
-                                    <h3 class="mb-0">{{ total_orders|default:"0" }}</h3>
-                                </div>
-                                <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
-                            </div>
-                            <small>All time</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-info">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-title mb-0">Total Books</h6>
-                                    <h3 class="mb-0">{{ total_books|default:"0" }}</h3>
-                                </div>
-                                <i class="fas fa-book fa-3x opacity-50"></i>
-                            </div>
-                            <small>In stock</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-title mb-0">Total Users</h6>
-                                    <h3 class="mb-0">{{ total_users|default:"0" }}</h3>
-                                </div>
-                                <i class="fas fa-users fa-3x opacity-50"></i>
-                            </div>
-                            <small>Registered</small>
-                        </div>
-                    </div>
+                <div class="admin-stat-icon danger">
+                    <i class="fas fa-book-reader"></i>
                 </div>
             </div>
-
-            <!-- Charts Row -->
-            <div class="row mb-4">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Sales Overview</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="salesChart" height="100"></canvas>
-                        </div>
-                    </div>
+            <div class="admin-stat-footer">
+                Overdue: {{ overdue_rentals }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Support Tickets</h6>
+                    <div class="stat-value">{{ open_conversations }}</div>
                 </div>
-                
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Order Status</h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="orderStatusChart"></canvas>
-                        </div>
-                    </div>
+                <div class="admin-stat-icon">
+                    <i class="fas fa-headset"></i>
                 </div>
             </div>
-
-            <!-- Recent Orders -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Recent Orders</h5>
-                            <a href="{% url 'admin_panel:order_list' %}" class="btn btn-sm btn-primary">View All</a>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Order ID</th>
-                                            <th>Customer</th>
-                                            <th>Date</th>
-                                            <th>Total</th>
-                                            <th>Status</th>
-                                            <th>Payment</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if recent_orders %}
-                                        {% for order in recent_orders %}
-                                        <tr>
-                                            <td>#{{ order.order_number }}</td>
-                                            <td>{{ order.user.get_full_name }}</td>
-                                            <td>{{ order.created_at|date:"M d, Y" }}</td>
-                                            <td>৳{{ order.total_amount }}</td>
-                                            <td>
-                                                {% if order.status == 'pending' %}
-                                                <span class="badge bg-warning">Pending</span>
-                                                {% elif order.status == 'confirmed' %}
-                                                <span class="badge bg-info">Confirmed</span>
-                                                {% elif order.status == 'processing' %}
-                                                <span class="badge bg-primary">Processing</span>
-                                                {% elif order.status == 'shipped' %}
-                                                <span class="badge bg-info">Shipped</span>
-                                                {% elif order.status == 'delivered' %}
-                                                <span class="badge bg-success">Delivered</span>
-                                                {% elif order.status == 'cancelled' %}
-                                                <span class="badge bg-danger">Cancelled</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if order.payment_status == 'paid' %}
-                                                <span class="badge bg-success">Paid</span>
-                                                {% else %}
-                                                <span class="badge bg-warning">Pending</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary">View</a>
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="7" class="text-center">No orders yet</td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+            <div class="admin-stat-footer">
+                Pending: {{ pending_conversations }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="admin-stat-card success">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Reviews</h6>
+                    <div class="stat-value">{{ total_reviews }}</div>
+                </div>
+                <div class="admin-stat-icon success">
+                    <i class="fas fa-star"></i>
                 </div>
             </div>
-
-            <!-- Low Stock Alert -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">Low Stock Alert</h5>
-                            <span class="badge bg-danger">{{ low_stock_books.count }}</span>
-                        </div>
-                        <div class="card-body">
-                            {% if low_stock_books %}
-                            <div class="list-group list-group-flush">
-                                {% for book in low_stock_books %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>{{ book.title|truncatewords:5 }}</strong><br>
-                                        <small class="text-muted">Stock: {{ book.stock_quantity }}</small>
-                                    </div>
-                                    <a href="{% url 'admin_panel:book_edit' book.id %}" class="btn btn-sm btn-outline-primary">Update</a>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <p class="text-center text-muted">All books are well stocked</p>
-                            {% endif %}
-                        </div>
-                    </div>
+            <div class="admin-stat-footer">
+                Pending Approval: {{ pending_reviews }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="admin-stat-card warning">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Out of Stock</h6>
+                    <div class="stat-value">{{ out_of_stock }}</div>
                 </div>
+                <div class="admin-stat-icon warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+            <div class="admin-stat-footer">
+                Needs Restocking
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- Top Selling Books -->
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">Top Selling Books</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if top_books %}
-                            <div class="list-group list-group-flush">
-                                {% for book in top_books %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>{{ book.title|truncatewords:5 }}</strong><br>
-                                        <small class="text-muted">{{ book.author }}</small>
-                                    </div>
-                                    <span class="badge bg-primary rounded-pill">{{ book.total_sold }} sold</span>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <p class="text-center text-muted">No sales data yet</p>
-                            {% endif %}
-                        </div>
-                    </div>
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-chart-line"></i> Sales Overview (Last 7 Days)</h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-chart-pie"></i> Order Status</h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="admin-chart-container">
+                    <canvas id="orderStatusChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Recent Orders & Top Books -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-shopping-cart"></i> Recent Orders</h5>
+                <a href="{% url 'admin_panel:order_list' %}" class="btn btn-sm btn-admin-primary">View All</a>
+            </div>
+            <div class="admin-card-body no-padding">
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><strong>#{{ order.order_number|slice:":10" }}</strong></td>
+                                <td>{{ order.user.full_name|default:order.user.email }}</td>
+                                <td>{{ order.created_at|date:"M d, Y" }}</td>
+                                <td><strong>৳{{ order.total|floatformat:2 }}</strong></td>
+                                <td>
+                                    <span class="status-badge status-{{ order.status }}">
+                                        {{ order.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="status-badge {% if order.payment_status == 'paid' %}status-paid{% else %}status-unpaid{% endif %}">
+                                        {{ order.get_payment_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'admin_panel:order_detail' order.order_number %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-shopping-cart"></i>
+                    <h5>No orders yet</h5>
+                    <p>Orders will appear here when customers place them</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Top Selling Books -->
+        <div class="admin-card mb-4">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-fire"></i> Top Selling Books</h5>
+            </div>
+            <div class="admin-card-body">
+                {% if top_books %}
+                <div class="list-group list-group-flush">
+                    {% for book in top_books %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong class="d-block">{{ book.title|truncatewords:5 }}</strong>
+                            <small class="text-muted">{{ book.author }}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ book.sales }} sold</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-book"></i>
+                    <p>No sales data yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Low Stock Alert -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-exclamation-triangle text-warning"></i> Low Stock Alert</h5>
+                <span class="badge bg-danger">{{ low_stock_items|length }}</span>
+            </div>
+            <div class="admin-card-body">
+                {% if low_stock_items %}
+                <div class="list-group list-group-flush">
+                    {% for book in low_stock_items %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <strong class="d-block">{{ book.title|truncatewords:5 }}</strong>
+                            <small class="text-danger"><i class="fas fa-box"></i> Stock: {{ book.stock }}</small>
+                        </div>
+                        <a href="{% url 'admin_panel:book_edit' book.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <p>All books are well stocked</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 // Sales Chart
 const salesCtx = document.getElementById('salesChart').getContext('2d');
@@ -270,17 +306,29 @@ new Chart(salesCtx, {
         datasets: [{
             label: 'Sales (৳)',
             data: {{ sales_data|safe }},
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.4
+            borderColor: '#0d6efd',
+            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+            tension: 0.4,
+            fill: true,
+            borderWidth: 2
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
         scales: {
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '৳' + value.toLocaleString();
+                    }
+                }
             }
         }
     }
@@ -295,17 +343,22 @@ new Chart(orderStatusCtx, {
         datasets: [{
             data: {{ order_status_data|safe }},
             backgroundColor: [
-                'rgb(255, 205, 86)',
-                'rgb(54, 162, 235)',
-                'rgb(153, 102, 255)',
-                'rgb(75, 192, 192)',
-                'rgb(255, 99, 132)'
+                '#ffc107',
+                '#0d6efd',
+                '#17a2b8',
+                '#28a745',
+                '#dc3545'
             ]
         }]
     },
     options: {
         responsive: true,
-        maintainAspectRatio: true
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
     }
 });
 </script>

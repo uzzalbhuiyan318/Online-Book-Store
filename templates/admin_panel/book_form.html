@@ -1,0 +1,308 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Book - Admin Panel{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Edit Book{% else %}Add New Book{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-book"></i> Book Information</h5>
+            </div>
+            <div class="admin-card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Title -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            Title <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.title.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Author -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.author.id_for_label }}" class="form-label">
+                            Author <span class="text-danger">*</span>
+                        </label>
+                        {{ form.author }}
+                        {% if form.author.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.author.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Description -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.description.errors }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">Provide a detailed description of the book</small>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">
+                            Category <span class="text-danger">*</span>
+                        </label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.category.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- ISBN -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.isbn.id_for_label }}" class="form-label">ISBN</label>
+                        {{ form.isbn }}
+                        {% if form.isbn.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.isbn.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Publisher -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.publisher.id_for_label }}" class="form-label">Publisher</label>
+                        {{ form.publisher }}
+                        {% if form.publisher.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.publisher.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Publication Date -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.publication_date.id_for_label }}" class="form-label">Publication Date</label>
+                        {{ form.publication_date }}
+                        {% if form.publication_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.publication_date.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Language -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.language.id_for_label }}" class="form-label">Language</label>
+                        {{ form.language }}
+                        {% if form.language.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.language.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Pages -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="admin-form-group">
+                                <label for="{{ form.pages.id_for_label }}" class="form-label">Pages</label>
+                                {{ form.pages }}
+                                {% if form.pages.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pages.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="admin-form-group">
+                                <label for="{{ form.format.id_for_label }}" class="form-label">Format</label>
+                                {{ form.format }}
+                                {% if form.format.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.format.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price and Stock -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="admin-form-group">
+                                <label for="{{ form.price.id_for_label }}" class="form-label">
+                                    Price (৳) <span class="text-danger">*</span>
+                                </label>
+                                {{ form.price }}
+                                {% if form.price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.price.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="admin-form-group">
+                                <label for="{{ form.discount_price.id_for_label }}" class="form-label">Discount Price (৳)</label>
+                                {{ form.discount_price }}
+                                {% if form.discount_price.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.discount_price.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="admin-form-group">
+                                <label for="{{ form.stock.id_for_label }}" class="form-label">
+                                    Stock <span class="text-danger">*</span>
+                                </label>
+                                {{ form.stock }}
+                                {% if form.stock.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.stock.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cover Image -->
+                    <div class="admin-form-group">
+                        <label for="{{ form.cover.id_for_label }}" class="form-label">Cover Image</label>
+                        {{ form.cover }}
+                        {% if form.cover.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cover.errors }}
+                        </div>
+                        {% endif %}
+                        {% if form.instance.cover %}
+                        <div class="mt-2">
+                            <img src="{{ form.instance.cover.url }}" alt="Current cover" class="img-thumbnail" style="max-width: 200px;">
+                            <p class="text-muted mt-1"><small>Current cover image</small></p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Status Checkboxes -->
+                    <div class="admin-form-group">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                Active (Display this book on the website)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <div class="form-check">
+                            {{ form.is_featured }}
+                            <label class="form-check-label" for="{{ form.is_featured.id_for_label }}">
+                                Featured (Show on homepage)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="admin-form-group">
+                        <div class="form-check">
+                            {{ form.is_available_for_rent }}
+                            <label class="form-check-label" for="{{ form.is_available_for_rent.id_for_label }}">
+                                Available for Rent
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="admin-form-group mb-0">
+                        <button type="submit" class="btn btn-admin-primary">
+                            <i class="fas fa-save"></i> Save Book
+                        </button>
+                        <a href="{% url 'admin_panel:book_list' %}" class="btn btn-admin-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-md-4">
+        <!-- Help Card -->
+        <div class="admin-card mb-3">
+            <div class="admin-card-header">
+                <h6><i class="fas fa-info-circle"></i> Help</h6>
+            </div>
+            <div class="admin-card-body">
+                <p class="small mb-2"><strong>Title:</strong> Enter the complete book title</p>
+                <p class="small mb-2"><strong>Author:</strong> Full name of the author(s)</p>
+                <p class="small mb-2"><strong>Category:</strong> Select appropriate category</p>
+                <p class="small mb-2"><strong>Price:</strong> Regular selling price in BDT</p>
+                <p class="small mb-2"><strong>Discount Price:</strong> Optional discounted price</p>
+                <p class="small mb-2"><strong>Stock:</strong> Number of copies available</p>
+                <p class="small mb-0"><strong>Cover Image:</strong> Recommended size: 400x600px</p>
+            </div>
+        </div>
+
+        <!-- Quick Stats (for edit mode) -->
+        {% if form.instance.pk %}
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h6><i class="fas fa-chart-bar"></i> Statistics</h6>
+            </div>
+            <div class="admin-card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Sales:</span>
+                    <strong>{{ form.instance.sales|default:0 }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Reviews:</span>
+                    <strong>{{ form.instance.review_set.count }}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Average Rating:</span>
+                    <strong>{{ form.instance.average_rating|default:0|floatformat:1 }} <i class="fas fa-star text-warning"></i></strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Added:</span>
+                    <strong>{{ form.instance.created_at|date:"M d, Y" }}</strong>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-calculate discount percentage
+const priceInput = document.getElementById('{{ form.price.id_for_label }}');
+const discountInput = document.getElementById('{{ form.discount_price.id_for_label }}');
+
+if (discountInput) {
+    discountInput.addEventListener('blur', function() {
+        const price = parseFloat(priceInput.value);
+        const discount = parseFloat(this.value);
+        
+        if (discount && price && discount >= price) {
+            alert('Discount price should be less than regular price');
+            this.value = '';
+        }
+    });
+}
+</script>
+{% endblock %}

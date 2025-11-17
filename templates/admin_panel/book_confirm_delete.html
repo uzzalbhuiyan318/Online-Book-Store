@@ -1,0 +1,76 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Delete Book - Admin Panel{% endblock %}
+{% block page_title %}Delete Book{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+            </div>
+            <div class="admin-card-body text-center p-4">
+                {% if book.cover %}
+                <img src="{{ book.cover.url }}" alt="{{ book.title }}" class="img-thumbnail mb-3" style="max-width: 150px;">
+                {% else %}
+                <div class="bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 200px;">
+                    <i class="fas fa-book fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+                
+                <h4>{{ book.title }}</h4>
+                <p class="text-muted mb-4">by {{ book.author }}</p>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p class="mb-2"><strong>Book Details:</strong></p>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-1">
+                                <span class="text-muted">Category:</span> {{ book.category.name }}
+                            </li>
+                            <li class="mb-1">
+                                <span class="text-muted">Price:</span> ৳{{ book.price }}
+                            </li>
+                            <li class="mb-1">
+                                <span class="text-muted">Stock:</span> {{ book.stock }}
+                            </li>
+                            <li class="mb-1">
+                                <span class="text-muted">Total Sales:</span> {{ book.sales|default:0 }}
+                            </li>
+                            <li class="mb-1">
+                                <span class="text-muted">Reviews:</span> {{ book.review_set.count }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                {% if book.sales > 0 or book.review_set.count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    This book has sales history and/or reviews. Deleting it may affect related data.
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <p class="mb-4">Are you sure you want to delete <strong>"{{ book.title }}"</strong>?</p>
+                    
+                    <button type="submit" class="btn btn-danger btn-lg me-2">
+                        <i class="fas fa-trash"></i> Yes, Delete Book
+                    </button>
+                    <a href="{% url 'admin_panel:book_list' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

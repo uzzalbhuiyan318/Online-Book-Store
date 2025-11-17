@@ -1,0 +1,226 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Books - Admin Panel{% endblock %}
+{% block page_title %}Books Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-book"></i> All Books ({{ page_obj.paginator.count }})</h5>
+        <div>
+            <a href="{% url 'admin_panel:book_add' %}" class="btn btn-admin-primary">
+                <i class="fas fa-plus"></i> Add New Book
+            </a>
+        </div>
+    </div>
+    
+    <div class="admin-card-body">
+        <!-- Search and Filters -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <input type="text" name="q" class="form-control" placeholder="Search by title, author..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:book_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        <!-- Bulk Actions -->
+        <form method="post" action="{% url 'admin_panel:book_bulk_action' %}" id="bulkActionForm">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <select name="action" class="form-select form-select-sm d-inline-block w-auto me-2">
+                        <option value="">Bulk Actions</option>
+                        <option value="activate">Activate</option>
+                        <option value="deactivate">Deactivate</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-admin-primary">Apply</button>
+                </div>
+                <div class="text-muted">
+                    <small>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} books</small>
+                </div>
+            </div>
+
+            {% if books %}
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th style="width: 80px;">Cover</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Sales</th>
+                            <th>Status</th>
+                            <th style="width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="selected_books" value="{{ book.id }}" class="form-check-input select-item">
+                            </td>
+                            <td>
+                                {% if book.cover %}
+                                <img src="{{ book.cover.url }}" alt="{{ book.title }}" class="img-thumbnail" style="width: 60px; height: 80px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 80px;">
+                                    <i class="fas fa-book text-muted"></i>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ book.title }}</strong>
+                                {% if book.isbn %}
+                                <br><small class="text-muted">ISBN: {{ book.isbn }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ book.author }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ book.category.name }}</span>
+                            </td>
+                            <td><strong>৳{{ book.price|floatformat:2 }}</strong></td>
+                            <td>
+                                {% if book.stock == 0 %}
+                                <span class="badge bg-danger">Out of Stock</span>
+                                {% elif book.stock < 5 %}
+                                <span class="badge bg-warning text-dark">{{ book.stock }}</span>
+                                {% else %}
+                                <span class="badge bg-success">{{ book.stock }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ book.sales|default:0 }}</td>
+                            <td>
+                                {% if book.is_active %}
+                                <span class="status-badge status-active">Active</span>
+                                {% else %}
+                                <span class="status-badge status-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'admin_panel:book_edit' book.id %}" class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'admin_panel:book_delete' book.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this book?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="admin-empty-state">
+                <i class="fas fa-book"></i>
+                <h5>No books found</h5>
+                {% if request.GET.q or request.GET.category or request.GET.status %}
+                <p>Try adjusting your search criteria</p>
+                <a href="{% url 'admin_panel:book_list' %}" class="btn btn-admin-primary">Clear Filters</a>
+                {% else %}
+                <p>Get started by adding your first book</p>
+                <a href="{% url 'admin_panel:book_add' %}" class="btn btn-admin-primary">Add Book</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('bulkActionForm').addEventListener('submit', function(e) {
+    const action = this.querySelector('select[name="action"]').value;
+    const selected = this.querySelectorAll('input[name="selected_books"]:checked');
+    
+    if (!action) {
+        e.preventDefault();
+        alert('Please select an action');
+        return;
+    }
+    
+    if (selected.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one book');
+        return;
+    }
+    
+    if (action === 'delete') {
+        if (!confirm(`Are you sure you want to delete ${selected.length} book(s)?`)) {
+            e.preventDefault();
+        }
+    }
+});
+</script>
+{% endblock %}
