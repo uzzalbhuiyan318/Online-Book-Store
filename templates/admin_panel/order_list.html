@@ -10,7 +10,7 @@
     <div class="admin-card-header">
         <h5><i class="fas fa-shopping-cart"></i> All Orders ({{ page_obj.paginator.count }})</h5>
         <div>
-            <a href="{% url 'admin_panel:export_orders' %}" class="btn btn-admin-success">
+            <a href="{% url 'admin_panel:export_orders_csv' %}" class="btn btn-admin-success">
                 <i class="fas fa-download"></i> Export CSV
             </a>
         </div>

@@ -16,7 +16,7 @@
                     {% csrf_token %}
                     {{ form.as_p }}
                     <button type="submit" class="btn btn-admin-primary">Save</button>
-                    <a href="{% url 'admin_panel:rental_detail' rental.id %}" class="btn btn-admin-secondary">Cancel</a>
+                    <a href="{% url 'admin_panel:rental_detail' rental.rental_number %}" class="btn btn-admin-secondary">Cancel</a>
                 </form>
             </div>
         </div>

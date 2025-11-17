@@ -8,7 +8,7 @@
 <div class="admin-card">
     <div class="admin-card-header">
         <h5><i class="fas fa-users"></i> All Customers ({{ page_obj.paginator.count }})</h5>
-        <a href="{% url 'admin_panel:export_customers' %}" class="btn btn-admin-success">
+        <a href="{% url 'admin_panel:export_customers_csv' %}" class="btn btn-admin-success">
             <i class="fas fa-download"></i> Export CSV
         </a>
     </div>
