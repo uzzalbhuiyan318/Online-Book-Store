@@ -384,6 +384,7 @@ def category_list(request):
 
 
 @staff_member_required
+@staff_member_required
 def category_add(request):
     """Add new category"""
     if request.method == 'POST':
@@ -392,6 +393,8 @@ def category_add(request):
             category = form.save()
             messages.success(request, f'Category "{category.name}" added successfully!')
             return redirect('admin_panel:category_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = CategoryForm()
     
@@ -410,6 +413,8 @@ def category_edit(request, pk):
             category = form.save()
             messages.success(request, f'Category "{category.name}" updated successfully!')
             return redirect('admin_panel:category_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = CategoryForm(instance=category)
     

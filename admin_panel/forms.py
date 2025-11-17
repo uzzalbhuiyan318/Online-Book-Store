@@ -1,11 +1,9 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
 from books.models import Book, Category, Review, Banner
-from orders.models import Order, OrderItem, Coupon
+from orders.models import Order, Coupon
 from rentals.models import RentalPlan, BookRental, RentalSettings
 from support.models import SupportAgent, QuickReply, ChatSettings
-from accounts.models import User, Address
-from django.utils import timezone
+from accounts.models import User
 
 
 class BookForm(forms.ModelForm):

@@ -175,7 +175,7 @@ class CouponValidityFilter(admin.SimpleListFilter):
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
     form = CouponAdminForm
-    list_display = ['code', 'get_discount_display', 'validity_status', 'is_active', 'valid_from', 'valid_to', 'usage_display', 'max_uses']
+    list_display = ['code', 'discount_display', 'validity_status', 'is_active', 'valid_from', 'valid_to', 'usage_display', 'max_uses']
     list_filter = [CouponValidityFilter, 'discount_type', 'is_active', 'valid_from', 'valid_to']
     search_fields = ['code', 'description']
     readonly_fields = ['used_count', 'created_at', 'updated_at', 'validity_status']
@@ -215,6 +215,11 @@ class CouponAdmin(admin.ModelAdmin):
         # Ensure code is uppercase
         obj.code = obj.code.upper()
         super().save_model(request, obj, form, change)
+    
+    def discount_display(self, obj):
+        """Display formatted discount"""
+        return obj.get_discount_display()
+    discount_display.short_description = 'Discount'
     
     def validity_status(self, obj):
         """Display current validity status with color"""
