@@ -4,208 +4,818 @@
 {% block title %}Rent {{ book.title }} - BookStore{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'books:book_list' %}">Books</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'books:book_detail' book.slug %}">{{ book.title }}</a></li>
-            <li class="breadcrumb-item active">Rent</li>
-        </ol>
-    </nav>
+<style>
+/* Rental Page Styles */
+.rental-header {
+    background: white;
+    color: black;
+    padding: 30px 0;
+    margin-bottom: 40px;
+    border-radius: 10px;
+}
 
-    <div class="row">
-        <!-- Book Info -->
-        <div class="col-md-4">
-            <div class="card shadow-sm">
-                {% if book.image %}
-                <img src="{{ book.image.url }}" class="card-img-top" alt="{{ book.title }}">
-                {% else %}
-                <div class="bg-light text-center py-5">
-                    <i class="fas fa-book fa-5x text-muted"></i>
-                </div>
-                {% endif %}
-                <div class="card-body">
-                    <h4 class="card-title">{{ book.title }}</h4>
-                    <p class="text-muted mb-2">by {{ book.author }}</p>
-                    <p class="text-muted mb-2"><small>{{ book.category }}</small></p>
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Book Price:</span>
-                        <h5 class="text-primary mb-0">৳{{ book.price }}</h5>
+.rental-page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Book Card Styles */
+.book-preview-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.book-preview-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.book-preview-image {
+    width: 100%;
+    height: 350px;
+    object-fit: cover;
+    background: #f5f5f5;
+}
+
+.book-preview-placeholder {
+    width: 100%;
+    height: 350px;
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.book-info-section {
+    padding: 20px;
+}
+
+.book-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.book-author {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.book-category {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.price-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    padding: 15px 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    margin: 15px 0;
+}
+
+.price-item {
+    text-align: center;
+}
+
+.price-label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.price-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.stock-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stock-badge.available {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stock-badge.limited {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stock-badge.unavailable {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Rental Plans Grid */
+.rental-plans-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.plans-header {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.plans-subtitle {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 25px;
+}
+
+.plan-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.plan-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.plan-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+    transform: translateY(-3px);
+}
+
+.plan-card:hover::before {
+    transform: scaleX(1);
+}
+
+.plan-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.2);
+}
+
+.plan-radio {
+    display: none;
+}
+
+.plan-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.plan-days {
+    display: inline-block;
+    background: #f0f0f0;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.plan-price {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 3px;
+}
+
+.plan-price-highlight {
+    font-size: 22px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Pricing Breakdown */
+.pricing-breakdown {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.breakdown-header {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.breakdown-row:last-child {
+    border-bottom: none;
+}
+
+.breakdown-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.breakdown-value {
+    color: #333;
+    font-weight: 600;
+}
+
+.breakdown-total {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.breakdown-total-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+}
+
+.breakdown-total-amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+/* Timeline */
+.timeline-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.timeline-header {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 25px;
+    color: #333;
+}
+
+.timeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    text-align: center;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+}
+
+.timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    width: calc(100% + 20px);
+    height: 2px;
+    background: linear-gradient(90deg, #667eea, transparent);
+    transform: translateX(10px);
+    z-index: 0;
+}
+
+.timeline-icon {
+    position: relative;
+    z-index: 2;
+    color: white;
+    font-size: 18px;
+    margin-bottom: 15px;
+    margin-top: 5px;
+}
+
+.timeline-date {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 5px;
+}
+
+.timeline-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Features Section */
+.features-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+}
+
+.features-header {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.feature-card {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.feature-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+}
+
+.feature-text {
+    flex: 1;
+}
+
+.feature-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.feature-description {
+    font-size: 12px;
+    color: #999;
+}
+
+/* Info Box */
+.info-box {
+    background: linear-gradient(135deg, #cfe9ff 0%, #e6f0ff 100%);
+    border: 1px solid #b3d9ff;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.info-icon {
+    flex-shrink: 0;
+    color: #0056b3;
+    font-size: 18px;
+}
+
+.info-text {
+    flex: 1;
+    font-size: 13px;
+    color: #0056b3;
+}
+
+/* Form Controls */
+.form-control,
+.form-check-input {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-rent {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 700;
+    padding: 14px 30px;
+    font-size: 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-rent:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    color: white;
+}
+
+.btn-rent:active {
+    transform: translateY(0);
+}
+
+/* Alert Styles */
+.alert-warning {
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    color: #f57f17;
+    border-radius: 8px;
+}
+
+.alert-danger {
+    background: #ffebee;
+    border: 1px solid #ef5350;
+    color: #c62828;
+    border-radius: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rental-plans-section {
+        padding: 20px;
+    }
+    
+    .timeline {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .timeline-item::after {
+        height: calc(100% + 20px);
+        width: 2px;
+        top: 50px;
+        left: 20px;
+    }
+    
+    .plan-card {
+        padding: 15px;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<div class="rental-page-container">
+    <!-- Header -->
+    <div class="rental-header mb-5">
+        <div class="container">
+            <nav aria-label="breadcrumb" class="breadcrumb mb-3" style="background: transparent;">
+                <ol class="breadcrumb" style="margin-bottom: 0;">
+                    <li class="breadcrumb-item"><a href="{% url 'books:book_list' %}" style="color: black;">Books</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'books:book_detail' book.slug %}" style="color: black;">{{ book.title }}</a></li>
+                    {% comment %} <li class="breadcrumb-item active" aria-current="page" style="color: black;">Rent This Book</li> {% endcomment %}
+                </ol>
+            </nav>
+            {% comment %} <h1 class="mb-2"><i class="fas fa-book-reader"></i> Rent This Book</h1>
+            <p class="mb-0 fs-6">Enjoy unlimited reading at affordable prices</p> {% endcomment %}
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row g-4 mb-5">
+            <!-- Book Preview -->
+            <div class="col-lg-4">
+                <div class="book-preview-card">
+                    {% if book.cover_image %}
+                    <img src="{{ book.cover_image.url }}" alt="{{ book.title }}" class="book-preview-image">
+                    {% else %}
+                    <div class="book-preview-placeholder">
+                        <i class="fas fa-book fa-6x text-muted opacity-25"></i>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="text-muted">Available Stock:</span>
-                        <span class="badge {% if book.stock > 5 %}bg-success{% elif book.stock > 0 %}bg-warning{% else %}bg-danger{% endif %}">
-                            {{ book.stock }} copies
-                        </span>
+                    {% endif %}
+                    
+                    <div class="book-info-section">
+                        <h3 class="book-title">{{ book.title }}</h3>
+                        <p class="book-author"><i class="fas fa-pen-fancy"></i> {{ book.author }}</p>
+                        <span class="book-category">{{ book.category }}</span>
+                        
+                        <div class="price-section">
+                            <div class="price-item">
+                                <div class="price-label">Book Price</div>
+                                <div class="price-value">৳{{ book.final_price }}</div>
+                            </div>
+                            <div class="price-item">
+                                <div class="price-label">Save Up to</div>
+                                <div class="price-value">70%</div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: center; padding-top: 15px;">
+                            <span class="stock-badge {% if book.stock > 5 %}available{% elif book.stock > 0 %}limited{% else %}unavailable{% endif %}">
+                                {% if book.stock > 5 %}
+                                    <i class="fas fa-check-circle"></i> {{ book.stock }} Copies Available
+                                {% elif book.stock > 0 %}
+                                    <i class="fas fa-exclamation-circle"></i> Only {{ book.stock }} Left
+                                {% else %}
+                                    <i class="fas fa-times-circle"></i> Out of Stock
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Rental Form -->
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-book-reader"></i> Rent This Book</h4>
-                </div>
-                <div class="card-body">
-                    {% if book.stock > 0 %}
-                        {% if not max_rentals_reached %}
-                            <form method="post" action="{% url 'rentals:create_rental' book.slug %}">
-                                {% csrf_token %}
+            <!-- Rental Options -->
+            <div class="col-lg-8">
+                {% if book.stock > 0 %}
+                    {% if not max_rentals_reached %}
+                        <form method="post" action="{% url 'rentals:create_rental' book.slug %}" id="rentalForm">
+                            {% csrf_token %}
+                            
+                            <!-- Rental Plans -->
+                            <div class="rental-plans-section">
+                                <div class="plans-header"><i class="fas fa-list"></i> Select Your Plan</div>
+                                <p class="plans-subtitle">Choose a rental duration that fits your reading pace</p>
                                 
-                                <!-- Rental Plan Selection -->
-                                <div class="mb-4">
-                                    <label class="form-label fw-bold">Select Rental Duration</label>
-                                    <div class="row g-3">
-                                        {% for plan in rental_plans %}
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input rental-plan" type="radio" name="rental_plan" 
-                                                       id="plan{{ plan.id }}" value="{{ plan.id }}" required
-                                                       data-days="{{ plan.days }}" 
-                                                       data-percentage="{{ plan.price_percentage }}">
-                                                <label class="form-check-label w-100" for="plan{{ plan.id }}">
-                                                    <div class="card border-2">
-                                                        <div class="card-body">
-                                                            <h6 class="mb-1">{{ plan.name }}</h6>
-                                                            <p class="mb-1"><small class="text-muted">{{ plan.days }} days</small></p>
-                                                            <span class="badge bg-success">{{ plan.price_percentage }}% of book price</span>
-                                                        </div>
-                                                    </div>
-                                                </label>
+                                <div class="row g-3">
+                                    {% for item in rental_prices %}
+                                    <div class="col-md-6">
+                                        <label class="plan-label" for="plan{{ item.plan.id }}" style="cursor: pointer; display: block;">
+                                            <input type="radio" name="rental_plan" id="plan{{ item.plan.id }}" 
+                                                   value="{{ item.plan.id }}" class="plan-radio rental-plan"
+                                                   data-days="{{ item.plan.days }}"
+                                                   data-percentage="{{ item.plan.price_percentage }}"
+                                                   data-price="{{ item.rental_price }}"
+                                                   data-security="{{ item.security_deposit }}"
+                                                   data-total="{{ item.total }}"
+                                                   required>
+                                            <div class="plan-card">
+                                                <div class="plan-name">{{ item.plan.name }}</div>
+                                                <div class="plan-days"><i class="fas fa-calendar-alt"></i> {{ item.plan.days }} Days</div>
+                                                <div class="plan-price">Rental Fee: <span class="plan-price-highlight">৳{{ item.rental_price }}</span></div>
+                                                <div class="plan-price">+ Security: <span style="color: #999;">৳{{ item.security_deposit }}</span></div>
                                             </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-
-                                <!-- Pricing Breakdown -->
-                                <div class="card bg-light mb-4">
-                                    <div class="card-body">
-                                        <h6 class="mb-3">Pricing Breakdown</h6>
-                                        <table class="table table-sm table-borderless mb-0">
-                                            <tr>
-                                                <td>Book Price:</td>
-                                                <td class="text-end">৳<span id="bookPrice">{{ book.final_price }}</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Rental Fee (<span id="rentalPercentage">-</span>):</td>
-                                                <td class="text-end">৳<span id="rentalFee">-</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Security Deposit ({{ settings.security_deposit_percentage }}%):</td>
-                                                <td class="text-end">৳<span id="securityDeposit">-</span></td>
-                                            </tr>
-                                            <tr class="border-top">
-                                                <td><strong>Total Amount:</strong></td>
-                                                <td class="text-end"><strong class="text-primary fs-5">৳<span id="totalAmount">-</span></strong></td>
-                                            </tr>
-                                        </table>
-                                        <div class="alert alert-info mb-0 mt-3">
-                                            <i class="fas fa-info-circle"></i> <small>Security deposit is refundable on timely return</small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Rental Dates -->
-                                <div class="card bg-light mb-4">
-                                    <div class="card-body">
-                                        <h6 class="mb-3">Rental Period</h6>
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                <small class="text-muted d-block mb-1">Start Date</small>
-                                                <strong id="startDate">-</strong>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <small class="text-muted d-block mb-1">Duration</small>
-                                                <strong id="duration">-</strong>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <small class="text-muted d-block mb-1">Due Date</small>
-                                                <strong id="dueDate">-</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Terms & Conditions -->
-                                <div class="mb-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="terms" required>
-                                        <label class="form-check-label" for="terms">
-                                            I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">rental terms and conditions</a>
                                         </label>
                                     </div>
+                                    {% endfor %}
                                 </div>
-
-                                <button type="submit" class="btn btn-primary btn-lg w-100">
-                                    <i class="fas fa-check-circle"></i> Confirm Rental
-                                </button>
-                            </form>
-                        {% else %}
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> You have reached the maximum limit of {{ settings.max_active_rentals_per_user }} active rentals. 
-                                Please return a book to rent more.
                             </div>
-                            <a href="{% url 'rentals:my_rentals' %}" class="btn btn-primary">
-                                View My Rentals
-                            </a>
-                        {% endif %}
+
+                            <!-- Timeline -->
+                            {% comment %} <div class="timeline-section">
+                                <div class="timeline-header"><i class="fas fa-clock"></i> Your Rental Timeline</div>
+                                <div class="timeline">
+                                    <div class="timeline-item">
+                                        <i class="timeline-icon fas fa-play-circle"></i>
+                                        <div class="timeline-date">Today</div>
+                                        <div class="timeline-label">Rental Starts</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <i class="timeline-icon fas fa-book-open"></i>
+                                        <div class="timeline-date" id="durationLabel">-</div>
+                                        <div class="timeline-label">Unlimited Reading</div>
+                                    </div>
+                                    <div class="timeline-item">
+                                        <i class="timeline-icon fas fa-undo"></i>
+                                        <div class="timeline-date" id="dueDateLabel">-</div>
+                                        <div class="timeline-label">Return Due</div>
+                                    </div>
+                                </div>
+                            </div> {% endcomment %}
+
+                            <!-- Pricing Breakdown -->
+                            <div class="pricing-breakdown">
+                                <div class="breakdown-header"><i class="fas fa-receipt"></i> Pricing Details</div>
+                                
+                                <div class="breakdown-row">
+                                    <span class="breakdown-label">Book Price</span>
+                                    <span class="breakdown-value">৳{{ book.final_price }}</span>
+                                </div>
+                                
+                                <div class="breakdown-row">
+                                    <span class="breakdown-label">Rental Fee (<span id="rentalPercentageDisplay">-</span>%)</span>
+                                    <span class="breakdown-value">৳<span id="rentalFeeDisplay">-</span></span>
+                                </div>
+                                
+                                <div class="breakdown-row">
+                                    <span class="breakdown-label">Security Deposit ({{ settings.security_deposit_percentage }}%)</span>
+                                    <span class="breakdown-value">৳<span id="securityDisplay">-</span></span>
+                                </div>
+                                
+                                <div class="breakdown-total">
+                                    <span class="breakdown-total-label">Total Amount</span>
+                                    <span class="breakdown-total-amount">৳<span id="totalDisplay">-</span></span>
+                                </div>
+                                
+                                {% comment %} <div class="info-box">
+                                    <i class="info-icon fas fa-shield-alt"></i>
+                                    <span class="info-text"><strong>Refundable:</strong> Security deposit will be fully refunded upon timely return in good condition</span>
+                                </div> {% endcomment %}
+                            </div>
+
+                            <!-- Features -->
+                            {% comment %} <div class="features-section">
+                                <div class="features-header"><i class="fas fa-star"></i> Why Rent with Us?</div>
+                                <div class="features-grid">
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-check"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">Up to {{ settings.max_renewals }} Renewals</div>
+                                            <div class="feature-description">Extend your rental anytime before due date</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-pound-sign"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">Save Money</div>
+                                            <div class="feature-description">Pay as low as 10% of book price</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-book"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">Read Unlimited</div>
+                                            <div class="feature-description">Keep the book for your selected duration</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-truck"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">Hassle-Free Return</div>
+                                            <div class="feature-description">Simple return process with instant refund</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-redo"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">No Late Fees*</div>
+                                            <div class="feature-description">Renew before due date - ৳{{ settings.daily_late_fee }}/day after</div>
+                                        </div>
+                                    </div>
+                                    <div class="feature-card">
+                                        <div class="feature-icon"><i class="fas fa-lock"></i></div>
+                                        <div class="feature-text">
+                                            <div class="feature-title">Secure Deposit</div>
+                                            <div class="feature-description">100% refundable security deposit</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div> {% endcomment %}
+
+                            <!-- Terms & Conditions -->
+                            {% comment %} <div class="form-check mb-4" style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                                <input class="form-check-input" type="checkbox" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">
+                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" style="color: #667eea; text-decoration: none; font-weight: 600;">rental terms and conditions</a>
+                                </label>
+                            </div> {% endcomment %}
+
+                            <!-- Action Button -->
+                            <button type="submit" class="btn btn-rent btn-lg w-100">
+                                <i class="fas fa-check-circle"></i> Proceed to Checkout
+                            </button>
+                        </form>
                     {% else %}
-                        <div class="alert alert-danger">
-                            <i class="fas fa-times-circle"></i> This book is currently out of stock for rental.
+                        <div class="alert alert-warning" style="border-radius: 8px; padding: 20px;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Rental Limit Reached</strong><br>
+                            You have {{ active_rentals_count }} active rentals out of {{ max_rentals }} allowed.
+                            Please return a book to rent another one.
                         </div>
-                        <a href="{% url 'books:book_list' %}" class="btn btn-primary">
-                            Browse Other Books
+                        <a href="{% url 'rentals:my_rentals' %}" class="btn btn-primary" style="border-radius: 8px;">
+                            <i class="fas fa-list"></i> View My Rentals
                         </a>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Rental Info -->
-            <div class="card shadow-sm mt-4">
-                <div class="card-body">
-                    <h5 class="card-title"><i class="fas fa-info-circle"></i> Rental Information</h5>
-                    <ul class="mb-0">
-                        <li>You can renew your rental up to {{ settings.max_renewals }} times</li>
-                        <li>Late return fee: ৳{{ settings.daily_late_fee }} per day</li>
-                        <li>Security deposit will be refunded on timely return</li>
-                        <li>Books must be returned in good condition</li>
-                    </ul>
-                </div>
+                {% else %}
+                    <div class="alert alert-danger" style="border-radius: 8px; padding: 20px;">
+                        <i class="fas fa-times-circle"></i>
+                        <strong>Currently Unavailable</strong><br>
+                        This book is out of stock for rental at the moment. Please check back soon or explore other books.
+                    </div>
+                    <a href="{% url 'books:book_list' %}" class="btn btn-primary" style="border-radius: 8px;">
+                        <i class="fas fa-book"></i> Browse Other Books
+                    </a>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <!-- Terms Modal -->
-<div class="modal fade" id="termsModal" tabindex="-1">
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Rental Terms & Conditions</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header border-bottom">
+                <h5 class="modal-title" id="termsModalLabel"><i class="fas fa-file-contract"></i> Rental Terms & Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <h6>Rental Period</h6>
-                <p>Books must be returned by the due date. Late returns will incur a fee of ৳{{ settings.daily_late_fee }} per day.</p>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <div class="mb-4">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-calendar-alt"></i> Rental Period</h6>
+                    <p>Books must be returned by the due date. Late returns will incur a fee of <strong>৳{{ settings.daily_late_fee }} per day</strong>. You can renew your rental up to <strong>{{ settings.max_renewals }} times</strong> before the due date to avoid late fees.</p>
+                </div>
                 
-                <h6>Book Condition</h6>
-                <p>Books must be returned in the same condition as rented. Damage or loss will result in additional charges.</p>
+                <div class="mb-4">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-book"></i> Book Condition</h6>
+                    <p>Books must be returned in the same condition as rented. Please avoid:</p>
+                    <ul>
+                        <li>Writing or marking inside the book</li>
+                        <li>Water damage or stains</li>
+                        <li>Bent pages or spine damage</li>
+                        <li>Missing pages or cover damage</li>
+                    </ul>
+                    <p>Damage beyond normal wear and tear will result in additional charges.</p>
+                </div>
                 
-                <h6>Security Deposit</h6>
-                <p>A security deposit of {{ settings.security_deposit_percentage }}% of the book price is required. This will be fully refunded upon timely return in good condition.</p>
+                <div class="mb-4">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-shield-alt"></i> Security Deposit</h6>
+                    <p>A security deposit of <strong>{{ settings.security_deposit_percentage }}% of the book price</strong> is required. This will be:</p>
+                    <ul>
+                        <li><strong>Fully refunded</strong> upon timely return in good condition</li>
+                        <li>Adjusted for damage repairs if necessary</li>
+                        <li>Refunded within 5-7 business days after return verification</li>
+                    </ul>
+                </div>
                 
-                <h6>Renewals</h6>
-                <p>You can renew your rental up to {{ settings.max_renewals }} times before the due date, subject to availability.</p>
+                <div class="mb-4">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-redo"></i> Renewals</h6>
+                    <p>You can renew your rental up to <strong>{{ settings.max_renewals }} times</strong> before the due date at no additional cost (except rental extension fees if applicable). Renewals can be done through your account dashboard.</p>
+                </div>
                 
-                <h6>Cancellation</h6>
-                <p>Pending rentals can be cancelled before activation. Activated rentals cannot be cancelled.</p>
+                <div class="mb-4">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-ban"></i> Cancellation Policy</h6>
+                    <ul>
+                        <li><strong>Pending rentals:</strong> Can be cancelled anytime before activation with full refund</li>
+                        <li><strong>Active rentals:</strong> Cannot be cancelled once started</li>
+                        <li>Cancelled rentals will have their security deposit refunded within 5-7 business days</li>
+                    </ul>
+                </div>
+                
+                <div class="mb-0">
+                    <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-check-circle"></i> Return Process</h6>
+                    <p>To return a book:</p>
+                    <ol>
+                        <li>Visit your <strong>My Rentals</strong> dashboard</li>
+                        <li>Click <strong>Return Book</strong> on your active rental</li>
+                        <li>Bring the book to our store or arrange pickup</li>
+                        <li>Our team will verify the condition</li>
+                        <li>Receive confirmation and refund within 5-7 days</li>
+                    </ol>
+                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer border-top">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -218,32 +828,50 @@ document.addEventListener('DOMContentLoaded', function() {
     const securityDepositPercentage = {{ settings.security_deposit_percentage }};
     const planRadios = document.querySelectorAll('.rental-plan');
     
-    planRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const days = parseInt(this.dataset.days);
-            const percentage = parseFloat(this.dataset.percentage);
-            
-            // Calculate prices
-            const rentalFee = (bookPrice * percentage / 100).toFixed(2);
-            const securityDeposit = (bookPrice * securityDepositPercentage / 100).toFixed(2);
-            const totalAmount = (parseFloat(rentalFee) + parseFloat(securityDeposit)).toFixed(2);
-            
-            // Update pricing
-            document.getElementById('rentalPercentage').textContent = percentage + '%';
-            document.getElementById('rentalFee').textContent = rentalFee;
-            document.getElementById('securityDeposit').textContent = securityDeposit;
-            document.getElementById('totalAmount').textContent = totalAmount;
-            
-            // Calculate dates
-            const today = new Date();
-            const dueDate = new Date(today);
-            dueDate.setDate(dueDate.getDate() + days);
-            
-            document.getElementById('startDate').textContent = today.toLocaleDateString('en-GB');
-            document.getElementById('duration').textContent = days + ' days';
-            document.getElementById('dueDate').textContent = dueDate.toLocaleDateString('en-GB');
+    function updateDisplay() {
+        const selectedPlan = document.querySelector('.rental-plan:checked');
+        if (!selectedPlan) return;
+        
+        const days = parseInt(selectedPlan.dataset.days);
+        const percentage = parseFloat(selectedPlan.dataset.percentage);
+        const rentalPrice = parseFloat(selectedPlan.dataset.price);
+        const securityDeposit = parseFloat(selectedPlan.dataset.security);
+        const total = parseFloat(selectedPlan.dataset.total);
+        
+        // Update pricing display
+        document.getElementById('rentalPercentageDisplay').textContent = percentage;
+        document.getElementById('rentalFeeDisplay').textContent = rentalPrice.toFixed(2);
+        document.getElementById('securityDisplay').textContent = securityDeposit.toFixed(2);
+        document.getElementById('totalDisplay').textContent = total.toFixed(2);
+        
+        // Update timeline
+        const today = new Date();
+        const dueDate = new Date(today);
+        dueDate.setDate(dueDate.getDate() + days);
+        
+        document.getElementById('durationLabel').textContent = days + ' Days';
+        document.getElementById('dueDateLabel').textContent = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        // Update plan cards styling
+        planRadios.forEach(radio => {
+            const card = radio.closest('.plan-label').querySelector('.plan-card');
+            if (radio.checked) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
         });
+    }
+    
+    planRadios.forEach(radio => {
+        radio.addEventListener('change', updateDisplay);
     });
+    
+    // Initial display update if a plan is already selected
+    if (document.querySelector('.rental-plan:checked')) {
+        updateDisplay();
+    }
 });
 </script>
+
 {% endblock %}
