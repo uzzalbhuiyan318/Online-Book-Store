@@ -4,247 +4,409 @@
 {% block title %}Checkout - BookStore{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <h2 class="mb-4">Shopping Cart</h2>
-    
-    <form method="post" id="checkout-form">
-        {% csrf_token %}
-        <div class="row">
-            <!-- Left Column - Cart Items -->
-            <div class="col-lg-8">
-                <div class="checkout-card">
-                    <!-- Select All Header -->
-                    <div class="checkout-header">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="selectAll">
-                            <label class="form-check-label" for="selectAll">
-                                <strong>Select All ({% if cart_items %}{{ cart_items|length }}{% else %}0{% endif %} Item)</strong>
-                            </label>
+<div class="checkout-page">
+    <div class="container py-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'books:home' %}"><i class="fas fa-home"></i> Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'books:cart' %}">Cart</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+            </ol>
+        </nav>
+
+        <!-- Page Header -->
+        <div class="checkout-page-header mb-4">
+            <h1 class="checkout-title">
+                <i class="fas fa-shopping-cart"></i> Checkout
+            </h1>
+            <p class="checkout-subtitle">Review your order and complete your purchase</p>
+        </div>
+
+        <form method="post" id="checkout-form">
+            {% csrf_token %}
+            <div class="row g-4">
+                <!-- Left Column - Cart Items & Forms -->
+                <div class="col-lg-8">
+                    <!-- Cart Items Card -->
+                    <div class="checkout-section-card mb-4">
+                        <div class="checkout-section-header">
+                            <div class="section-title">
+                                <i class="fas fa-shopping-bag"></i>
+                                <span>Order Items ({% if cart_items %}{{ cart_items|length }}{% else %}0{% endif %})</span>
+                            </div>
+                            <div class="section-actions">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                    <label class="form-check-label" for="selectAll">
+                                        Select All
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="checkout-total">
-                            <span class="label">your total:</span>
-                            <span class="price-original">৳<span id="totalPrice">{{ subtotal }}</span></span>
-                            <span class="price-current">৳<span id="discountedPrice">{{ subtotal }}</span></span>
+
+                        <div class="checkout-section-body">
+                            {% if cart_items %}
+                            <div class="cart-items-list">
+                                {% for item in cart_items %}
+                                <div class="cart-item-card" data-price="{{ item.subtotal }}" data-book-id="{{ item.book.id }}" data-cart-id="{{ item.id }}">
+                                    <div class="item-select">
+                                        <input class="form-check-input item-check" type="checkbox" value="{{ item.book.id }}" checked>
+                                    </div>
+                                    
+                                    <div class="item-image-wrapper">
+                                        {% if item.book.cover_image %}
+                                        <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}" class="item-image">
+                                        {% else %}
+                                        <div class="placeholder-image">
+                                            <i class="fas fa-book"></i>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="item-info">
+                                        <h6 class="item-title">{{ item.book.title }}</h6>
+                                        <p class="item-author">by {{ item.book.author }}</p>
+                                        {% if item.book.stock < 10 %}
+                                        <p class="item-stock">Only {{ item.book.stock }} left in stock</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="item-quantity-control">
+                                        <button type="button" class="qty-btn qty-minus" data-book-id="{{ item.book.id }}">−</button>
+                                        <input type="number" class="qty-input" value="{{ item.quantity }}" min="1" max="{{ item.book.stock }}" data-book-id="{{ item.book.id }}" readonly>
+                                        <button type="button" class="qty-btn qty-plus" data-book-id="{{ item.book.id }}">+</button>
+                                    </div>
+                                    
+                                    <div class="item-pricing">
+                                        <div class="current-price">৳{{ item.book.final_price }}</div>
+                                        {% if item.book.discount_price %}
+                                        <div class="original-price">৳{{ item.book.price }}</div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="item-total-section">
+                                        <div class="item-total-price">৳{{ item.subtotal }}</div>
+                                        <button type="button" class="btn-remove-item" data-book-id="{{ item.book.id }}" title="Remove">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="empty-cart-message">
+                                <i class="fas fa-shopping-cart"></i>
+                                <h5>Your cart is empty</h5>
+                                <p>Add some books to get started!</p>
+                                <a href="{% url 'books:home' %}" class="btn btn-primary">Continue Shopping</a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <!-- Cart Items -->
-                    {% if cart_items %}
-                    <div class="checkout-items">
-                        {% for item in cart_items %}
-                        <div class="checkout-item" data-price="{{ item.subtotal }}" data-book-id="{{ item.book.id }}">
-                            <div class="item-checkbox">
-                                <input class="form-check-input item-check" type="checkbox" value="{{ item.book.id }}">
+                    <!-- Delivery Address Card -->
+                    <div class="checkout-section-card mb-4">
+                        <div class="checkout-section-header">
+                            <div class="section-title">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>Delivery Address</span>
+                            </div>
+                        </div>
+                        
+                        <div class="checkout-section-body">
+                            {% if addresses %}
+                            <div class="address-selection">
+                                {% for address in addresses %}
+                                <div class="address-card {% if address.is_default %}default-address{% endif %}">
+                                    <input class="form-check-input" type="radio" name="address_id" id="address{{ address.id }}" 
+                                           value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
+                                    <label class="address-card-label" for="address{{ address.id }}">
+                                        <div class="address-header">
+                                            <strong class="address-name">{{ address.full_name }}</strong>
+                                            {% if address.is_default %}
+                                            <span class="badge bg-primary">Default</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="address-details">
+                                            <p class="address-phone"><i class="fas fa-phone"></i> {{ address.phone }}</p>
+                                            <p class="address-text">
+                                                <i class="fas fa-map-marker-alt"></i>
+                                                {{ address.address_line1 }}{% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}<br>
+                                                <span class="ms-3">{{ address.city }}, {{ address.state }} - {{ address.postal_code }}</span>
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+                                {% endfor %}
+                                <div class="add-address-section">
+                                    <a href="{% url 'accounts:add_address' %}?next={{ request.path }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-plus"></i> Add New Address
+                                    </a>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle"></i> Please add your delivery address
+                            </div>
+                            <div class="new-address-form">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="address_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="address_line1" name="address_line1" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="address_line2" class="form-label">Address Line 2 (Optional)</label>
+                                        <input type="text" class="form-control" id="address_line2" name="address_line2">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="city" class="form-label">City <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="city" name="city" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="state" class="form-label">State/Division <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="state" name="state" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Payment Method Card -->
+                    <div class="checkout-section-card">
+                        <div class="checkout-section-header">
+                            <div class="section-title">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Payment Method</span>
+                            </div>
+                        </div>
+                        
+                        <div class="checkout-section-body">
+                            <div class="payment-methods-grid">
+                                <div class="payment-method-card">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" checked required>
+                                    <label class="payment-method-label" for="cod">
+                                        <div class="payment-icon">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </div>
+                                        <div class="payment-info">
+                                            <div class="payment-name">Cash on Delivery</div>
+                                            <div class="payment-desc">Pay when you receive</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="payment-method-card">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="bkash" value="bkash" required>
+                                    <label class="payment-method-label" for="bkash">
+                                        <div class="payment-icon bkash-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <div class="payment-info">
+                                            <div class="payment-name">bKash</div>
+                                            <div class="payment-desc">Mobile payment</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="payment-method-card">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="nagad" value="nagad" required>
+                                    <label class="payment-method-label" for="nagad">
+                                        <div class="payment-icon nagad-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <div class="payment-info">
+                                            <div class="payment-name">Nagad</div>
+                                            <div class="payment-desc">Mobile payment</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="payment-method-card">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="rocket" value="rocket" required>
+                                    <label class="payment-method-label" for="rocket">
+                                        <div class="payment-icon rocket-icon">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <div class="payment-info">
+                                            <div class="payment-name">Rocket</div>
+                                            <div class="payment-desc">Mobile payment</div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div class="payment-method-card">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="sslcommerz" value="sslcommerz" required>
+                                    <label class="payment-method-label" for="sslcommerz">
+                                        <div class="payment-icon card-icon">
+                                            <i class="fas fa-credit-card"></i>
+                                        </div>
+                                        <div class="payment-info">
+                                            <div class="payment-name">Card Payment</div>
+                                            <div class="payment-desc">Credit/Debit card</div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Customer Notes -->
+                            <div class="customer-notes-section mt-4">
+                                <label for="customer_notes" class="form-label">
+                                    <i class="fas fa-comment"></i> Order Notes (Optional)
+                                </label>
+                                <textarea class="form-control" id="customer_notes" name="customer_notes" rows="3" 
+                                          placeholder="Any special instructions for your order..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column - Order Summary -->
+                <div class="col-lg-4">
+                    <div class="checkout-summary-sticky">
+                        <div class="checkout-summary-card">
+                            <div class="summary-header">
+                                <h5><i class="fas fa-file-invoice"></i> Order Summary</h5>
                             </div>
                             
-                            <div class="item-image">
-                                {% if item.book.cover_image %}
-                                <img src="{{ item.book.cover_image.url }}" alt="{{ item.book.title }}">
-                                {% else %}
-                                <div class="placeholder-image">
-                                    <i class="fas fa-book"></i>
+                            <div class="summary-body">
+                                <div class="summary-row">
+                                    <span class="summary-label">Subtotal</span>
+                                    <span class="summary-value">৳{{ subtotal }}</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span class="summary-label">
+                                        Shipping Fee
+                                        <i class="fas fa-info-circle text-muted" 
+                                           data-bs-toggle="tooltip" 
+                                           title="Flat rate delivery charge"></i>
+                                    </span>
+                                    <span class="summary-value">৳{{ shipping_cost }}</span>
+                                </div>
+                                {% if discount > 0 %}
+                                <div class="summary-row discount-row">
+                                    <span class="summary-label">Discount</span>
+                                    <span class="summary-value">-৳{{ discount }}</span>
                                 </div>
                                 {% endif %}
+                                
+                                <div class="summary-divider"></div>
+                                
+                                <div class="summary-row total-row">
+                                    <span class="summary-label">Total</span>
+                                    <span class="summary-value">৳{{ total }}</span>
+                                </div>
                             </div>
-                            
-                            <div class="item-details">
-                                <h6 class="item-title">{{ item.book.title }}</h6>
-                                <p class="item-author">{{ item.book.author }}</p>
-                                <p class="item-availability">Only {{ item.book.stock }} copies available</p>
-                            </div>
-                            
-                            <div class="item-quantity">
-                                <button type="button" class="qty-btn qty-minus" data-book-id="{{ item.book.id }}">−</button>
-                                <input type="number" class="qty-input" value="{{ item.quantity }}" min="1" data-book-id="{{ item.book.id }}">
-                                <button type="button" class="qty-btn qty-plus" data-book-id="{{ item.book.id }}">+</button>
-                            </div>
-                            
-                            <div class="item-price">
-                                <div class="price-current">৳{{ item.book.discount_price|default:item.book.price }}</div>
-                                {% if item.book.discount_price %}
-                                <div class="price-original">৳{{ item.book.price }}</div>
+
+                            <!-- Coupon Section -->
+                            <div class="coupon-section">
+                                {% if coupon_code %}
+                                <div class="applied-coupon">
+                                    <div class="coupon-badge">
+                                        <i class="fas fa-tag"></i>
+                                        <span>{{ coupon_code }}</span>
+                                    </div>
+                                    <button type="button" class="btn-remove-coupon" onclick="removeCoupon()" title="Remove coupon">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="coupon-success">
+                                    <i class="fas fa-check-circle"></i> Coupon applied successfully!
+                                </div>
+                                {% else %}
+                                <div class="coupon-input-group">
+                                    <input type="text" class="form-control" id="coupon_code" 
+                                           placeholder="Enter coupon code">
+                                    <button type="button" class="btn-apply-coupon" onclick="applyCoupon()">
+                                        Apply
+                                    </button>
+                                </div>
+                                <small class="coupon-hint">
+                                    <i class="fas fa-tag"></i> Have a promo code? Enter it above
+                                </small>
                                 {% endif %}
                             </div>
-                            
-                            <div class="item-total">
-                                <div class="total-price">৳{{ item.subtotal }}</div>
-                                <button type="button" class="btn-delete" data-book-id="{{ item.book.id }}" title="Delete">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <div class="text-center py-5">
-                        <p class="text-muted">Your cart is empty</p>
-                    </div>
-                    {% endif %}
-                </div>
 
-                <!-- Delivery & Payment Info -->
-                <div class="checkout-card mt-4">
-                    <div class="checkout-section-header">
-                        <h5>Delivery Information</h5>
-                    </div>
-                    
-                    <div class="checkout-section-body">
-                        {% if addresses %}
-                        <div class="mb-3">
-                            <label class="form-label">Select Delivery Address</label>
-                            {% for address in addresses %}
-                            <div class="address-item">
-                                <input class="form-check-input" type="radio" name="address_id" id="address{{ address.id }}" 
-                                       value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
-                                <label class="form-check-label" for="address{{ address.id }}">
-                                    <strong>{{ address.full_name }}</strong> - {{ address.phone }}<br>
-                                    {{ address.address_line1 }}{% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}<br>
-                                    {{ address.city }}, {{ address.state }} - {{ address.postal_code }}
-                                    {% if address.is_default %}<span class="badge bg-primary">Default</span>{% endif %}
-                                </label>
-                            </div>
-                            {% endfor %}
-                            <div class="mt-3">
-                                <a href="{% url 'accounts:add_address' %}" class="btn btn-outline-primary btn-sm">
-                                    <i class="fas fa-plus"></i> Add New Address
+                            <!-- Checkout Button -->
+                            <div class="checkout-button-section">
+                                <button type="submit" class="btn-proceed-checkout" {% if not cart_items %}disabled{% endif %}>
+                                    <i class="fas fa-lock"></i> Place Order
+                                </button>
+                                <a href="{% url 'books:cart' %}" class="btn-back-to-cart">
+                                    <i class="fas fa-arrow-left"></i> Back to Cart
                                 </a>
                             </div>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-warning">
-                            You don't have any saved addresses. Please add a delivery address.
-                        </div>
-                        <div class="form-group mb-3">
-                            <label for="full_name" class="form-label">Full Name</label>
-                            <input type="text" class="form-control" id="full_name" name="full_name" required>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label for="phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone" required>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label for="address_line1" class="form-label">Address Line 1</label>
-                            <input type="text" class="form-control" id="address_line1" name="address_line1" required>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
 
-                <!-- Payment Method -->
-                <div class="checkout-card mt-4">
-                    <div class="checkout-section-header">
-                        <h5>Payment Method</h5>
-                    </div>
-                    
-                    <div class="checkout-section-body">
-                        <div class="payment-options">
-                            <div class="payment-option">
-                                <input class="form-check-input" type="radio" name="payment_method" id="cod" value="cod" checked required>
-                                <label class="form-check-label" for="cod">
-                                    <i class="fas fa-money-bill-wave"></i> Cash on Delivery
-                                </label>
+                            <!-- Security Badge -->
+                            <div class="security-badges">
+                                <div class="security-item">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Secure Checkout</span>
+                                </div>
+                                <div class="security-item">
+                                    <i class="fas fa-lock"></i>
+                                    <span>SSL Encrypted</span>
+                                </div>
                             </div>
-                            <div class="payment-option">
-                                <input class="form-check-input" type="radio" name="payment_method" id="bkash" value="bkash" required>
-                                <label class="form-check-label" for="bkash">
-                                    <i class="fas fa-mobile-alt"></i> bKash
-                                </label>
+
+                            <!-- Accepted Payment Methods -->
+                            <div class="accepted-payments">
+                                <div class="payments-label">We Accept:</div>
+                                <div class="payments-icons">
+                                    <span class="payment-badge">
+                                        <i class="fas fa-money-bill-wave"></i> COD
+                                    </span>
+                                    <span class="payment-badge">bKash</span>
+                                    <span class="payment-badge">Nagad</span>
+                                    <span class="payment-badge">Rocket</span>
+                                    <span class="payment-badge">
+                                        <i class="fas fa-credit-card"></i> Card
+                                    </span>
+                                </div>
                             </div>
-                            <div class="payment-option">
-                                <input class="form-check-input" type="radio" name="payment_method" id="nagad" value="nagad" required>
-                                <label class="form-check-label" for="nagad">
-                                    <i class="fas fa-mobile-alt"></i> Nagad
-                                </label>
-                            </div>
-                            <div class="payment-option">
-                                <input class="form-check-input" type="radio" name="payment_method" id="rocket" value="rocket" required>
-                                <label class="form-check-label" for="rocket">
-                                    <i class="fas fa-mobile-alt"></i> Rocket
-                                </label>
-                            </div>
+                        </div>
+
+                        <!-- Help Section -->
+                        <div class="checkout-help-card mt-3">
+                            <h6><i class="fas fa-question-circle"></i> Need Help?</h6>
+                            <ul class="help-list">
+                                <li><a href="#"><i class="fas fa-phone"></i> Call us: +880 1234-567890</a></li>
+                                <li><a href="#"><i class="fas fa-envelope"></i> support@bookstore.com</a></li>
+                                <li><a href="#"><i class="fas fa-comments"></i> Live Chat</a></li>
+                            </ul>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Right Column - Order Summary -->
-            <div class="col-lg-4">
-                <div class="order-summary-card">
-                    <h5 class="summary-title">Checkout Summary</h5>
-                    
-                    <div class="summary-details">
-                        <div class="summary-row">
-                            <span class="label">Subtotal</span>
-                            <span class="value">৳{{ subtotal }}</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="label">Delivery and<br>Website Service Charge</span>
-                            <span class="value">৳{{ shipping_cost }}</span>
-                        </div>
-                        {% if discount > 0 %}
-                        <div class="summary-row text-success">
-                            <span class="label">Discount</span>
-                            <span class="value">-৳{{ discount }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="summary-divider"></div>
-                    
-                    <div class="summary-row total-row">
-                        <span class="label">Total</span>
-                        <span class="value">৳{{ total }}</span>
-                    </div>
-                    
-                    <!-- Promo Code Section -->
-                    <div class="promo-section">
-                        {% if coupon_code %}
-                        <div class="alert alert-success py-2 mb-3">
-                            <small>Coupon "{{ coupon_code }}" applied!</small>
-                            <button type="button" class="btn-close btn-sm float-end" onclick="removeCoupon()"></button>
-                        </div>
-                        {% else %}
-                        <input type="text" class="form-control" id="coupon_code" placeholder="Apply Promo Code or Voucher Code" readonly>
-                        <small class="text-muted mt-2">Apply Promo Code or Voucher Code on the Shipping Page</small>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Checkout Button -->
-                    <button type="submit" class="btn btn-checkout w-100">
-                        <i class="fas fa-lock"></i> Proceed to Checkout
-                    </button>
-                    
-                    <!-- Secure Checkout Badge -->
-                    <div class="secure-checkout mt-3">
-                        <i class="fas fa-lock"></i> Secure Checkout
-                    </div>
-                    
-                    <!-- Accepted Payment Methods -->
-                    <div class="payment-methods-badge mt-3">
-                        <span class="methods-label">We Accept:</span>
-                        <div class="methods-icons">
-                            <span class="method-icon">bKash</span>
-                            <span class="method-icon">Nagad</span>
-                            <span class="method-icon">Rocket</span>
-                            <span class="method-icon">COD</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </div>
 
 <script>
+// Coupon functionality
 function applyCoupon() {
     const couponCode = document.getElementById('coupon_code').value.trim();
     if (!couponCode) {
-        alert('Please enter a coupon code');
+        showToast('Please enter a coupon code', 'warning');
         return;
     }
+    
     const applyBtn = event.target;
     applyBtn.disabled = true;
-    applyBtn.textContent = 'Applying...';
+    applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
     
     fetch("{% url 'orders:apply_coupon' %}", {
         method: 'POST',
@@ -257,35 +419,47 @@ function applyCoupon() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert(data.message || 'Invalid coupon code');
+            showToast(data.message || 'Invalid coupon code', 'error');
             applyBtn.disabled = false;
             applyBtn.textContent = 'Apply';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        showToast('An error occurred. Please try again.', 'error');
         applyBtn.disabled = false;
         applyBtn.textContent = 'Apply';
     });
 }
 
 function removeCoupon() {
-    if (!confirm('Remove coupon code?')) {
+    if (!confirm('Remove this coupon code?')) {
         return;
     }
+    
     fetch("{% url 'orders:remove_coupon' %}", {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
         }
     })
-    .then(() => location.reload());
+    .then(response => response.json())
+    .then(data => {
+        showToast('Coupon removed', 'success');
+        setTimeout(() => location.reload(), 500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred', 'error');
+    });
 }
 
+// Cart item quantity management
 document.addEventListener('DOMContentLoaded', function() {
+    // Select all checkbox functionality
     const selectAllCheckbox = document.getElementById('selectAll');
     const itemCheckboxes = document.querySelectorAll('.item-check');
     
@@ -301,6 +475,154 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
         });
     });
+
+    // Quantity buttons
+    document.querySelectorAll('.qty-minus, .qty-plus').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const bookId = this.dataset.bookId;
+            const input = document.querySelector(`input.qty-input[data-book-id="${bookId}"]`);
+            const currentVal = parseInt(input.value) || 1;
+            const maxVal = parseInt(input.max) || 999;
+            
+            let newVal = currentVal;
+            if (this.classList.contains('qty-minus')) {
+                newVal = Math.max(1, currentVal - 1);
+            } else {
+                newVal = Math.min(maxVal, currentVal + 1);
+            }
+            
+            if (newVal !== currentVal) {
+                updateCartQuantity(bookId, newVal);
+            }
+        });
+    });
+
+    // Remove item buttons
+    document.querySelectorAll('.btn-remove-item').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const bookId = this.dataset.bookId;
+            if (confirm('Remove this item from cart?')) {
+                removeFromCart(bookId);
+            }
+        });
+    });
+
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Form validation
+    const checkoutForm = document.getElementById('checkout-form');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            // Check if any items are selected
+            const selectedItems = document.querySelectorAll('.item-check:checked');
+            if (selectedItems.length === 0) {
+                e.preventDefault();
+                showToast('Please select at least one item to checkout', 'warning');
+                return false;
+            }
+        });
+    }
 });
+
+// Update cart quantity via AJAX
+function updateCartQuantity(bookId, quantity) {
+    const cartItem = document.querySelector(`[data-book-id="${bookId}"]`);
+    if (!cartItem) return;
+    
+    // Find the cart ID from the data attribute or form
+    const cartId = cartItem.getAttribute('data-cart-id');
+    if (!cartId) {
+        showToast('Cart item ID not found', 'error');
+        return;
+    }
+    
+    fetch(`/books/cart/update/${cartId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `quantity=${quantity}`
+    })
+    .then(response => response.text())
+    .then(data => {
+        showToast('Quantity updated', 'success');
+        setTimeout(() => location.reload(), 500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to update quantity', 'error');
+    });
+}
+
+// Remove from cart via AJAX
+function removeFromCart(bookId) {
+    const cartItem = document.querySelector(`[data-book-id="${bookId}"]`);
+    if (!cartItem) return;
+    
+    const cartId = cartItem.getAttribute('data-cart-id');
+    if (!cartId) {
+        showToast('Cart item ID not found', 'error');
+        return;
+    }
+    
+    fetch(`/books/cart/remove/${cartId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.text())
+    .then(data => {
+        showToast('Item removed from cart', 'success');
+        setTimeout(() => location.reload(), 500);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to remove item', 'error');
+    });
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    // Create toast element if it doesn't exist
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+
+    const toastId = 'toast_' + Date.now();
+    const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : type === 'warning' ? 'bg-warning' : 'bg-info';
+    const iconClass = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle';
+    
+    const toastHTML = `
+        <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fas ${iconClass} me-2"></i>${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        this.remove();
+    });
+}
 </script>
 {% endblock %}
