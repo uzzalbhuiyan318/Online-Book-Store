@@ -20,7 +20,7 @@ $(document).ready(function() {
             success: function(response) {
                 // Update cart count
                 if (response.cart_count) {
-                    $('.cart-count').text(response.cart_count);
+                    $('.cart-count').text(response.cart_count).show();
                 }
                 
                 // Show success message

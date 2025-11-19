@@ -278,6 +278,7 @@ document.querySelectorAll('.add-to-cart').forEach(button => {
                 const cartBadge = document.querySelector('.cart-count');
                 if (cartBadge && data.cart_count) {
                     cartBadge.textContent = data.cart_count;
+                    cartBadge.style.display = 'inline-block';
                 }
                 
                 setTimeout(() => {

@@ -77,7 +77,7 @@
                         <a class="nav-link nav-icon position-relative" href="{% url 'books:cart' %}" title="Cart">
                             <i class="fas fa-shopping-cart"></i>
                             <span class="icon-label">Cart</span>
-                            <span class="badge bg-danger cart-badge" {% if cart_count == 0 %}style="display: none;"{% endif %}>{{ cart_count }}</span>
+                            <span class="badge bg-danger cart-badge cart-count" {% if cart_count == 0 %}style="display: none;"{% endif %}>{{ cart_count }}</span>
                         </a>
                     </li>
                     
