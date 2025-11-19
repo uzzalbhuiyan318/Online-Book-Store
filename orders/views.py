@@ -198,7 +198,7 @@ def checkout(request):
 
 
 def order_success(request, order_number):
-    """Order success page - accessible without login for payment callbacks"""
+    """Order success page - accessible without login for payment callbacks, but re-authenticates user if session lost"""
     logger.info(f"order_success called for order_number: {order_number}, user authenticated: {request.user.is_authenticated}")
     
     # Try to get order - allow access for payment callbacks even if user is not logged in
@@ -219,7 +219,23 @@ def order_success(request, order_number):
             order = Order.objects.get(order_number=order_number)
             logger.info(f"Found order {order_number} for non-authenticated request")
             
-            # Additional security: only allow access to recently confirmed orders (within last hour)
+            # IMPORTANT: Re-authenticate the user to maintain session
+            # This prevents users from being logged out after SSLCommerz redirect
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            try:
+                user = User.objects.get(id=order.user.id)
+                request.user = user
+                request.session.create()
+                request.session['_auth_user_id'] = str(user.pk)
+                request.session['_auth_user_backend'] = 'django.contrib.auth.backends.ModelBackend'
+                request.session['_auth_user_hash'] = user.get_session_auth_hash()
+                request.session.modified = True
+                logger.info(f"✅ User {user.id} re-authenticated after payment gateway redirect")
+            except User.DoesNotExist:
+                logger.warning(f"Could not re-authenticate user {order.user.id}")
+            
+            # Additional security: only allow access to recently confirmed/created orders (within last hour)
             # This prevents old orders from being accessed without login
             if order.confirmed_at:
                 time_since_confirmation = timezone.now() - order.confirmed_at

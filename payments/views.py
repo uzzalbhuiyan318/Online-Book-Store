@@ -1,16 +1,60 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth import get_user, login, logout
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
+from django.contrib.sessions.models import Session
 from .models import Payment
 from orders.models import Order, OrderStatusHistory
 from rentals.models import BookRental, RentalStatusHistory
 from orders.email_utils import send_order_confirmation_email
 from .sslcommerz import SSLCommerzPayment
 import logging
+import json
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
+
+
+def ensure_session_valid(request, order):
+    """
+    Ensure user session is valid and user is authenticated.
+    This prevents session loss after external payment gateway redirects.
+    """
+    logger.info(f"ensure_session_valid called for order {order.order_number}")
+    
+    # If user is already authenticated, session is fine
+    if request.user.is_authenticated:
+        logger.info(f"User {request.user.id} already authenticated")
+        return request.user
+    
+    # Session might have been lost due to external redirect
+    # Re-authenticate the user using the order's user
+    logger.warning(f"User not authenticated after SSLCommerz redirect, attempting to re-authenticate")
+    logger.info(f"Order belongs to user {order.user.id} ({order.user.email})")
+    
+    # Create a new session for the user
+    request.user = order.user
+    request.session.create()
+    
+    # Create a temporary session to maintain the user
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    try:
+        user = User.objects.get(id=order.user.id)
+        # Manually set the session key
+        request.session['_auth_user_id'] = str(user.pk)
+        request.session['_auth_user_backend'] = 'django.contrib.auth.backends.ModelBackend'
+        request.session['_auth_user_hash'] = user.get_session_auth_hash()
+        request.session.modified = True
+        
+        logger.info(f"✅ Session re-established for user {user.id}")
+        return user
+    except Exception as e:
+        logger.error(f"❌ Failed to re-establish session: {str(e)}")
+        return None
 
 
 def bkash_callback(request):
@@ -211,6 +255,9 @@ def sslcommerz_success(request):
             logger.info(f"Payment successful for rental {reference_obj.rental_number}, transaction {transaction_id}")
             messages.success(request, 'Payment completed successfully! Your rental is now active.')
             
+            # Ensure user session is maintained (prevent logout after external redirect)
+            ensure_session_valid(request, reference_obj)
+            
             return redirect('rentals:rental_success', rental_number=reference_obj.rental_number)
         else:
             reference_obj.payment_status = 'paid'
@@ -226,6 +273,9 @@ def sslcommerz_success(request):
             )
             
             logger.info(f"Payment successful for order {reference_obj.order_number}, transaction {transaction_id}")
+            
+            # Ensure user session is maintained (prevent logout after external redirect)
+            ensure_session_valid(request, reference_obj)
             
             # Send order confirmation email
             logger.info(f"SSLCommerz payment successful, attempting to send email to {reference_obj.user.email}")
