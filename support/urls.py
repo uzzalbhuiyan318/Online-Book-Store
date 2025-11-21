@@ -22,10 +22,11 @@ urlpatterns = [
     
     # Agent API endpoints
     path('api/conversations/', agent_views.agent_get_conversations, name='agent_get_conversations'),
-    path('api/conversation/<str:conversation_id>/messages/', agent_views.agent_get_messages, name='agent_get_messages'),
+    path('agent/api/conversation/<str:conversation_id>/messages/', agent_views.agent_get_messages, name='agent_get_messages'),
     path('api/conversation/<str:conversation_id>/mark-read/', agent_views.agent_mark_messages_read, name='agent_mark_read'),
     path('agent/api/send/', agent_views.agent_send_message, name='agent_send_message'),
     path('agent/api/conversation/<str:conversation_id>/update/', agent_views.agent_update_conversation, name='agent_update_conversation'),
     path('agent/api/toggle-online/', agent_views.agent_toggle_online, name='agent_toggle_online'),
     path('agent/api/quick-replies/', agent_views.agent_get_quick_replies, name='agent_quick_replies'),
+    path('api/agents/', agent_views.get_agents_list, name='get_agents_list'),
 ]

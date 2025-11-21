@@ -12,25 +12,46 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="admin-form-group">
-                        <label>Title</label>
+                        <label>Title <span class="text-danger">*</span></label>
                         {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">{{ form.title.errors }}</div>
+                        {% endif %}
                     </div>
                     <div class="admin-form-group">
-                        <label>Image</label>
+                        <label>Subtitle</label>
+                        {{ form.subtitle }}
+                        {% if form.subtitle.errors %}
+                        <div class="invalid-feedback d-block">{{ form.subtitle.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Image <span class="text-danger">*</span></label>
                         {{ form.image }}
                         {% if form.instance.image %}
                         <div class="mt-2">
-                            <img src="{{ form.instance.image.url }}" alt="Current" style="max-width: 200px;">
+                            <img src="{{ form.instance.image.url }}" alt="Current" style="max-width: 300px; max-height: 200px;">
                         </div>
+                        {% endif %}
+                        {% if form.image.errors %}
+                        <div class="invalid-feedback d-block">{{ form.image.errors }}</div>
                         {% endif %}
                     </div>
                     <div class="admin-form-group">
                         <label>Link URL</label>
-                        {{ form.link_url }}
+                        {{ form.link }}
+                        <small class="text-muted">e.g., /books/ or https://example.com</small>
+                        {% if form.link.errors %}
+                        <div class="invalid-feedback d-block">{{ form.link.errors }}</div>
+                        {% endif %}
                     </div>
                     <div class="admin-form-group">
                         <label>Order</label>
                         {{ form.order }}
+                        <small class="text-muted">Lower numbers appear first</small>
+                        {% if form.order.errors %}
+                        <div class="invalid-feedback d-block">{{ form.order.errors }}</div>
+                        {% endif %}
                     </div>
                     <div class="admin-form-group">
                         <div class="form-check">
@@ -38,8 +59,12 @@
                             <label class="form-check-label">Active</label>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-admin-primary">Save</button>
-                    <a href="{% url 'admin_panel:banner_list' %}" class="btn btn-admin-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-admin-primary">
+                        <i class="fas fa-save"></i> Save Banner
+                    </button>
+                    <a href="{% url 'admin_panel:banner_list' %}" class="btn btn-admin-secondary">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
                 </form>
             </div>
         </div>

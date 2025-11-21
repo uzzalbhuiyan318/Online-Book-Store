@@ -1,0 +1,113 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Conversation {{ conversation.conversation_id }} - Admin Panel{% endblock %}
+{% block page_title %}Conversation Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h5><i class="fas fa-comments"></i> Conversation {{ conversation.conversation_id }}</h5>
+            </div>
+            <div class="admin-card-body">
+                <div class="mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> {{ conversation.user.full_name }}</p>
+                            <p><strong>Email:</strong> {{ conversation.user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> <span class="badge bg-{{ conversation.status }}">{{ conversation.get_status_display }}</span></p>
+                            <p><strong>Agent:</strong> {{ conversation.assigned_agent.display_name|default:"Unassigned" }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="conversion-tracking mb-4 p-3 border rounded">
+                    <h6><i class="fas fa-chart-line"></i> Conversion Tracking</h6>
+                    <form method="post" action="{% url 'admin_panel:support_conversation_toggle_conversion' conversation.conversation_id %}">
+                        {% csrf_token %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" {% if conversation.is_converted %}checked{% endif %} disabled>
+                            <label class="form-check-label">
+                                {% if conversation.is_converted %}
+                                    <i class="fas fa-check-circle text-success"></i> Converted to Sale
+                                {% else %}
+                                    <i class="fas fa-times-circle text-muted"></i> Not Converted
+                                {% endif %}
+                            </label>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Conversion Notes</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Add notes about this conversion...">{{ conversation.conversion_notes }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm {% if conversation.is_converted %}btn-warning{% else %}btn-success{% endif %}">
+                            <i class="fas {% if conversation.is_converted %}fa-undo{% else %}fa-check{% endif %}"></i>
+                            {% if conversation.is_converted %}Unmark as Converted{% else %}Mark as Converted{% endif %}
+                        </button>
+                    </form>
+                </div>
+                
+                <h6>Messages</h6>
+                <div class="messages-container" style="max-height: 400px; overflow-y: auto;">
+                    {% for message in messages %}
+                    <div class="message-item mb-3 p-3 {% if message.is_agent %}bg-light{% else %}bg-white border{% endif %} rounded">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ message.sender.full_name }}</strong>
+                            <small class="text-muted">{{ message.created_at|date:"M d, Y H:i" }}</small>
+                        </div>
+                        <p class="mb-0 mt-2">{{ message.content }}</p>
+                        {% if message.attachment %}
+                        <div class="mt-2">
+                            <a href="{{ message.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-paperclip"></i> {{ message.attachment_name }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No messages in this conversation.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <h6><i class="fas fa-shopping-bag"></i> Customer Orders</h6>
+            </div>
+            <div class="admin-card-body">
+                {% if user_orders %}
+                    {% for order in user_orders %}
+                    <div class="mb-3 pb-3 border-bottom">
+                        <p class="mb-1">
+                            <strong>{{ order.order_number }}</strong>
+                            <span class="badge bg-{{ order.get_status_display_class }}">{{ order.get_status_display }}</span>
+                        </p>
+                        <p class="mb-1 text-muted small">{{ order.created_at|date:"M d, Y" }}</p>
+                        <p class="mb-0"><strong>৳{{ order.total }}</strong></p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No orders from this customer yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="admin-card mt-3">
+            <div class="admin-card-header">
+                <h6>Actions</h6>
+            </div>
+            <div class="admin-card-body">
+                <a href="{% url 'admin_panel:support_conversation_list' %}" class="btn btn-admin-secondary w-100 mb-2">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

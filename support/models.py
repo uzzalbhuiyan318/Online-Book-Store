@@ -57,6 +57,8 @@ class Conversation(models.Model):
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='normal', verbose_name=_("Priority"))
     language = models.CharField(max_length=10, default='en', verbose_name=_("Language"))
     is_archived = models.BooleanField(default=False, verbose_name=_("Archived"))
+    is_converted = models.BooleanField(default=False, verbose_name=_("Converted to Sale"))
+    conversion_notes = models.TextField(blank=True, verbose_name=_("Conversion Notes"))
     user_unread_count = models.IntegerField(default=0, verbose_name=_("User Unread Count"))
     agent_unread_count = models.IntegerField(default=0, verbose_name=_("Agent Unread Count"))
     last_message_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Last Message At"))

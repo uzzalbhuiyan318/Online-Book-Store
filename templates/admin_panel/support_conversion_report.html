@@ -1,0 +1,134 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Conversion Report - Admin Panel{% endblock %}
+{% block page_title %}Support Conversion Report{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="admin-stat-card bg-primary">
+            <div class="stat-value">{{ total_conversations }}</div>
+            <div class="stat-label">Total Conversations</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat-card bg-success">
+            <div class="stat-value">{{ converted_conversations }}</div>
+            <div class="stat-label">Converted to Sales</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="admin-stat-card bg-info">
+            <div class="stat-value">{{ conversion_rate }}%</div>
+            <div class="stat-label">Overall Conversion Rate</div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-chart-line"></i> Agent Performance</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn btn-admin-primary">Filter</button>
+                    <a href="{% url 'admin_panel:support_conversion_report' %}" class="btn btn-admin-secondary">Reset</a>
+                </div>
+            </div>
+        </form>
+
+        {% if agent_stats %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Total Conversations</th>
+                        <th>Converted</th>
+                        <th>Conversion Rate</th>
+                        <th>Performance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in agent_stats %}
+                    <tr>
+                        <td>
+                            <strong>{{ stat.agent.display_name }}</strong>
+                            <br><small class="text-muted">{{ stat.agent.email }}</small>
+                        </td>
+                        <td>{{ stat.total_conversations }}</td>
+                        <td>{{ stat.converted_conversations }}</td>
+                        <td>
+                            <strong>{{ stat.conversion_rate }}%</strong>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar {% if stat.conversion_rate >= 50 %}bg-success{% elif stat.conversion_rate >= 30 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                     role="progressbar" 
+                                     style="width: {{ stat.conversion_rate }}%;" 
+                                     aria-valuenow="{{ stat.conversion_rate }}" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                    {{ stat.conversion_rate }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-chart-bar"></i>
+            <h5>No data available</h5>
+            <p class="text-muted">No agent performance data to display for the selected period.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="admin-card mt-4">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-lightbulb"></i> Insights & Tips</h5>
+    </div>
+    <div class="admin-card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Top Performers</h6>
+                {% if agent_stats %}
+                    {% for stat in agent_stats|slice:":3" %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span><i class="fas fa-trophy text-warning"></i> {{ stat.agent.display_name }}</span>
+                        <span class="badge bg-success">{{ stat.conversion_rate }}%</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">No data available</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <h6>Improvement Tips</h6>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> Follow up within 24 hours</li>
+                    <li><i class="fas fa-check text-success"></i> Personalize responses</li>
+                    <li><i class="fas fa-check text-success"></i> Ask qualifying questions</li>
+                    <li><i class="fas fa-check text-success"></i> Provide product recommendations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

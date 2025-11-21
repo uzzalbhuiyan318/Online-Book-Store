@@ -982,15 +982,30 @@ def support_conversation_list(request):
     if status:
         conversations = conversations.filter(status=status)
     
+    # Filter by conversion
+    converted = request.GET.get('converted')
+    if converted == '1':
+        conversations = conversations.filter(is_converted=True)
+    elif converted == '0':
+        conversations = conversations.filter(is_converted=False)
+    
     # Pagination
     paginator = Paginator(conversations, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    # Conversion stats
+    total_conversations = Conversation.objects.count()
+    converted_conversations = Conversation.objects.filter(is_converted=True).count()
+    conversion_rate = (converted_conversations / total_conversations * 100) if total_conversations > 0 else 0
+    
     context = {
         'page_obj': page_obj,
         'conversations': page_obj.object_list,
         'total_count': conversations.count(),
+        'total_conversations': total_conversations,
+        'converted_conversations': converted_conversations,
+        'conversion_rate': round(conversion_rate, 2),
     }
     return render(request, 'admin_panel/support_conversation_list.html', context)
 
@@ -1036,6 +1051,96 @@ def support_agent_edit(request, pk):
     
     context = {'form': form, 'agent': agent, 'action': 'Edit'}
     return render(request, 'admin_panel/support_agent_form.html', context)
+
+
+@staff_member_required
+def support_conversation_detail(request, conversation_id):
+    """View conversation details with conversion tracking"""
+    conversation = get_object_or_404(Conversation, conversation_id=conversation_id)
+    messages_list = Message.objects.filter(conversation=conversation).select_related('sender').order_by('created_at')
+    
+    # Get related orders from the user
+    from orders.models import Order
+    user_orders = Order.objects.filter(user=conversation.user).order_by('-created_at')[:5]
+    
+    context = {
+        'conversation': conversation,
+        'messages': messages_list,
+        'user_orders': user_orders,
+    }
+    return render(request, 'admin_panel/support_conversation_detail.html', context)
+
+
+@staff_member_required
+def support_conversation_toggle_conversion(request, conversation_id):
+    """Toggle conversation conversion status"""
+    conversation = get_object_or_404(Conversation, conversation_id=conversation_id)
+    
+    if request.method == 'POST':
+        conversation.is_converted = not conversation.is_converted
+        notes = request.POST.get('notes', '').strip()
+        if notes:
+            conversation.conversion_notes = notes
+        conversation.save()
+        
+        status_text = "marked as converted" if conversation.is_converted else "unmarked as converted"
+        messages.success(request, f'Conversation {status_text} successfully!')
+        
+        # Return to the referring page or conversation list
+        return redirect(request.META.get('HTTP_REFERER', 'admin_panel:support_conversation_list'))
+    
+    return redirect('admin_panel:support_conversation_list')
+
+
+@staff_member_required
+def support_conversion_report(request):
+    """Support conversion report showing agent performance"""
+    # Get date range
+    from datetime import datetime
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    conversations = Conversation.objects.all()
+    
+    if start_date:
+        conversations = conversations.filter(created_at__date__gte=start_date)
+    if end_date:
+        conversations = conversations.filter(created_at__date__lte=end_date)
+    
+    # Overall stats
+    total_conversations = conversations.count()
+    converted_conversations = conversations.filter(is_converted=True).count()
+    conversion_rate = (converted_conversations / total_conversations * 100) if total_conversations > 0 else 0
+    
+    # Agent performance
+    agents = SupportAgent.objects.all()
+    agent_stats = []
+    
+    for agent in agents:
+        agent_convs = conversations.filter(assigned_agent=agent)
+        agent_total = agent_convs.count()
+        agent_converted = agent_convs.filter(is_converted=True).count()
+        agent_rate = (agent_converted / agent_total * 100) if agent_total > 0 else 0
+        
+        agent_stats.append({
+            'agent': agent,
+            'total_conversations': agent_total,
+            'converted_conversations': agent_converted,
+            'conversion_rate': round(agent_rate, 2),
+        })
+    
+    # Sort by conversion rate
+    agent_stats.sort(key=lambda x: x['conversion_rate'], reverse=True)
+    
+    context = {
+        'total_conversations': total_conversations,
+        'converted_conversations': converted_conversations,
+        'conversion_rate': round(conversion_rate, 2),
+        'agent_stats': agent_stats,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'admin_panel/support_conversion_report.html', context)
 
 
 @staff_member_required

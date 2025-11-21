@@ -61,6 +61,9 @@ urlpatterns = [
     
     # Support Management
     path('support/conversations/', views.support_conversation_list, name='support_conversation_list'),
+    path('support/conversations/<str:conversation_id>/', views.support_conversation_detail, name='support_conversation_detail'),
+    path('support/conversations/<str:conversation_id>/toggle-conversion/', views.support_conversation_toggle_conversion, name='support_conversation_toggle_conversion'),
+    path('support/conversion-report/', views.support_conversion_report, name='support_conversion_report'),
     path('support/agents/', views.support_agent_list, name='support_agent_list'),
     path('support/agents/add/', views.support_agent_add, name='support_agent_add'),
     path('support/agents/<int:pk>/edit/', views.support_agent_edit, name='support_agent_edit'),

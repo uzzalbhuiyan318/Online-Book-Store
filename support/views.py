@@ -58,28 +58,20 @@ def get_or_create_conversation(request):
     if not conversation:
         conversation = Conversation.objects.create(
             user=request.user,
-            language=request.LANGUAGE_CODE if hasattr(request, 'LANGUAGE_CODE') else 'en'
+            language=request.LANGUAGE_CODE if hasattr(request, 'LANGUAGE_CODE') else 'en',
+            status='pending'  # Set as pending until an agent replies
         )
         
-        # Auto-assign to available agent
+        # Do NOT auto-assign - let first agent to reply get assigned
+        # Send welcome message as system message
         settings = get_chat_settings()
-        if settings.auto_assign:
-            agent = SupportAgent.objects.filter(
-                is_online=True,
-                is_active=True
-            ).first()
-            if agent:
-                conversation.assigned_agent = agent
-                conversation.save()
-                
-                # Send system message
-                Message.objects.create(
-                    conversation=conversation,
-                    sender=agent.user,
-                    is_agent=True,
-                    message_type='system',
-                    content=settings.welcome_message if request.LANGUAGE_CODE == 'en' else settings.welcome_message_bn
-                )
+        Message.objects.create(
+            conversation=conversation,
+            sender=request.user,  # System message from customer's perspective
+            is_agent=False,
+            message_type='system',
+            content=settings.welcome_message if request.LANGUAGE_CODE == 'en' else settings.welcome_message_bn
+        )
     
     return JsonResponse({
         'conversation_id': conversation.conversation_id,
@@ -170,10 +162,12 @@ def send_message(request, conversation_id):
             content=content
         )
         
-        # Update conversation
+        # Update conversation - mark as open if it was pending
         conversation.last_message_at = timezone.now()
         conversation.agent_unread_count = F('agent_unread_count') + 1
-        conversation.save(update_fields=['last_message_at', 'agent_unread_count'])
+        if conversation.status == 'pending':
+            conversation.status = 'open'
+        conversation.save(update_fields=['last_message_at', 'agent_unread_count', 'status'])
         
         return JsonResponse({
             'success': True,

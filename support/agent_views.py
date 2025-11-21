@@ -10,11 +10,13 @@ import json
 
 def is_support_agent(user):
     """Check if user is a support agent"""
+    if not user.is_authenticated:
+        return False
     return hasattr(user, 'support_agent') and user.is_staff
 
 
-@login_required
-@user_passes_test(is_support_agent)
+@login_required(login_url='/accounts/login/')
+@user_passes_test(is_support_agent, login_url='/accounts/login/')
 def agent_dashboard(request):
     """Agent dashboard to handle customer conversations"""
     try:
@@ -114,11 +116,13 @@ def agent_get_conversations(request):
                 'avatar': conv.user.profile_image.url if conv.user.profile_image else None,
             },
             'assigned_agent': {
-                'name': conv.assigned_agent.display_name if conv.assigned_agent else None,
-            } if conv.assigned_agent else None,
+                'name': conv.assigned_agent.display_name if conv.assigned_agent else 'Unassigned',
+                'is_me': conv.assigned_agent == agent if conv.assigned_agent else False,
+            } if conv.assigned_agent else {'name': 'Unassigned - Available', 'is_me': False},
             'status': conv.status,
             'priority': conv.priority,
             'agent_unread_count': conv.agent_unread_count,
+            'can_reply': not conv.assigned_agent or conv.assigned_agent == agent,
             'last_message': {
                 'content': last_message.content[:50] if last_message else '',
                 'created_at': last_message.created_at.isoformat() if last_message else None,
@@ -141,8 +145,17 @@ def agent_get_messages(request, conversation_id):
     
     conversation = get_object_or_404(Conversation, conversation_id=conversation_id)
     
+    # Check if this agent is allowed to view this conversation
+    # Agents can view all conversations, but only reply to their assigned ones
+    is_assigned = conversation.assigned_agent == agent if conversation.assigned_agent else True
+    
     # Get last message ID from request to only return new messages
-    last_message_id = request.GET.get('last_message_id', 0)
+    # Accept both 'after' and 'last_message_id' parameters for compatibility
+    last_message_id = request.GET.get('after') or request.GET.get('last_message_id') or '0'
+    try:
+        last_message_id = int(last_message_id)
+    except (ValueError, TypeError):
+        last_message_id = 0
     
     messages = Message.objects.filter(
         conversation=conversation,
@@ -178,7 +191,12 @@ def agent_get_messages(request, conversation_id):
             'created_at': msg.created_at.isoformat(),
         })
     
-    return JsonResponse({'messages': messages_data})
+    return JsonResponse({
+        'messages': messages_data,
+        'is_assigned_to_me': conversation.assigned_agent == agent if conversation.assigned_agent else False,
+        'assigned_agent_name': conversation.assigned_agent.display_name if conversation.assigned_agent else None,
+        'can_reply': not conversation.assigned_agent or conversation.assigned_agent == agent
+    })
 
 
 @login_required
@@ -205,10 +223,18 @@ def agent_send_message(request):
     conversation = get_object_or_404(Conversation, conversation_id=conversation_id)
     
     try:
-        # Assign conversation to agent if not assigned
+        # Check if conversation is already assigned to a different agent
+        if conversation.assigned_agent and conversation.assigned_agent != agent:
+            return JsonResponse({
+                'success': False, 
+                'message': f'This conversation is already assigned to {conversation.assigned_agent.display_name}. Only the assigned agent can reply.'
+            }, status=403)
+        
+        # Auto-assign conversation to this agent if not assigned (first reply wins)
         if not conversation.assigned_agent:
             conversation.assigned_agent = agent
-            conversation.save(update_fields=['assigned_agent'])
+            conversation.status = 'open'  # Change from pending to open
+            conversation.save(update_fields=['assigned_agent', 'status'])
         
         # Create message
         message_data = {
@@ -232,6 +258,9 @@ def agent_send_message(request):
         conversation.user_unread_count = F('user_unread_count') + 1
         conversation.save(update_fields=['last_message_at', 'user_unread_count'])
         
+        # Refresh conversation to get updated values
+        conversation.refresh_from_db()
+        
         return JsonResponse({
             'success': True,
             'message': {
@@ -244,7 +273,9 @@ def agent_send_message(request):
                 'message_type': message.message_type,
                 'attachment': message.attachment.url if message.attachment else None,
                 'attachment_name': message.attachment_name
-            }
+            },
+            'assigned_agent_name': conversation.assigned_agent.display_name if conversation.assigned_agent else None,
+            'is_assigned_to_me': conversation.assigned_agent == agent if conversation.assigned_agent else False
         })
     
     except Exception as e:
@@ -255,7 +286,7 @@ def agent_send_message(request):
 @user_passes_test(is_support_agent)
 @require_http_methods(["POST"])
 def agent_update_conversation(request, conversation_id):
-    """API endpoint to update conversation status, priority, etc."""
+    """API endpoint to update conversation status, priority, assignment, etc."""
     try:
         agent = SupportAgent.objects.get(user=request.user)
     except SupportAgent.DoesNotExist:
@@ -274,9 +305,55 @@ def agent_update_conversation(request, conversation_id):
         if 'priority' in data:
             conversation.priority = data['priority']
         
-        # Assign to agent
+        # Assign to agent (manual reassignment)
         if 'assign_to_me' in data and data['assign_to_me']:
+            # Check if conversation is already assigned to someone else
+            if conversation.assigned_agent and conversation.assigned_agent != agent:
+                # This is a reassignment - only allow if user has permission
+                if not request.user.is_staff:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Cannot reassign. This conversation is assigned to {conversation.assigned_agent.display_name}. Only admins can reassign conversations.'
+                    }, status=403)
+            
+            # Assign or reassign to this agent
+            old_agent = conversation.assigned_agent.display_name if conversation.assigned_agent else None
             conversation.assigned_agent = agent
+            
+            # Create a system message about reassignment
+            if old_agent and old_agent != agent.display_name:
+                Message.objects.create(
+                    conversation=conversation,
+                    sender=request.user,
+                    is_agent=True,
+                    message_type='system',
+                    content=f'Conversation reassigned from {old_agent} to {agent.display_name}'
+                )
+        
+        # Reassign to another agent (admin only)
+        if 'reassign_to_agent_id' in data:
+            if not request.user.is_staff:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Only admins can reassign conversations to other agents.'
+                }, status=403)
+            
+            new_agent_id = data['reassign_to_agent_id']
+            try:
+                new_agent = SupportAgent.objects.get(id=new_agent_id)
+                old_agent = conversation.assigned_agent.display_name if conversation.assigned_agent else 'Unassigned'
+                conversation.assigned_agent = new_agent
+                
+                # Create system message
+                Message.objects.create(
+                    conversation=conversation,
+                    sender=request.user,
+                    is_agent=True,
+                    message_type='system',
+                    content=f'Conversation reassigned from {old_agent} to {new_agent.display_name}'
+                )
+            except SupportAgent.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Invalid agent ID'}, status=400)
         
         conversation.save()
         
@@ -285,7 +362,8 @@ def agent_update_conversation(request, conversation_id):
             'conversation': {
                 'status': conversation.status,
                 'priority': conversation.priority,
-                'assigned_agent': agent.display_name if conversation.assigned_agent else None,
+                'assigned_agent': conversation.assigned_agent.display_name if conversation.assigned_agent else None,
+                'is_assigned_to_me': conversation.assigned_agent == agent if conversation.assigned_agent else False,
             }
         })
     
@@ -373,3 +451,24 @@ def agent_mark_messages_read(request, conversation_id):
         'success': True,
         'marked_read': unread_count
     })
+
+
+@login_required
+@user_passes_test(is_support_agent)
+@require_http_methods(["GET"])
+def get_agents_list(request):
+    """Get list of all active support agents for reassignment"""
+    agents = SupportAgent.objects.filter(
+        is_active=True
+    ).select_related('user').order_by('display_name')
+    
+    agents_data = []
+    for agent in agents:
+        agents_data.append({
+            'id': agent.id,
+            'display_name': agent.display_name,
+            'email': agent.user.email,
+            'is_online': agent.is_online,
+        })
+    
+    return JsonResponse({'agents': agents_data})
