@@ -145,9 +145,9 @@
                                 </div>
                             </div>
                             {% else %}
-                            <div class="alert alert-info mb-3">
+                            {% comment %} <div class="alert alert-info mb-3">
                                 <i class="fas fa-info-circle"></i> Please add your delivery address
-                            </div>
+                            </div> {% endcomment %}
                             <div class="new-address-form">
                                 <div class="row g-3">
                                     <div class="col-md-6">
@@ -208,7 +208,7 @@
                                     </label>
                                 </div>
 
-                                <div class="payment-method-card">
+                                {% comment %} <div class="payment-method-card">
                                     <input class="form-check-input" type="radio" name="payment_method" id="bkash" value="bkash" required>
                                     <label class="payment-method-label" for="bkash">
                                         <div class="payment-icon bkash-icon">
@@ -245,7 +245,7 @@
                                             <div class="payment-desc">Mobile payment</div>
                                         </div>
                                     </label>
-                                </div>
+                                </div> {% endcomment %}
 
                                 <div class="payment-method-card">
                                     <input class="form-check-input" type="radio" name="payment_method" id="sslcommerz" value="sslcommerz" required>
@@ -254,8 +254,8 @@
                                             <i class="fas fa-credit-card"></i>
                                         </div>
                                         <div class="payment-info">
-                                            <div class="payment-name">Card Payment</div>
-                                            <div class="payment-desc">Credit/Debit card</div>
+                                            <div class="payment-name">SSLCommerz</div>
+                                            <div class="payment-desc">Mobile Net and Credit/Debit card</div>
                                         </div>
                                     </label>
                                 </div>
@@ -350,7 +350,7 @@
                             </div>
 
                             <!-- Security Badge -->
-                            <div class="security-badges">
+                            {% comment %} <div class="security-badges">
                                 <div class="security-item">
                                     <i class="fas fa-shield-alt"></i>
                                     <span>Secure Checkout</span>
@@ -359,7 +359,7 @@
                                     <i class="fas fa-lock"></i>
                                     <span>SSL Encrypted</span>
                                 </div>
-                            </div>
+                            </div> {% endcomment %}
 
                             <!-- Accepted Payment Methods -->
                             <div class="accepted-payments">
