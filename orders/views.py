@@ -16,25 +16,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-@login_required
 def checkout(request):
-    """Checkout view"""
-    # Get cart items
-    cart_items = Cart.objects.filter(user=request.user).select_related('book')
+    """Checkout view - Shows cart and handles order placement"""
+    # Get cart items for both authenticated and guest users
+    cart_items = []
     
-    if not cart_items.exists():
-        messages.error(request, 'Your cart is empty.')
-        return redirect('books:cart')
-    
-    # Check stock availability
-    for item in cart_items:
-        if item.quantity > item.book.stock:
-            messages.error(request, f'{item.book.title} has insufficient stock.')
-            return redirect('books:cart')
+    if request.user.is_authenticated:
+        cart_items = Cart.objects.filter(user=request.user).select_related('book')
+    elif request.session.session_key:
+        cart_items = Cart.objects.filter(session_key=request.session.session_key).select_related('book')
     
     # Calculate totals
-    subtotal = sum(item.subtotal for item in cart_items)
-    shipping = Decimal('60.00')  # Flat rate
+    subtotal = sum(item.subtotal for item in cart_items) if cart_items else 0
+    shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')  # Flat rate
     
     # Get coupon discount from session
     discount = Decimal(str(request.session.get('discount', 0)))
@@ -42,7 +36,32 @@ def checkout(request):
     
     total = subtotal + shipping - discount
     
+    # Get addresses if user is authenticated
+    addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-id') if request.user.is_authenticated else []
+    
+    # Handle form submission - REQUIRE LOGIN for order placement
     if request.method == 'POST':
+        # Require login to place order
+        if not request.user.is_authenticated:
+            messages.warning(request, 'Please login to complete your order.')
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+        
+        # Check if cart is empty
+        cart_items = Cart.objects.filter(user=request.user).select_related('book')
+        if not cart_items.exists():
+            messages.error(request, 'Your cart is empty.')
+            return redirect('orders:checkout')
+        
+        # Check stock availability
+        for item in cart_items:
+            if item.quantity > item.book.stock:
+                messages.error(request, f'{item.book.title} has insufficient stock.')
+                return redirect('orders:checkout')
+        
+        # Recalculate totals for order placement
+        subtotal = sum(item.subtotal for item in cart_items)
+        shipping = Decimal('60.00')  # Flat rate
+        
         form = CheckoutForm(request.POST, user=request.user)
         if form.is_valid():
             # Get or create shipping address

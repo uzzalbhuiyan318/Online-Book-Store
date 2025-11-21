@@ -7,21 +7,20 @@
 <div class="checkout-page">
     <div class="container py-4">
         <!-- Breadcrumb -->
-        <nav aria-label="breadcrumb" class="mb-4">
+        <nav aria-label="breadcrumb" class="mb-1">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'books:home' %}"><i class="fas fa-home"></i> Home</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'books:cart' %}">Cart</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Checkout</li>
             </ol>
         </nav>
 
         <!-- Page Header -->
-        <div class="checkout-page-header mb-4">
+        {% comment %} <div class="checkout-page-header mb-4">
             <h1 class="checkout-title">
                 <i class="fas fa-shopping-cart"></i> Checkout
             </h1>
             <p class="checkout-subtitle">Review your order and complete your purchase</p>
-        </div>
+        </div> {% endcomment %}
 
         <form method="post" id="checkout-form">
             {% csrf_token %}
@@ -73,9 +72,9 @@
                                     </div>
                                     
                                     <div class="item-quantity-control">
-                                        <button type="button" class="qty-btn qty-minus" data-book-id="{{ item.book.id }}">−</button>
-                                        <input type="number" class="qty-input" value="{{ item.quantity }}" min="1" max="{{ item.book.stock }}" data-book-id="{{ item.book.id }}" readonly>
-                                        <button type="button" class="qty-btn qty-plus" data-book-id="{{ item.book.id }}">+</button>
+                                        <button type="button" class="qty-btn qty-minus" data-cart-id="{{ item.id }}" data-max="{{ item.book.stock }}">−</button>
+                                        <input type="number" class="qty-input" value="{{ item.quantity }}" min="1" max="{{ item.book.stock }}" data-cart-id="{{ item.id }}" readonly>
+                                        <button type="button" class="qty-btn qty-plus" data-cart-id="{{ item.id }}" data-max="{{ item.book.stock }}">+</button>
                                     </div>
                                     
                                     <div class="item-pricing">
@@ -87,7 +86,7 @@
                                     
                                     <div class="item-total-section">
                                         <div class="item-total-price">৳{{ item.subtotal }}</div>
-                                        <button type="button" class="btn-remove-item" data-book-id="{{ item.book.id }}" title="Remove">
+                                        <button type="button" class="btn-remove-item" data-cart-id="{{ item.id }}" title="Remove">
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </div>
@@ -345,8 +344,8 @@
                                 <button type="submit" class="btn-proceed-checkout" {% if not cart_items %}disabled{% endif %}>
                                     <i class="fas fa-lock"></i> Place Order
                                 </button>
-                                <a href="{% url 'books:cart' %}" class="btn-back-to-cart">
-                                    <i class="fas fa-arrow-left"></i> Back to Cart
+                                <a href="{% url 'books:book_list' %}" class="btn-back-to-cart">
+                                    <i class="fas fa-arrow-left"></i> Continue Shopping
                                 </a>
                             </div>
 
@@ -478,11 +477,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Quantity buttons
     document.querySelectorAll('.qty-minus, .qty-plus').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const bookId = this.dataset.bookId;
-            const input = document.querySelector(`input.qty-input[data-book-id="${bookId}"]`);
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const cartId = this.dataset.cartId;
+            
+            if (!cartId) {
+                console.error('Cart ID not found on button:', this);
+                showToast('Error: Cart ID not found', 'error');
+                return;
+            }
+            
+            const input = document.querySelector(`input.qty-input[data-cart-id="${cartId}"]`);
+            if (!input) {
+                console.error('Input not found for cart ID:', cartId);
+                showToast('Error: Input field not found', 'error');
+                return;
+            }
+            
             const currentVal = parseInt(input.value) || 1;
-            const maxVal = parseInt(input.max) || 999;
+            const maxVal = parseInt(this.dataset.max) || 999;
             
             let newVal = currentVal;
             if (this.classList.contains('qty-minus')) {
@@ -492,7 +505,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (newVal !== currentVal) {
-                updateCartQuantity(bookId, newVal);
+                input.value = newVal;
+                console.log('Updating cart ID:', cartId, 'to quantity:', newVal);
+                updateCartQuantity(cartId, newVal);
             }
         });
     });
@@ -500,9 +515,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Remove item buttons
     document.querySelectorAll('.btn-remove-item').forEach(btn => {
         btn.addEventListener('click', function() {
-            const bookId = this.dataset.bookId;
+            const cartId = this.dataset.cartId;
             if (confirm('Remove this item from cart?')) {
-                removeFromCart(bookId);
+                removeFromCart(cartId);
             }
         });
     });
@@ -529,18 +544,17 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Update cart quantity via AJAX
-function updateCartQuantity(bookId, quantity) {
-    const cartItem = document.querySelector(`[data-book-id="${bookId}"]`);
-    if (!cartItem) return;
-    
-    // Find the cart ID from the data attribute or form
-    const cartId = cartItem.getAttribute('data-cart-id');
+function updateCartQuantity(cartId, quantity) {
     if (!cartId) {
         showToast('Cart item ID not found', 'error');
         return;
     }
     
-    fetch(`/books/cart/update/${cartId}/`, {
+    console.log('Updating cart ID:', cartId, 'to quantity:', quantity);
+    const updateUrl = '{% url "books:update_cart" 0 %}'.replace('/0/', `/${cartId}/`);
+    console.log('Update URL:', updateUrl);
+    
+    fetch(updateUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -548,44 +562,140 @@ function updateCartQuantity(bookId, quantity) {
         },
         body: `quantity=${quantity}`
     })
-    .then(response => response.text())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        showToast('Quantity updated', 'success');
-        setTimeout(() => location.reload(), 500);
+        console.log('Response data:', data);
+        if (data.success) {
+            // Update the item subtotal
+            const cartItemCard = document.querySelector(`[data-cart-id="${cartId}"]`);
+            if (cartItemCard) {
+                const itemTotalPrice = cartItemCard.querySelector('.item-total-price');
+                if (itemTotalPrice) {
+                    itemTotalPrice.textContent = '৳' + data.item_subtotal.toFixed(2);
+                }
+            }
+            
+            // Update order summary
+            updateOrderSummary(data.subtotal, data.shipping_cost, data.total, data.cart_count);
+            
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message || 'Failed to remove item', 'error');
+            if (data.reload) {
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+    })
+    .catch(error => {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Failed to update quantity', 'error');
+        showToast('Failed to update quantity: ' + error.message, 'error');
+        setTimeout(() => location.reload(), 1500);
     });
 }
 
 // Remove from cart via AJAX
-function removeFromCart(bookId) {
-    const cartItem = document.querySelector(`[data-book-id="${bookId}"]`);
-    if (!cartItem) return;
-    
-    const cartId = cartItem.getAttribute('data-cart-id');
+function removeFromCart(cartId) {
     if (!cartId) {
         showToast('Cart item ID not found', 'error');
         return;
     }
     
-    fetch(`/books/cart/remove/${cartId}/`, {
+    console.log('Removing cart ID:', cartId);
+    const removeUrl = '{% url "books:remove_from_cart" 0 %}'.replace('/0/', `/${cartId}/`);
+    console.log('Remove URL:', removeUrl);
+    
+    fetch(removeUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': '{{ csrf_token }}'
         }
     })
-    .then(response => response.text())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        showToast('Item removed from cart', 'success');
-        setTimeout(() => location.reload(), 500);
+        console.log('Response data:', data);
+        if (data.success) {
+            // Remove the cart item card with animation
+            const cartItemCard = document.querySelector(`[data-cart-id="${cartId}"]`);
+            if (cartItemCard) {
+                cartItemCard.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out';
+                cartItemCard.style.opacity = '0';
+                cartItemCard.style.transform = 'translateX(20px)';
+                
+                setTimeout(() => {
+                    cartItemCard.remove();
+                    
+                    // Update order summary
+                    updateOrderSummary(data.subtotal, data.shipping_cost, data.total, data.cart_count);
+                    
+                    // Check if cart is now empty
+                    const remainingItems = document.querySelectorAll('.cart-item-card');
+                    if (remainingItems.length === 0) {
+                        location.reload(); // Reload to show empty cart message
+                    }
+                }, 300);
+            }
+            
+            showToast(data.message, 'success');
+        } else {
+            showToast(data.message || 'Failed to remove item', 'error');
+            if (data.reload) {
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Failed to remove item', 'error');
+        showToast('Failed to remove item: ' + error.message, 'error');
+        setTimeout(() => location.reload(), 1500);
     });
+}
+
+// Update order summary totals
+function updateOrderSummary(subtotal, shippingCost, total, cartCount) {
+    // Update subtotal
+    const subtotalElement = document.querySelector('.summary-row .summary-value');
+    if (subtotalElement) {
+        subtotalElement.textContent = '৳' + subtotal.toFixed(2);
+    }
+    
+    // Update shipping cost
+    const shippingElements = document.querySelectorAll('.summary-row .summary-value');
+    if (shippingElements.length >= 2) {
+        shippingElements[1].textContent = '৳' + shippingCost.toFixed(2);
+    }
+    
+    // Update total
+    const totalElement = document.querySelector('.total-row .summary-value');
+    if (totalElement) {
+        totalElement.textContent = '৳' + total.toFixed(2);
+    }
+    
+    // Update cart count in header
+    const sectionTitle = document.querySelector('.section-title span');
+    if (sectionTitle) {
+        sectionTitle.textContent = `Order Items (${cartCount})`;
+    }
+    
+    // Update navbar cart badge if exists
+    const cartBadge = document.querySelector('.cart-badge, .badge');
+    if (cartBadge && cartCount > 0) {
+        cartBadge.textContent = cartCount;
+    }
 }
 
 // Toast notification function

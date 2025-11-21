@@ -6,6 +6,9 @@ from django.core.paginator import Paginator
 from django.http import JsonResponse
 from .models import Book, Category, Cart, Wishlist, Review, Banner
 from .forms import ReviewForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def home(request):
@@ -329,35 +332,120 @@ def add_to_cart(request, book_id):
 
 def update_cart(request, cart_id):
     """Update cart item quantity"""
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'})
+    
+    try:
         quantity = int(request.POST.get('quantity', 1))
         
+        # Try to find cart item - check both user and session
+        cart_item = None
+        
         if request.user.is_authenticated:
-            cart_item = get_object_or_404(Cart, id=cart_id, user=request.user)
+            # Try user's cart first
+            try:
+                cart_item = Cart.objects.get(id=cart_id, user=request.user)
+            except Cart.DoesNotExist:
+                logger.warning(f'Cart {cart_id} not found for authenticated user {request.user.email}')
+                return JsonResponse({'success': False, 'message': 'Cart item not found', 'reload': True})
         else:
-            cart_item = get_object_or_404(Cart, id=cart_id, session_key=request.session.session_key)
+            # Guest user - use session
+            session_key = request.session.session_key
+            if not session_key:
+                # Try to create session
+                if not request.session.exists(request.session.session_key):
+                    request.session.create()
+                    session_key = request.session.session_key
+                else:
+                    return JsonResponse({'success': False, 'message': 'No session found', 'reload': True})
+            
+            try:
+                cart_item = Cart.objects.get(id=cart_id, session_key=session_key)
+            except Cart.DoesNotExist:
+                logger.warning(f'Cart {cart_id} not found for session {session_key}')
+                return JsonResponse({'success': False, 'message': 'Cart item not found', 'reload': True})
+        
+        if not cart_item:
+            return JsonResponse({'success': False, 'message': 'Cart item not found', 'reload': True})
         
         if quantity > 0:
             cart_item.quantity = quantity
             cart_item.save()
-            messages.success(request, 'Cart updated!')
+            item_subtotal = cart_item.subtotal
         else:
             cart_item.delete()
-            messages.success(request, 'Item removed from cart!')
-    
-    return redirect('books:cart')
+            item_subtotal = 0
+        
+        # Calculate updated cart totals
+        if request.user.is_authenticated:
+            cart_items = Cart.objects.filter(user=request.user)
+        else:
+            cart_items = Cart.objects.filter(session_key=session_key)
+        
+        subtotal = sum(item.subtotal for item in cart_items)
+        cart_count = sum(item.quantity for item in cart_items)
+        shipping_cost = 60 if subtotal > 0 else 0
+        total = subtotal + shipping_cost
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Cart updated successfully',
+            'item_subtotal': float(item_subtotal),
+            'subtotal': float(subtotal),
+            'shipping_cost': float(shipping_cost),
+            'total': float(total),
+            'cart_count': cart_count,
+            'quantity': quantity
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
 
 def remove_from_cart(request, cart_id):
     """Remove item from cart"""
-    if request.user.is_authenticated:
-        cart_item = get_object_or_404(Cart, id=cart_id, user=request.user)
-    else:
-        cart_item = get_object_or_404(Cart, id=cart_id, session_key=request.session.session_key)
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Invalid request method'})
     
-    cart_item.delete()
-    messages.success(request, 'Item removed from cart!')
-    return redirect('books:cart')
+    try:
+        # Find cart item
+        if request.user.is_authenticated:
+            try:
+                cart_item = Cart.objects.get(id=cart_id, user=request.user)
+            except Cart.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Cart item not found'})
+        else:
+            session_key = request.session.session_key
+            if not session_key:
+                return JsonResponse({'success': False, 'message': 'Session not found'})
+            try:
+                cart_item = Cart.objects.get(id=cart_id, session_key=session_key)
+            except Cart.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Cart item not found'})
+        
+        cart_item.delete()
+        
+        # Calculate updated cart totals
+        if request.user.is_authenticated:
+            cart_items = Cart.objects.filter(user=request.user)
+        else:
+            cart_items = Cart.objects.filter(session_key=session_key)
+        
+        subtotal = sum(item.subtotal for item in cart_items)
+        cart_count = sum(item.quantity for item in cart_items)
+        shipping_cost = 60 if subtotal > 0 else 0
+        total = subtotal + shipping_cost
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Item removed from cart',
+            'subtotal': float(subtotal),
+            'shipping_cost': float(shipping_cost),
+            'total': float(total),
+            'cart_count': cart_count,
+            'removed': True
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
 
 def clear_cart(request):
