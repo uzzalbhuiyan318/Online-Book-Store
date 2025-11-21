@@ -64,7 +64,9 @@
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     overflow: hidden;
-    margin-bottom: 10px;
+    position: absolute;
+    bottom: 70px;
+    right: 0;
 }
 
 .chat-window.open {
@@ -474,7 +476,11 @@
         width: 100vw;
         height: 100vh;
         border-radius: 0;
-        margin: 0;
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        top: 0;
     }
     
     .chat-widget.bottom-right,

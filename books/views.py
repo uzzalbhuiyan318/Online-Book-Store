@@ -322,7 +322,7 @@ def add_to_cart(request, book_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': True,
-            'message': f'{book.title} added to cart!',
+            'message': '',
             'cart_count': cart_count
         })
     

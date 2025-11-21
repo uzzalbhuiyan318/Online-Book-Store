@@ -288,14 +288,14 @@ document.querySelectorAll('.add-to-cart').forEach(button => {
                     btn.disabled = false;
                 }, 2000);
             } else {
-                alert(data.message || 'Failed to add to cart');
+                // Silent error - just reset button
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            // Silent error - just reset button
             btn.innerHTML = originalText;
             btn.disabled = false;
         });

@@ -584,7 +584,7 @@ function updateCartQuantity(cartId, quantity) {
             // Update order summary
             updateOrderSummary(data.subtotal, data.shipping_cost, data.total, data.cart_count);
             
-            showToast(data.message, 'success');
+            // Silent update - no toast notification
         } else {
             showToast(data.message || 'Failed to remove item', 'error');
             if (data.reload) {
@@ -596,7 +596,7 @@ function updateCartQuantity(cartId, quantity) {
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('Failed to update quantity: ' + error.message, 'error');
+        // Silent error - reload to sync cart state
         setTimeout(() => location.reload(), 1500);
     });
 }

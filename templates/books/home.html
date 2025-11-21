@@ -392,12 +392,16 @@ $(document).ready(function() {
                         button.prop('disabled', false);
                     }, 2000);
                 } else {
-                    alert(response.message || 'Failed to add to cart');
+                    // Silent error - just reset button
+                    button.html('<i class="fas fa-shopping-cart"></i> Add to Cart');
+                    button.prop('disabled', false);
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
-                alert('An error occurred. Please try again.');
+                // Silent error - just reset button
+                button.html('<i class="fas fa-shopping-cart"></i> Add to Cart');
+                button.prop('disabled', false);
             }
         });
     });
