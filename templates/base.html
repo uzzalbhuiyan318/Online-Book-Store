@@ -167,7 +167,7 @@
                     <div class="dropdown-menu mega-menu">
                         <div class="container">
                             <div class="row g-2">
-                                {% for author in authors %}
+                                {% for author in nav_authors %}
                                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                     <a href="{% url 'books:book_list' %}?author={{ author.author|urlencode }}" class="category-item">
                                         <i class="fas fa-user text-info me-2"></i>
@@ -191,7 +191,7 @@
                     <div class="dropdown-menu mega-menu">
                         <div class="container">
                             <div class="row g-2">
-                                {% for publisher in publishers %}
+                                {% for publisher in nav_publishers %}
                                 <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                     <a href="{% url 'books:book_list' %}?publisher={{ publisher.publisher|urlencode }}" class="category-item">
                                         <i class="fas fa-building text-success me-2"></i>

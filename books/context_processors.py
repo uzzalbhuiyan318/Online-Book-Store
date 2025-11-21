@@ -30,13 +30,14 @@ def categories_context(request):
     """Add active categories, authors, and publishers to context"""
     categories = Category.objects.filter(is_active=True)
     
-    # Get unique authors with book count
-    authors = Book.objects.filter(is_active=True).values('author').annotate(
+    # Get unique authors with book count for the site navigation (avoid clashing with
+    # view-level `authors` context variables used on listing pages)
+    nav_authors = Book.objects.filter(is_active=True).values('author').annotate(
         book_count=Count('id')
     ).order_by('author')[:50]  # Limit to 50 authors
-    
-    # Get unique publishers with book count
-    publishers = Book.objects.filter(is_active=True, publisher__isnull=False).exclude(
+
+    # Get unique publishers with book count for the site navigation
+    nav_publishers = Book.objects.filter(is_active=True, publisher__isnull=False).exclude(
         publisher=''
     ).values('publisher').annotate(
         book_count=Count('id')
@@ -44,6 +45,6 @@ def categories_context(request):
     
     return {
         'categories': categories,
-        'authors': authors,
-        'publishers': publishers,
+        'nav_authors': nav_authors,
+        'nav_publishers': nav_publishers,
     }
