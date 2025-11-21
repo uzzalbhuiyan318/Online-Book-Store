@@ -188,6 +188,51 @@ main {
     font-weight: 700;
 }
 
+/* ======================================================
+   Rental Detail Page - Premium Blue overrides
+   Scope all styles under `.rental-detail-page` to avoid
+   affecting other pages while applying the brand color.
+   ====================================================== */
+.rental-detail-page .card-header {
+    background: linear-gradient(90deg, var(--premium-blue) 0%, var(--premium-blue-dark) 100%);
+    color: #ffffff;
+    border: none;
+}
+
+.rental-detail-page .badge {
+    background: var(--premium-blue) !important;
+    color: #ffffff !important;
+}
+
+/* Make action buttons use premium blue variants on this page */
+.rental-detail-page .btn-success,
+.rental-detail-page .btn-warning,
+.rental-detail-page .btn-info,
+.rental-detail-page .btn-danger,
+.rental-detail-page .btn-secondary {
+    background: var(--premium-blue) !important;
+    border-color: var(--premium-blue) !important;
+    color: #ffffff !important;
+}
+
+.rental-detail-page .btn-outline-secondary {
+    color: var(--premium-blue) !important;
+    border-color: rgba(37,99,235,0.2) !important;
+}
+
+/* Alerts on this page get a soft blue tone */
+.rental-detail-page .alert-info {
+    background-color: rgba(37,99,235,0.06);
+    border-color: rgba(37,99,235,0.12);
+    color: #1e3a8a;
+}
+
+/* Minor spacing tuning if required */
+.rental-detail-page .card {
+    overflow: visible;
+}
+
+
 .checkout-page-header .checkout-subtitle {
     margin: 0;
     color: rgba(255,255,255,0.95);
