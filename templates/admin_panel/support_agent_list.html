@@ -18,27 +18,70 @@
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Agent</th>
-                        <th>Email</th>
+                        <th>Avatar</th>
+                        <th>Agent Info</th>
+                        <th>User Account</th>
+                        <th>Contact Email</th>
                         <th>Status</th>
+                        <th>Online</th>
+                        <th>Order</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for agent in agents %}
                     <tr>
-                        <td><strong>{{ agent.user.full_name|default:agent.user.email }}</strong></td>
-                        <td>{{ agent.user.email }}</td>
                         <td>
-                            {% if agent.is_available %}
-                            <span class="status-badge status-active">Available</span>
+                            {% if agent.avatar %}
+                            <img src="{{ agent.avatar.url }}" alt="{{ agent.display_name }}" 
+                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                             {% else %}
-                            <span class="status-badge status-inactive">Unavailable</span>
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                        display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                {{ agent.display_name|first|upper }}
+                            </div>
                             {% endif %}
                         </td>
                         <td>
+                            <strong>{{ agent.display_name }}</strong>
+                            {% if agent.display_name_bn %}
+                            <br><small class="text-muted">{{ agent.display_name_bn }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div>{{ agent.user.full_name|default:agent.user.email }}</div>
+                            <small class="text-muted">{{ agent.user.email }}</small>
+                            <br>
+                            {% if agent.user.is_staff %}
+                            <span class="badge bg-success mt-1">
+                                <i class="fas fa-shield-alt"></i> Staff Access Granted
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark mt-1">
+                                <i class="fas fa-shield-alt"></i> No Staff Access
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ agent.email }}</td>
+                        <td>
+                            {% if agent.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if agent.is_online %}
+                            <span class="badge bg-success"><i class="fas fa-circle"></i> Online</span>
+                            {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-circle"></i> Offline</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ agent.order }}</td>
+                        <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'admin_panel:support_agent_edit' agent.id %}" class="btn btn-outline-primary">
+                                <a href="{% url 'admin_panel:support_agent_edit' agent.id %}" 
+                                   class="btn btn-outline-primary" title="Edit Agent">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             </div>
@@ -48,11 +91,27 @@
                 </tbody>
             </table>
         </div>
+        
+        {% comment %} <div class="mt-3">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Managing Agent Access:</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Click <strong>Edit</strong> to manage agent details and permissions</li>
+                    <li>Toggle <strong>"Grant Staff Access"</strong> to control Agent Dashboard access</li>
+                    <li>Agents with "Staff Access Granted" badge can login to Agent Dashboard</li>
+                    <li>Agents without staff access cannot access the Agent Panel</li>
+                </ul>
+            </div>
+        </div> {% endcomment %}
         {% else %}
         <div class="admin-empty-state">
             <i class="fas fa-user-headset"></i>
             <h5>No agents found</h5>
-            <a href="{% url 'admin_panel:support_agent_add' %}" class="btn btn-admin-primary">Add Agent</a>
+            <p>Add support agents to handle customer conversations</p>
+            <a href="{% url 'admin_panel:support_agent_add' %}" class="btn btn-admin-primary">
+                <i class="fas fa-plus"></i> Add First Agent
+            </a>
         </div>
         {% endif %}
     </div>

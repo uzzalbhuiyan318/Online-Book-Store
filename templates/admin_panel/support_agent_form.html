@@ -6,14 +6,201 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="admin-card">
+            <div class="admin-card-header">
+                <h5>
+                    <i class="fas fa-user-headset"></i> 
+                    {% if form.instance.pk %}Edit Agent: {{ form.instance.display_name }}{% else %}Add New Support Agent{% endif %}
+                </h5>
+            </div>
             <div class="admin-card-body">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-admin-primary">Save</button>
-                    <a href="{% url 'admin_panel:support_agent_list' %}" class="btn btn-admin-secondary">Cancel</a>
+                    
+                    <div class="row">
+                        <div class="col-md-12 mb-4">
+                            <div class="alert alert-primary">
+                                <h6 class="mb-3"><i class="fas fa-user-shield"></i> User & Permissions</h6>
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="{{ form.user.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-user"></i> User Account *
+                                        </label>
+                                        {{ form.user }}
+                                        {% if form.user.help_text %}
+                                        <div class="form-text">{{ form.user.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.user.errors %}
+                                            <div class="text-danger">{{ form.user.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label fw-bold d-block">
+                                            <i class="fas fa-shield-alt"></i> Access Control
+                                        </label>
+                                        <div class="form-check form-switch mt-2">
+                                            {{ form.grant_staff_access }}
+                                            <label class="form-check-label" for="{{ form.grant_staff_access.id_for_label }}">
+                                                <strong>{{ form.grant_staff_access.label }}</strong>
+                                            </label>
+                                        </div>
+                                        {% if form.grant_staff_access.help_text %}
+                                        <div class="form-text">{{ form.grant_staff_access.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.grant_staff_access.errors %}
+                                            <div class="text-danger">{{ form.grant_staff_access.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                <i class="fas fa-envelope"></i> Contact Email *
+                            </label>
+                            {{ form.email }}
+                            <div class="form-text">Email address for customer support contact</div>
+                            {% if form.email.errors %}
+                                <div class="text-danger">{{ form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.display_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-id-card"></i> Display Name (English) *
+                            </label>
+                            {{ form.display_name }}
+                            <div class="form-text">Name shown to customers</div>
+                            {% if form.display_name.errors %}
+                                <div class="text-danger">{{ form.display_name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.display_name_bn.id_for_label }}" class="form-label">
+                                <i class="fas fa-id-card"></i> Display Name (Bengali)
+                            </label>
+                            {{ form.display_name_bn }}
+                            <div class="form-text">Name in Bengali (optional)</div>
+                            {% if form.display_name_bn.errors %}
+                                <div class="text-danger">{{ form.display_name_bn.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="{{ form.avatar.id_for_label }}" class="form-label">
+                                <i class="fas fa-image"></i> Avatar Image
+                            </label>
+                            {{ form.avatar }}
+                            {% if form.instance.avatar %}
+                            <div class="mt-2">
+                                <img src="{{ form.instance.avatar.url }}" alt="Current avatar" style="max-width: 100px; max-height: 100px; border-radius: 50%;">
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Upload agent profile picture</div>
+                            {% if form.avatar.errors %}
+                                <div class="text-danger">{{ form.avatar.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label">
+                                <i class="fas fa-info-circle"></i> Bio (English)
+                            </label>
+                            {{ form.bio }}
+                            <div class="form-text">Agent description or introduction</div>
+                            {% if form.bio.errors %}
+                                <div class="text-danger">{{ form.bio.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.bio_bn.id_for_label }}" class="form-label">
+                                <i class="fas fa-info-circle"></i> Bio (Bengali)
+                            </label>
+                            {{ form.bio_bn }}
+                            <div class="form-text">Agent bio in Bengali (optional)</div>
+                            {% if form.bio_bn.errors %}
+                                <div class="text-danger">{{ form.bio_bn.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.order.id_for_label }}" class="form-label">
+                                <i class="fas fa-sort"></i> Display Order
+                            </label>
+                            {{ form.order }}
+                            <div class="form-text">Lower numbers appear first</div>
+                            {% if form.order.errors %}
+                                <div class="text-danger">{{ form.order.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check form-switch mt-4">
+                                {{ form.is_online }}
+                                <label class="form-check-label" for="{{ form.is_online.id_for_label }}">
+                                    <i class="fas fa-circle"></i> Currently Online
+                                </label>
+                            </div>
+                            {% if form.is_online.errors %}
+                                <div class="text-danger">{{ form.is_online.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check form-switch mt-4">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    <i class="fas fa-check-circle"></i> Active Agent
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="text-danger">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    {% comment %} <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Important:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Enable <strong>"Grant Staff Access"</strong> to allow this agent to access the Agent Dashboard</li>
+                            <li>Staff access grants the <code>is_staff</code> permission required for agent panel login</li>
+                            <li>You can toggle this permission anytime by editing the agent</li>
+                            <li>Removing staff access will prevent agent from accessing the dashboard</li>
+                        </ul>
+                    </div> {% endcomment %}
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-admin-primary">
+                            <i class="fas fa-save"></i> Save Agent
+                        </button>
+                        <a href="{% url 'admin_panel:support_agent_list' %}" class="btn btn-admin-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>

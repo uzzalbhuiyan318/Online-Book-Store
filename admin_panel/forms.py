@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from books.models import Book, Category, Review, Banner
 from orders.models import Order, Coupon
 from rentals.models import RentalPlan, BookRental, RentalSettings
@@ -201,6 +202,13 @@ class BannerForm(forms.ModelForm):
 
 class SupportAgentForm(forms.ModelForm):
     """Form for creating/editing support agents"""
+    grant_staff_access = forms.BooleanField(
+        required=False,
+        initial=True,
+        label='Grant Staff Access',
+        help_text='Allow this user to access Agent Dashboard (automatically grants is_staff permission)',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
     
     class Meta:
         model = SupportAgent
@@ -217,6 +225,42 @@ class SupportAgentForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from accounts.models import User
+        
+        # Show only users who don't already have a SupportAgent profile
+        existing_agent_users = SupportAgent.objects.values_list('user_id', flat=True)
+        
+        # If editing, include the current agent's user
+        if self.instance.pk:
+            self.fields['user'].queryset = User.objects.filter(
+                Q(id=self.instance.user_id) | ~Q(id__in=existing_agent_users)
+            ).order_by('email')
+            # Set the current staff status
+            self.fields['grant_staff_access'].initial = self.instance.user.is_staff
+            # Show user info as text when editing
+            self.fields['user'].widget.attrs['readonly'] = True
+            self.fields['user'].help_text = f"Current user: {self.instance.user.email}"
+        else:
+            self.fields['user'].queryset = User.objects.exclude(
+                id__in=existing_agent_users
+            ).order_by('email')
+            self.fields['user'].help_text = "Select a user to assign as support agent"
+    
+    def save(self, commit=True):
+        agent = super().save(commit=False)
+        
+        # Handle staff access based on checkbox
+        grant_staff = self.cleaned_data.get('grant_staff_access', True)
+        if agent.user:
+            agent.user.is_staff = grant_staff
+            agent.user.save()
+        
+        if commit:
+            agent.save()
+        return agent
 
 
 class QuickReplyForm(forms.ModelForm):
