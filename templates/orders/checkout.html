@@ -403,7 +403,7 @@ function applyCoupon() {
         return;
     }
     
-    const applyBtn = event.target;
+    const applyBtn = (typeof event !== 'undefined' && event && event.target) ? event.target : document.querySelector('.btn-apply-coupon');
     applyBtn.disabled = true;
     applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Applying...';
     
@@ -415,11 +415,50 @@ function applyCoupon() {
         },
         body: 'coupon_code=' + encodeURIComponent(couponCode)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             showToast(data.message, 'success');
-            setTimeout(() => location.reload(), 1000);
+
+            // Update coupon section in-place to show applied coupon
+            const couponSection = document.querySelector('.coupon-section');
+            if (couponSection) {
+                couponSection.innerHTML = `
+                    <div class="applied-coupon">
+                        <div class="coupon-badge">
+                            <i class="fas fa-tag"></i>
+                            <span>${data.coupon_code}</span>
+                        </div>
+                        <button type="button" class="btn-remove-coupon" title="Remove coupon">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="coupon-success">
+                        <i class="fas fa-check-circle"></i> Coupon applied successfully!
+                    </div>
+                `;
+
+                // Attach event listener to new remove button
+                const removeBtn = couponSection.querySelector('.btn-remove-coupon');
+                if (removeBtn) removeBtn.addEventListener('click', removeCoupon);
+            }
+
+            // Update order summary using returned totals if available
+            if (typeof updateOrderSummary === 'function') {
+                const subtotal = parseFloat(data.subtotal || document.querySelector('.summary-row .summary-value')?.textContent.replace(/[^0-9.]/g, '') || 0);
+                const shipping = parseFloat(data.shipping_cost || 0);
+                const total = parseFloat(data.total || (subtotal + shipping - (data.discount || 0)));
+                updateOrderSummary(subtotal, shipping, total, data.cart_count || 0);
+            }
+
+            // re-enable button state visually
+            applyBtn.disabled = false;
+            applyBtn.textContent = 'Apply';
         } else {
             showToast(data.message || 'Invalid coupon code', 'error');
             applyBtn.disabled = false;
@@ -435,20 +474,51 @@ function applyCoupon() {
 }
 
 function removeCoupon() {
-    if (!confirm('Remove this coupon code?')) {
-        return;
-    }
-    
+    // Ask for confirmation before removing
+    if (!confirm('Remove this coupon code?')) return;
+
     fetch("{% url 'orders:remove_coupon' %}", {
         method: 'POST',
         headers: {
             'X-CSRFToken': '{{ csrf_token }}'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
     .then(data => {
-        showToast('Coupon removed', 'success');
-        setTimeout(() => location.reload(), 500);
+        if (data.success) {
+            showToast(data.message || 'Coupon removed', 'success');
+
+            // Restore coupon input group
+            const couponSection = document.querySelector('.coupon-section');
+            if (couponSection) {
+                couponSection.innerHTML = `
+                    <div class="coupon-input-group">
+                        <input type="text" class="form-control" id="coupon_code" placeholder="Enter coupon code">
+                        <button type="button" class="btn-apply-coupon">Apply</button>
+                    </div>
+                    <small class="coupon-hint">
+                        <i class="fas fa-tag"></i> Have a promo code? Enter it above
+                    </small>
+                `;
+
+                // Re-attach event listener to the newly created apply button
+                const newApplyBtn = couponSection.querySelector('.btn-apply-coupon');
+                if (newApplyBtn) newApplyBtn.addEventListener('click', applyCoupon);
+            }
+
+            // Update order summary using returned totals
+            if (typeof updateOrderSummary === 'function') {
+                const subtotal = parseFloat(data.subtotal || 0);
+                const shipping = parseFloat(data.shipping_cost || 0);
+                const total = parseFloat(data.total || 0);
+                updateOrderSummary(subtotal, shipping, total, data.cart_count || 0);
+            }
+        } else {
+            showToast(data.message || 'Failed to remove coupon', 'error');
+        }
     })
     .catch(error => {
         console.error('Error:', error);

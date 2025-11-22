@@ -493,13 +493,20 @@ def apply_coupon(request):
         request.session['coupon_code'] = coupon.code
         request.session['coupon_id'] = coupon.id
         request.session['discount'] = float(discount)
-        
+        # Recalculate totals to return to frontend (so page doesn't need full reload)
+        shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')
+        total = Decimal(subtotal) + shipping - Decimal(str(discount))
+
         return JsonResponse({
             'success': True,
             'message': f'Coupon applied! You saved ৳{discount:.2f}',
             'discount': float(discount),
             'coupon_code': coupon.code,
-            'discount_display': f'৳{discount:.2f}'
+            'discount_display': f'৳{discount:.2f}',
+            'subtotal': float(subtotal),
+            'shipping_cost': float(shipping),
+            'total': float(total),
+            'cart_count': cart_items.count() if hasattr(cart_items, 'count') else len(cart_items)
         })
     
     return JsonResponse({'success': False, 'message': 'Invalid request'})
@@ -514,10 +521,26 @@ def remove_coupon(request):
         for key in ['coupon_code', 'coupon_id', 'discount']:
             if key in request.session:
                 del request.session[key]
-        
+        # Recalculate totals and return updated summary so frontend can update without reload
+        from books.models import Cart
+        if request.user.is_authenticated:
+            cart_items = Cart.objects.filter(user=request.user)
+        else:
+            cart_items = Cart.objects.filter(session_key=request.session.session_key)
+
+        subtotal = sum(item.subtotal for item in cart_items) if cart_items else 0
+        shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')
+        discount = Decimal(str(request.session.get('discount', 0)))
+        total = Decimal(subtotal) + shipping - discount
+
         return JsonResponse({
             'success': True,
-            'message': 'Coupon removed successfully'
+            'message': 'Coupon removed successfully',
+            'subtotal': float(subtotal),
+            'shipping_cost': float(shipping),
+            'total': float(total),
+            'discount': float(discount),
+            'cart_count': cart_items.count() if hasattr(cart_items, 'count') else len(cart_items)
         })
     
     return JsonResponse({'success': False, 'message': 'Invalid request'})
