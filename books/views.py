@@ -14,9 +14,10 @@ logger = logging.getLogger(__name__)
 def home(request):
     """Homepage view"""
     banners = Banner.objects.filter(is_active=True).order_by('order')[:5]
-    featured_books = Book.objects.filter(is_active=True, is_featured=True)[:8]
-    bestsellers = Book.objects.filter(is_active=True, is_bestseller=True)[:8]
-    new_arrivals = Book.objects.filter(is_active=True).order_by('-created_at')[:8]
+    # Exclude books with missing slugs to avoid reverse URL errors in templates
+    featured_books = Book.objects.filter(is_active=True, is_featured=True).exclude(slug__isnull=True).exclude(slug='')[:8]
+    bestsellers = Book.objects.filter(is_active=True, is_bestseller=True).exclude(slug__isnull=True).exclude(slug='')[:8]
+    new_arrivals = Book.objects.filter(is_active=True).exclude(slug__isnull=True).exclude(slug='').order_by('-created_at')[:8]
     
     # Get user's wishlist book IDs for authenticated users
     wishlist_book_ids = []
@@ -35,7 +36,7 @@ def home(request):
 
 def book_list(request):
     """Book listing with filters"""
-    books = Book.objects.filter(is_active=True)
+    books = Book.objects.filter(is_active=True).exclude(slug__isnull=True).exclude(slug='')
     
     # Filter by category
     category_slug = request.GET.get('category')
@@ -107,7 +108,7 @@ def book_list(request):
 def category_books(request, slug):
     """Books by category"""
     category = get_object_or_404(Category, slug=slug, is_active=True)
-    books = Book.objects.filter(is_active=True, category=category)
+    books = Book.objects.filter(is_active=True, category=category).exclude(slug__isnull=True).exclude(slug='')
     
     # Filter by language
     language = request.GET.get('language')
@@ -190,9 +191,9 @@ def book_detail(request, slug):
     
     # Related books
     related_books = Book.objects.filter(
-        category=book.category, 
+        category=book.category,
         is_active=True
-    ).exclude(id=book.id)[:4]
+    ).exclude(id=book.id).exclude(slug__isnull=True).exclude(slug='')[:4]
     
     context = {
         'book': book,
