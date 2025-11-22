@@ -10,8 +10,8 @@ urlpatterns = [
     
     # Books
     path('books/', views.book_list, name='book_list'),
-    path('books/<slug:slug>/', views.book_detail, name='book_detail'),
-    path('category/<slug:slug>/', views.category_books, name='category_books'),
+    path('books/<str:slug>/', views.book_detail, name='book_detail'),
+    path('category/<str:slug>/', views.category_books, name='category_books'),
     path('search/', views.search_books, name='search'),
     path('api/search/', views.live_search_api, name='live_search_api'),
     
@@ -28,5 +28,5 @@ urlpatterns = [
     path('wishlist/remove/<int:book_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     
     # Reviews
-    path('books/<slug:slug>/review/', views.add_review, name='add_review'),
+    path('books/<str:slug>/review/', views.add_review, name='add_review'),
 ]

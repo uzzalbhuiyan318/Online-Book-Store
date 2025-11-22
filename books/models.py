@@ -10,7 +10,7 @@ class Category(models.Model):
     
     name = models.CharField(max_length=200, unique=True, verbose_name='Category Name')
     name_bn = models.CharField(max_length=200, null=True, blank=True, verbose_name='Category Name (Bangla)')
-    slug = models.SlugField(max_length=200, unique=True, blank=True)
+    slug = models.SlugField(max_length=200, unique=True, blank=True, allow_unicode=True)
     description = models.TextField(blank=True, verbose_name='Description')
     image = models.ImageField(upload_to='categories/', null=True, blank=True, verbose_name='Category Image')
     is_active = models.BooleanField(default=True, verbose_name='Active')
@@ -29,7 +29,11 @@ class Category(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            try:
+                # Use unicode-aware slugify for Bangla support
+                self.slug = slugify(self.name, allow_unicode=True)
+            except TypeError:
+                self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
 
@@ -43,7 +47,7 @@ class Book(models.Model):
     ]
     
     title = models.CharField(max_length=500, verbose_name='Book Title')
-    slug = models.SlugField(max_length=500, unique=True, blank=True)
+    slug = models.SlugField(max_length=500, unique=True, blank=True, allow_unicode=True)
     author = models.CharField(max_length=300, verbose_name='Author')
     publisher = models.CharField(max_length=300, null=True, blank=True, verbose_name='Publisher')
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True, verbose_name='ISBN')
@@ -93,7 +97,10 @@ class Book(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.title)
+            try:
+                self.slug = slugify(self.title, allow_unicode=True)
+            except TypeError:
+                self.slug = slugify(self.title)
         
         # Validate featured books limit
         if self.is_featured:
