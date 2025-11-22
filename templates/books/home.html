@@ -9,7 +9,10 @@
     .banner-slider {
         height: 400px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        object-fit: cover;
     }
+    .banner-link { display: block; }
+    .banner-link img { height: 400px; object-fit: cover; width: 100%; }
     .section-title {
         font-weight: 700;
         margin-bottom: 30px;
@@ -41,14 +44,13 @@
     <div class="carousel-inner">
         {% for banner in banners %}
         <div class="carousel-item {% if forloop.first %}active{% endif %}">
+            {% if banner.link %}
+            <a href="{{ banner.link }}" class="banner-link" aria-label="Open banner link">
+                <img src="{{ banner.image.url }}" class="d-block w-100 banner-slider" alt="{{ banner.title }}">
+            </a>
+            {% else %}
             <img src="{{ banner.image.url }}" class="d-block w-100 banner-slider" alt="{{ banner.title }}">
-            <div class="carousel-caption d-none d-md-block">
-                <h2>{{ banner.title }}</h2>
-                <p>{{ banner.description }}</p>
-                {% if banner.link %}
-                <a href="{{ banner.link }}" class="btn btn-light btn-lg">Shop Now</a>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
