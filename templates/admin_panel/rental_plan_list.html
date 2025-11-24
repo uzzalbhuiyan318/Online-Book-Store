@@ -5,45 +5,120 @@
 {% block page_title %}Rental Plans{% endblock %}
 
 {% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stats-card primary">
+            <div class="icon"><i class="fas fa-calendar-alt"></i></div>
+            <div class="details">
+                <h3>{{ total_count }}</h3>
+                <span>Total Plans</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card success">
+            <div class="icon"><i class="fas fa-check-circle"></i></div>
+            <div class="details">
+                <h3>{{ active_count }}</h3>
+                <span>Active Plans</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card danger">
+            <div class="icon"><i class="fas fa-times-circle"></i></div>
+            <div class="details">
+                <h3>{{ inactive_count }}</h3>
+                <span>Inactive Plans</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="admin-card">
     <div class="admin-card-header">
-        <h5><i class="fas fa-calendar-alt"></i> Rental Plans</h5>
-        <a href="{% url 'admin_panel:rental_plan_add' %}" class="btn btn-admin-primary">
-            <i class="fas fa-plus"></i> Add Plan
-        </a>
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <h5><i class="fas fa-calendar-alt"></i> Rental Plans</h5>
+            <a href="{% url 'admin_panel:rental_plan_add' %}" class="btn btn-admin-primary">
+                <i class="fas fa-plus"></i> Add Plan
+            </a>
+        </div>
     </div>
+    
     <div class="admin-card-body">
+        <!-- Filters and Search -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <form method="get" class="d-flex gap-2">
+                    <select name="status" class="form-select w-auto" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                    
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search plans..." value="{{ request.GET.q }}">
+                        <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4 text-end">
+                <form method="post" action="{% url 'admin_panel:rental_plan_bulk_action' %}" id="bulkActionForm" class="d-inline-block">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <select name="action" class="form-select form-select-sm" required>
+                            <option value="">Bulk Actions</option>
+                            <option value="activate">Activate Selected</option>
+                            <option value="deactivate">Deactivate Selected</option>
+                            <option value="delete">Delete Selected</option>
+                        </select>
+                        <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Are you sure you want to perform this action?')">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {% if plans %}
         <div class="table-responsive">
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th width="40"><input type="checkbox" id="selectAll"></th>
+                        <th>Order</th>
                         <th>Name</th>
                         <th>Duration</th>
-                        <th>Price</th>
+                        <th>Price %</th>
                         <th>Status</th>
+                        <th>Created At</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for plan in plans %}
                     <tr>
-                        <td><strong>{{ plan.name }}</strong></td>
-                        <td>{{ plan.duration_days }} days</td>
-                        <td>৳{{ plan.price|floatformat:2 }}</td>
                         <td>
-                            {% if plan.is_active %}
-                            <span class="status-badge status-active">Active</span>
-                            {% else %}
-                            <span class="status-badge status-inactive">Inactive</span>
-                            {% endif %}
+                            <input type="checkbox" name="plan_ids" value="{{ plan.id }}" form="bulkActionForm">
                         </td>
+                        <td>{{ plan.order }}</td>
+                        <td><strong>{{ plan.name }}</strong></td>
+                        <td>{{ plan.days }} days</td>
+                        <td>{{ plan.price_percentage }}%</td>
+                        <td>
+                            <a href="{% url 'admin_panel:rental_plan_toggle_status' plan.id %}" class="text-decoration-none">
+                                {% if plan.is_active %}
+                                <span class="status-badge status-active"><i class="fas fa-check"></i> Active</span>
+                                {% else %}
+                                <span class="status-badge status-inactive"><i class="fas fa-times"></i> Inactive</span>
+                                {% endif %}
+                            </a>
+                        </td>
+                        <td>{{ plan.created_at|date:"M d, Y" }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{% url 'admin_panel:rental_plan_edit' plan.id %}" class="btn btn-outline-primary">
+                                <a href="{% url 'admin_panel:rental_plan_edit' plan.id %}" class="btn btn-outline-primary" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{% url 'admin_panel:rental_plan_delete' plan.id %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')">
+                                <a href="{% url 'admin_panel:rental_plan_delete' plan.id %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure?')" title="Delete">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </div>
@@ -53,13 +128,55 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
         {% else %}
         <div class="admin-empty-state">
             <i class="fas fa-calendar-alt"></i>
             <h5>No plans found</h5>
+            <p class="text-muted">Try adjusting your search or filters</p>
             <a href="{% url 'admin_panel:rental_plan_add' %}" class="btn btn-admin-primary">Add Plan</a>
         </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="plan_ids"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+</script>
 {% endblock %}

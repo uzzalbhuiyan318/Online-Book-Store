@@ -932,10 +932,33 @@ def rental_update_status(request, rental_number):
 
 @staff_member_required
 def rental_plan_list(request):
-    """List rental plans"""
+    """List rental plans with enhanced management features"""
     plans = RentalPlan.objects.all().order_by('order', 'days')
     
-    context = {'plans': plans}
+    # Filter by status
+    status = request.GET.get('status')
+    if status == 'active':
+        plans = plans.filter(is_active=True)
+    elif status == 'inactive':
+        plans = plans.filter(is_active=False)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        plans = plans.filter(name__icontains=query)
+    
+    # Pagination
+    paginator = Paginator(plans, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'plans': page_obj.object_list,
+        'total_count': RentalPlan.objects.count(),
+        'active_count': RentalPlan.objects.filter(is_active=True).count(),
+        'inactive_count': RentalPlan.objects.filter(is_active=False).count(),
+    }
     return render(request, 'admin_panel/rental_plan_list.html', context)
 
 
@@ -985,6 +1008,49 @@ def rental_plan_delete(request, pk):
         return redirect('admin_panel:rental_plan_list')
     
     return render(request, 'admin_panel/rental_plan_confirm_delete.html', {'plan': plan})
+
+
+@staff_member_required
+def rental_plan_bulk_action(request):
+    """Handle bulk actions for rental plans"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_plan_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('plan_ids')
+    
+    if not selected:
+        messages.error(request, 'No plans selected!')
+        return redirect('admin_panel:rental_plan_list')
+    
+    plans_qs = RentalPlan.objects.filter(id__in=selected)
+    
+    if action == 'activate':
+        updated = plans_qs.update(is_active=True)
+        messages.success(request, f'{updated} plan(s) activated.')
+    elif action == 'deactivate':
+        updated = plans_qs.update(is_active=False)
+        messages.success(request, f'{updated} plan(s) deactivated.')
+    elif action == 'delete':
+        count = plans_qs.count()
+        plans_qs.delete()
+        messages.success(request, f'{count} plan(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_plan_list')
+
+
+@staff_member_required
+def rental_plan_toggle_status(request, pk):
+    """Toggle rental plan active status"""
+    plan = get_object_or_404(RentalPlan, pk=pk)
+    plan.is_active = not plan.is_active
+    plan.save()
+    
+    status = "activated" if plan.is_active else "deactivated"
+    messages.success(request, f'Plan "{plan.name}" {status}.')
+    return redirect('admin_panel:rental_plan_list')
 
 
 @staff_member_required
@@ -1437,3 +1503,365 @@ def export_books_csv(request):
         ])
     
     return response
+
+
+# ==================== RENTAL FEEDBACK MANAGEMENT ====================
+
+@staff_member_required
+def rental_feedback_list(request):
+    """List all rental feedbacks with approval management"""
+    feedbacks = RentalFeedback.objects.all().select_related(
+        'rental__user', 'rental__book'
+    ).order_by('-created_at')
+    
+    # Filter by approval status
+    is_approved = request.GET.get('is_approved')
+    if is_approved == '1':
+        feedbacks = feedbacks.filter(is_approved=True)
+    elif is_approved == '0':
+        feedbacks = feedbacks.filter(is_approved=False)
+    
+    # Filter by rating
+    rating = request.GET.get('rating')
+    if rating:
+        feedbacks = feedbacks.filter(rating=rating)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        feedbacks = feedbacks.filter(
+            Q(rental__rental_number__icontains=query) |
+            Q(rental__user__email__icontains=query) |
+            Q(rental__book__title__icontains=query) |
+            Q(comment__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(feedbacks, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'feedbacks': page_obj.object_list,
+        'total_count': feedbacks.count(),
+        'approved_count': RentalFeedback.objects.filter(is_approved=True).count(),
+        'pending_count': RentalFeedback.objects.filter(is_approved=False).count(),
+    }
+    return render(request, 'admin_panel/rental_feedback_list.html', context)
+
+
+@staff_member_required
+def rental_feedback_approve(request, pk):
+    """Approve a rental feedback"""
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    feedback.is_approved = True
+    feedback.save()
+    messages.success(request, 'Feedback approved successfully!')
+    return redirect('admin_panel:rental_feedback_list')
+
+
+@staff_member_required
+def rental_feedback_delete(request, pk):
+    """Delete a rental feedback"""
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    feedback.delete()
+    messages.success(request, 'Feedback deleted successfully!')
+    return redirect('admin_panel:rental_feedback_list')
+
+
+@staff_member_required
+def rental_feedback_bulk_action(request):
+    """Handle bulk actions for rental feedbacks"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_feedback_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('feedback_ids')
+    
+    if not selected:
+        messages.error(request, 'No feedbacks selected!')
+        return redirect('admin_panel:rental_feedback_list')
+    
+    feedbacks_qs = RentalFeedback.objects.filter(id__in=selected)
+    
+    if action == 'approve':
+        updated = feedbacks_qs.update(is_approved=True)
+        messages.success(request, f'{updated} feedback(s) approved.')
+    elif action == 'unapprove':
+        updated = feedbacks_qs.update(is_approved=False)
+        messages.success(request, f'{updated} feedback(s) unapproved.')
+    elif action == 'delete':
+        count = feedbacks_qs.count()
+        feedbacks_qs.delete()
+        messages.success(request, f'{count} feedback(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_feedback_list')
+
+
+# ==================== RENTAL NOTIFICATION MANAGEMENT ====================
+
+@staff_member_required
+def rental_notification_list(request):
+    """List all rental notifications"""
+    notifications = RentalNotification.objects.all().select_related(
+        'user', 'rental'
+    ).order_by('-created_at')
+    
+    # Filter by notification type
+    notif_type = request.GET.get('notification_type')
+    if notif_type:
+        notifications = notifications.filter(notification_type=notif_type)
+    
+    # Filter by read status
+    is_read = request.GET.get('is_read')
+    if is_read == '1':
+        notifications = notifications.filter(is_read=True)
+    elif is_read == '0':
+        notifications = notifications.filter(is_read=False)
+    
+    # Filter by sent status
+    is_sent = request.GET.get('is_sent')
+    if is_sent == '1':
+        notifications = notifications.filter(is_sent=True)
+    elif is_sent == '0':
+        notifications = notifications.filter(is_sent=False)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        notifications = notifications.filter(
+            Q(user__email__icontains=query) |
+            Q(user__full_name__icontains=query) |
+            Q(title__icontains=query) |
+            Q(message__icontains=query) |
+            Q(rental__rental_number__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(notifications, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'notifications': page_obj.object_list,
+        'total_count': notifications.count(),
+        'unread_count': RentalNotification.objects.filter(is_read=False).count(),
+        'sent_count': RentalNotification.objects.filter(is_sent=True).count(),
+    }
+    return render(request, 'admin_panel/rental_notification_list.html', context)
+
+
+@staff_member_required
+def rental_notification_bulk_action(request):
+    """Handle bulk actions for rental notifications"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_notification_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('notification_ids')
+    
+    if not selected:
+        messages.error(request, 'No notifications selected!')
+        return redirect('admin_panel:rental_notification_list')
+    
+    notifications_qs = RentalNotification.objects.filter(id__in=selected)
+    
+    if action == 'mark_read':
+        updated = notifications_qs.update(is_read=True)
+        messages.success(request, f'{updated} notification(s) marked as read.')
+    elif action == 'mark_unread':
+        updated = notifications_qs.update(is_read=False)
+        messages.success(request, f'{updated} notification(s) marked as unread.')
+    elif action == 'delete':
+        count = notifications_qs.count()
+        notifications_qs.delete()
+        messages.success(request, f'{count} notification(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_notification_list')
+
+
+# ==================== RENTAL FEEDBACK MANAGEMENT ====================
+
+@staff_member_required
+def rental_feedback_list(request):
+    """List all rental feedbacks with approval management"""
+    feedbacks = RentalFeedback.objects.all().select_related(
+        'rental__user', 'rental__book'
+    ).order_by('-created_at')
+    
+    # Filter by approval status
+    is_approved = request.GET.get('is_approved')
+    if is_approved == '1':
+        feedbacks = feedbacks.filter(is_approved=True)
+    elif is_approved == '0':
+        feedbacks = feedbacks.filter(is_approved=False)
+    
+    # Filter by rating
+    rating = request.GET.get('rating')
+    if rating:
+        feedbacks = feedbacks.filter(rating=rating)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        feedbacks = feedbacks.filter(
+            Q(rental__rental_number__icontains=query) |
+            Q(rental__user__email__icontains=query) |
+            Q(rental__book__title__icontains=query) |
+            Q(comment__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(feedbacks, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'feedbacks': page_obj.object_list,
+        'total_count': feedbacks.count(),
+        'approved_count': RentalFeedback.objects.filter(is_approved=True).count(),
+        'pending_count': RentalFeedback.objects.filter(is_approved=False).count(),
+    }
+    return render(request, 'admin_panel/rental_feedback_list.html', context)
+
+
+@staff_member_required
+def rental_feedback_approve(request, pk):
+    """Approve a rental feedback"""
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    feedback.is_approved = True
+    feedback.save()
+    messages.success(request, 'Feedback approved successfully!')
+    return redirect('admin_panel:rental_feedback_list')
+
+
+@staff_member_required
+def rental_feedback_delete(request, pk):
+    """Delete a rental feedback"""
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    feedback.delete()
+    messages.success(request, 'Feedback deleted successfully!')
+    return redirect('admin_panel:rental_feedback_list')
+
+
+@staff_member_required
+def rental_feedback_bulk_action(request):
+    """Handle bulk actions for rental feedbacks"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_feedback_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('feedback_ids')
+    
+    if not selected:
+        messages.error(request, 'No feedbacks selected!')
+        return redirect('admin_panel:rental_feedback_list')
+    
+    feedbacks_qs = RentalFeedback.objects.filter(id__in=selected)
+    
+    if action == 'approve':
+        updated = feedbacks_qs.update(is_approved=True)
+        messages.success(request, f'{updated} feedback(s) approved.')
+    elif action == 'unapprove':
+        updated = feedbacks_qs.update(is_approved=False)
+        messages.success(request, f'{updated} feedback(s) unapproved.')
+    elif action == 'delete':
+        count = feedbacks_qs.count()
+        feedbacks_qs.delete()
+        messages.success(request, f'{count} feedback(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_feedback_list')
+
+
+# ==================== RENTAL NOTIFICATION MANAGEMENT ====================
+
+@staff_member_required
+def rental_notification_list(request):
+    """List all rental notifications"""
+    notifications = RentalNotification.objects.all().select_related(
+        'user', 'rental'
+    ).order_by('-created_at')
+    
+    # Filter by notification type
+    notif_type = request.GET.get('notification_type')
+    if notif_type:
+        notifications = notifications.filter(notification_type=notif_type)
+    
+    # Filter by read status
+    is_read = request.GET.get('is_read')
+    if is_read == '1':
+        notifications = notifications.filter(is_read=True)
+    elif is_read == '0':
+        notifications = notifications.filter(is_read=False)
+    
+    # Filter by sent status
+    is_sent = request.GET.get('is_sent')
+    if is_sent == '1':
+        notifications = notifications.filter(is_sent=True)
+    elif is_sent == '0':
+        notifications = notifications.filter(is_sent=False)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        notifications = notifications.filter(
+            Q(user__email__icontains=query) |
+            Q(user__full_name__icontains=query) |
+            Q(title__icontains=query) |
+            Q(message__icontains=query) |
+            Q(rental__rental_number__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(notifications, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'notifications': page_obj.object_list,
+        'total_count': notifications.count(),
+        'unread_count': RentalNotification.objects.filter(is_read=False).count(),
+        'sent_count': RentalNotification.objects.filter(is_sent=True).count(),
+    }
+    return render(request, 'admin_panel/rental_notification_list.html', context)
+
+
+@staff_member_required
+def rental_notification_bulk_action(request):
+    """Handle bulk actions for rental notifications"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_notification_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('notification_ids')
+    
+    if not selected:
+        messages.error(request, 'No notifications selected!')
+        return redirect('admin_panel:rental_notification_list')
+    
+    notifications_qs = RentalNotification.objects.filter(id__in=selected)
+    
+    if action == 'mark_read':
+        updated = notifications_qs.update(is_read=True)
+        messages.success(request, f'{updated} notification(s) marked as read.')
+    elif action == 'mark_unread':
+        updated = notifications_qs.update(is_read=False)
+        messages.success(request, f'{updated} notification(s) marked as unread.')
+    elif action == 'delete':
+        count = notifications_qs.count()
+        notifications_qs.delete()
+        messages.success(request, f'{count} notification(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_notification_list')

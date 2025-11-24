@@ -17,11 +17,25 @@
                     </div>
                     <div class="admin-form-group">
                         <label>Duration (Days)</label>
-                        {{ form.duration_days }}
+                        {{ form.days }}
+                        {% if form.days.errors %}
+                        <div class="text-danger small">{{ form.days.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="admin-form-group">
-                        <label>Price</label>
-                        {{ form.price }}
+                        <label>Price Percentage of Book Price (%)</label>
+                        {{ form.price_percentage }}
+                        <small class="text-muted">Percentage of book price to charge (e.g., 10 for 10%)</small>
+                        {% if form.price_percentage.errors %}
+                        <div class="text-danger small">{{ form.price_percentage.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="admin-form-group">
+                        <label>Display Order</label>
+                        {{ form.order }}
+                        {% if form.order.errors %}
+                        <div class="text-danger small">{{ form.order.errors.0 }}</div>
+                        {% endif %}
                     </div>
                     <div class="admin-form-group">
                         <div class="form-check">

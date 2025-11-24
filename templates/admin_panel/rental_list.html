@@ -5,6 +5,42 @@
 {% block page_title %}Rentals Management{% endblock %}
 
 {% block content %}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ active_count }}</h3>
+                <p class="mb-0"><i class="fas fa-check-circle"></i> Active Rentals</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h3 class="text-danger">{{ overdue_count }}</h3>
+                <p class="mb-0"><i class="fas fa-exclamation-triangle"></i> Overdue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ pending_count }}</h3>
+                <p class="mb-0"><i class="fas fa-clock"></i> Pending</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h3 class="text-info">{{ page_obj.paginator.count }}</h3>
+                <p class="mb-0"><i class="fas fa-list"></i> Total Rentals</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="admin-card">
     <div class="admin-card-header">
         <h5><i class="fas fa-book-reader"></i> All Rentals ({{ page_obj.paginator.count }})</h5>
@@ -15,15 +51,31 @@
             <div class="col-md-4">
                 <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ request.GET.q }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <select name="status" class="form-select">
                     <option value="">All Status</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
                     <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
                     <option value="returned" {% if request.GET.status == 'returned' %}selected{% endif %}>Returned</option>
                     <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                    <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
                 </select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-2">
+                <select name="payment_status" class="form-select">
+                    <option value="">All Payment Status</option>
+                    <option value="pending" {% if request.GET.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="paid" {% if request.GET.payment_status == 'paid' %}selected{% endif %}>Paid</option>
+                    <option value="failed" {% if request.GET.payment_status == 'failed' %}selected{% endif %}>Failed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="due_soon" class="form-select">
+                    <option value="">All Due Dates</option>
+                    <option value="1" {% if request.GET.due_soon == '1' %}selected{% endif %}>Due Soon (3 days)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <button type="submit" class="btn btn-admin-primary me-2">
                     <i class="fas fa-search"></i> Search
                 </button>
@@ -65,7 +117,9 @@
                             <th>Plan</th>
                             <th>Start Date</th>
                             <th>Due Date</th>
+                            <th>Days Info</th>
                             <th>Status</th>
+                            <th>Payment</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -74,13 +128,58 @@
                         <tr>
                             <td><input type="checkbox" name="selected_rentals" value="{{ rental.id }}" class="select-item"></td>
                             <td><strong>#{{ rental.rental_number }}</strong></td>
-                            <td>{{ rental.user.full_name|default:rental.user.email }}</td>
+                            <td>
+                                {{ rental.user.full_name|default:rental.user.email }}
+                                {% if rental.user_summary %}
+                                <br>
+                                <small class="badge bg-{{ rental.user_summary.color }}">
+                                    Active: {{ rental.user_summary.active_count }}/{{ rental.user_summary.max_rentals }}
+                                    {% if rental.user_summary.overdue_count > 0 %}
+                                    | Overdue: {{ rental.user_summary.overdue_count }}
+                                    {% endif %}
+                                </small>
+                                {% endif %}
+                            </td>
                             <td>{{ rental.book.title|truncatewords:5 }}</td>
                             <td>{{ rental.rental_plan.name }}</td>
                             <td>{{ rental.start_date|date:"M d, Y" }}</td>
                             <td>{{ rental.due_date|date:"M d, Y" }}</td>
                             <td>
-                                <span class="status-badge status-{{ rental.status }}">{{ rental.get_status_display }}</span>
+                                {% if rental.status == 'active' %}
+                                    {% if rental.is_overdue %}
+                                        <span class="text-danger fw-bold">⚠️ Overdue by {{ rental.overdue_days }} days</span>
+                                    {% else %}
+                                        {% if rental.days_remaining <= 3 %}
+                                            <span class="text-warning fw-bold">⏰ {{ rental.days_remaining }} days left</span>
+                                        {% else %}
+                                            <span class="text-success">{{ rental.days_remaining }} days left</span>
+                                        {% endif %}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rental.status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% elif rental.status == 'active' %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif rental.status == 'returned' %}
+                                    <span class="badge bg-secondary">Returned</span>
+                                {% elif rental.status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                {% elif rental.status == 'cancelled' %}
+                                    <span class="badge bg-dark">Cancelled</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if rental.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif rental.payment_status == 'paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% elif rental.payment_status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
                             </td>
                             <td>
                                 <a href="{% url 'admin_panel:rental_detail' rental.rental_number %}" class="btn btn-sm btn-outline-primary">

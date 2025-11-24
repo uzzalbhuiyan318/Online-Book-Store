@@ -22,6 +22,76 @@ import json
 import csv
 
 
+# ==================== RENTAL HELPER FUNCTIONS ====================
+
+def get_user_rental_summary(user):
+    """
+    Get comprehensive rental summary for a user.
+    Returns dict with active, pending, overdue counts and color coding.
+    """
+    settings = RentalSettings.get_settings()
+    active_count = BookRental.objects.filter(user=user, status='active').count()
+    pending_count = BookRental.objects.filter(user=user, status='pending').count()
+    overdue_count = BookRental.objects.filter(
+        user=user, status='active', due_date__lt=timezone.now()
+    ).count()
+    total_rentals = BookRental.objects.filter(user=user).count()
+    
+    # Determine color based on active rental limit
+    max_rentals = settings.max_active_rentals_per_user
+    if active_count >= max_rentals:
+        color = 'danger'
+        icon = '⚠️'
+    elif active_count >= max_rentals - 1:
+        color = 'warning'
+        icon = '⚡'
+    else:
+        color = 'success'
+        icon = '✓'
+    
+    return {
+        'active_count': active_count,
+        'pending_count': pending_count,
+        'overdue_count': overdue_count,
+        'total_rentals': total_rentals,
+        'at_limit': active_count >= max_rentals,
+        'color': color,
+        'icon': icon,
+        'max_rentals': max_rentals
+    }
+
+
+def get_status_badge_html(status):
+    """Generate Bootstrap badge HTML for rental status"""
+    colors = {
+        'pending': 'warning',
+        'active': 'success',
+        'returned': 'secondary',
+        'overdue': 'danger',
+        'cancelled': 'dark',
+    }
+    color = colors.get(status, 'secondary')
+    return f'<span class="badge bg-{color}">{status.title()}</span>'
+
+
+def get_days_info_html(rental):
+    """Generate HTML for days remaining/overdue display"""
+    if rental.status == 'active':
+        if rental.is_overdue:
+            return f'<span class="text-danger fw-bold">⚠️ Overdue by {rental.overdue_days} days</span>'
+        else:
+            days = rental.days_remaining
+            if days <= 3:
+                return f'<span class="text-warning fw-bold">⏰ {days} days remaining</span>'
+            else:
+                return f'<span class="text-success">{days} days remaining</span>'
+    elif rental.status == 'returned':
+        return '<span class="text-muted">Returned</span>'
+    return '<span class="text-muted">-</span>'
+
+
+# ==================== DASHBOARD & GENERAL ====================
+
 @staff_member_required
 def dashboard(request):
     """Admin Dashboard"""
@@ -391,7 +461,7 @@ def delete_review(request, pk):
 
 @staff_member_required
 def rental_list(request):
-    """List all rentals"""
+    """List all rentals with enhanced filtering and visual indicators"""
     rentals = BookRental.objects.all().select_related('user', 'book', 'rental_plan').order_by('-created_at')
 
     # Search (rental number, user, book, transaction id)
@@ -409,22 +479,46 @@ def rental_list(request):
     status = request.GET.get('status')
     if status:
         rentals = rentals.filter(status=status)
+    
+    # Filter by payment status
+    payment_status = request.GET.get('payment_status')
+    if payment_status:
+        rentals = rentals.filter(payment_status=payment_status)
 
     # Filter overdue
     if request.GET.get('overdue') == '1':
         rentals = rentals.filter(status='active', due_date__lt=timezone.now())
+    
+    # Filter due soon (within 3 days)
+    if request.GET.get('due_soon') == '1':
+        three_days_from_now = timezone.now() + timedelta(days=3)
+        rentals = rentals.filter(
+            status='active',
+            due_date__gte=timezone.now(),
+            due_date__lte=three_days_from_now
+        )
 
     # Pagination
     paginator = Paginator(rentals, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
+    # Add user rental summaries to each rental
+    rentals_with_summaries = []
+    for rental in page_obj.object_list:
+        rental.user_summary = get_user_rental_summary(rental.user)
+        rentals_with_summaries.append(rental)
 
     context = {
         'page_obj': page_obj,
-        'rentals': page_obj.object_list,
+        'rentals': rentals_with_summaries,
         'total_count': rentals.count(),
+        'active_count': BookRental.objects.filter(status='active').count(),
+        'overdue_count': BookRental.objects.filter(status='active', due_date__lt=timezone.now()).count(),
+        'pending_count': BookRental.objects.filter(status='pending').count(),
     }
     return render(request, 'admin_panel/rental_list.html', context)
+
 
 
 @staff_member_required
@@ -643,6 +737,205 @@ def rental_settings(request):
     context = {'form': form, 'settings': settings_obj}
     return render(request, 'admin_panel/rental_settings.html', context)
 
+
+# ==================== RENTAL FEEDBACK MANAGEMENT ====================
+
+@staff_member_required
+def rental_feedback_list(request):
+    """List all rental feedbacks with approval management"""
+    from rentals.models import RentalFeedback
+    
+    feedbacks = RentalFeedback.objects.all().select_related(
+        'rental', 'user', 'book'
+    ).order_by('-created_at')
+    
+    # Filter by approval status
+    approval_status = request.GET.get('approval_status')
+    if approval_status == 'approved':
+        feedbacks = feedbacks.filter(is_approved=True)
+    elif approval_status == 'pending':
+        feedbacks = feedbacks.filter(is_approved=False)
+    
+    # Filter by rating
+    rating = request.GET.get('rating')
+    if rating:
+        feedbacks = feedbacks.filter(overall_rating=rating)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        feedbacks = feedbacks.filter(
+            Q(rental__rental_number__icontains=query) |
+            Q(user__email__icontains=query) |
+            Q(book__title__icontains=query) |
+            Q(comment__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(feedbacks, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'feedbacks': page_obj.object_list,
+        'total_count': feedbacks.count(),
+        'approved_count': RentalFeedback.objects.filter(is_approved=True).count(),
+        'pending_count': RentalFeedback.objects.filter(is_approved=False).count(),
+    }
+    return render(request, 'admin_panel/rental_feedback_list.html', context)
+
+
+@staff_member_required
+def rental_feedback_approve(request, pk):
+    """Approve a rental feedback"""
+    from rentals.models import RentalFeedback
+    
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    feedback.is_approved = True
+    feedback.save()
+    messages.success(request, 'Feedback approved successfully!')
+    return redirect('admin_panel:rental_feedback_list')
+
+
+@staff_member_required
+def rental_feedback_delete(request, pk):
+    """Delete a rental feedback"""
+    from rentals.models import RentalFeedback
+    
+    feedback = get_object_or_404(RentalFeedback, pk=pk)
+    
+    if request.method == 'POST':
+        feedback.delete()
+        messages.success(request, 'Feedback deleted successfully!')
+        return redirect('admin_panel:rental_feedback_list')
+    
+    context = {'feedback': feedback}
+    return render(request, 'admin_panel/rental_feedback_confirm_delete.html', context)
+
+
+@staff_member_required
+def rental_feedback_bulk_action(request):
+    """Handle bulk actions for rental feedbacks"""
+    from rentals.models import RentalFeedback
+    
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_feedback_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('selected_feedbacks')
+    
+    if not selected:
+        messages.error(request, 'No feedbacks selected!')
+        return redirect('admin_panel:rental_feedback_list')
+    
+    feedbacks_qs = RentalFeedback.objects.filter(id__in=selected)
+    
+    if action == 'approve':
+        updated = feedbacks_qs.update(is_approved=True)
+        messages.success(request, f'{updated} feedback(s) approved.')
+    elif action == 'unapprove':
+        updated = feedbacks_qs.update(is_approved=False)
+        messages.success(request, f'{updated} feedback(s) unapproved.')
+    elif action == 'delete':
+        count = feedbacks_qs.count()
+        feedbacks_qs.delete()
+        messages.success(request, f'{count} feedback(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_feedback_list')
+
+
+# ==================== RENTAL NOTIFICATION MANAGEMENT ====================
+
+@staff_member_required
+def rental_notification_list(request):
+    """List all rental notifications"""
+    notifications = RentalNotification.objects.all().select_related(
+        'user', 'rental'
+    ).order_by('-created_at')
+    
+    # Filter by notification type
+    notif_type = request.GET.get('notification_type')
+    if notif_type:
+        notifications = notifications.filter(notification_type=notif_type)
+    
+    # Filter by read status
+    read_status = request.GET.get('read_status')
+    if read_status == 'read':
+        notifications = notifications.filter(is_read=True)
+    elif read_status == 'unread':
+        notifications = notifications.filter(is_read=False)
+    
+    # Filter by sent status
+    sent_status = request.GET.get('sent_status')
+    if sent_status == 'sent':
+        notifications = notifications.filter(is_sent=True)
+    elif sent_status == 'not_sent':
+        notifications = notifications.filter(is_sent=False)
+    
+    # Search
+    query = request.GET.get('q')
+    if query:
+        notifications = notifications.filter(
+            Q(user__email__icontains=query) |
+            Q(user__full_name__icontains=query) |
+            Q(title__icontains=query) |
+            Q(message__icontains=query) |
+            Q(rental__rental_number__icontains=query)
+        )
+    
+    # Pagination
+    paginator = Paginator(notifications, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'notifications': page_obj.object_list,
+        'total_count': notifications.count(),
+        'unread_count': RentalNotification.objects.filter(is_read=False).count(),
+        'sent_count': RentalNotification.objects.filter(is_sent=True).count(),
+    }
+    return render(request, 'admin_panel/rental_notification_list.html', context)
+
+
+@staff_member_required
+def rental_notification_bulk_action(request):
+    """Handle bulk actions for rental notifications"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_notification_list')
+    
+    action = request.POST.get('action')
+    selected = request.POST.getlist('selected_notifications')
+    
+    if not selected:
+        messages.error(request, 'No notifications selected!')
+        return redirect('admin_panel:rental_notification_list')
+    
+    notifications_qs = RentalNotification.objects.filter(id__in=selected)
+    
+    if action == 'mark_read':
+        updated = notifications_qs.update(is_read=True)
+        messages.success(request, f'{updated} notification(s) marked as read.')
+    elif action == 'mark_unread':
+        updated = notifications_qs.update(is_read=False)
+        messages.success(request, f'{updated} notification(s) marked as unread.')
+    elif action == 'mark_sent':
+        updated = notifications_qs.update(is_sent=True, sent_at=timezone.now())
+        messages.success(request, f'{updated} notification(s) marked as sent.')
+    elif action == 'delete_read':
+        count = notifications_qs.filter(is_read=True).count()
+        notifications_qs.filter(is_read=True).delete()
+        messages.success(request, f'{count} read notification(s) deleted.')
+    else:
+        messages.error(request, 'Invalid action selected!')
+    
+    return redirect('admin_panel:rental_notification_list')
+
+
+# ==================== REPORTS ====================
 
 @staff_member_required
 def sales_report(request):
