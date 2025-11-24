@@ -15,19 +15,27 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Book)
 class BookAdmin(admin.ModelAdmin):
-    list_display = ['title', 'author', 'category', 'price', 'discount_price', 'stock', 'is_active', 'is_featured']
+    list_display = ['title', 'title_bn', 'author', 'author_bn', 'category', 'price', 'discount_price', 'stock', 'is_active', 'is_featured']
     list_filter = ['category', 'language', 'is_active', 'is_featured', 'is_bestseller', 'created_at']
-    search_fields = ['title', 'author', 'isbn', 'publisher']
+    search_fields = ['title', 'title_bn', 'author', 'author_bn', 'isbn', 'publisher', 'publisher_bn']
     list_editable = ['is_active', 'stock']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['views', 'sales']
     
     fieldsets = (
-        ('Basic Information', {
+        ('Basic Information (English)', {
             'fields': ('title', 'slug', 'author', 'publisher', 'isbn', 'category', 'language')
         }),
-        ('Description', {
+        ('Basic Information (Bangla)', {
+            'fields': ('title_bn', 'author_bn', 'publisher_bn'),
+            'classes': ('collapse',),
+        }),
+        ('Description (English)', {
             'fields': ('short_description', 'description')
+        }),
+        ('Description (Bangla)', {
+            'fields': ('short_description_bn', 'description_bn'),
+            'classes': ('collapse',),
         }),
         ('Pricing & Stock', {
             'fields': ('price', 'discount_price', 'stock')

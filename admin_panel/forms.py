@@ -8,24 +8,29 @@ from accounts.models import User
 
 
 class BookForm(forms.ModelForm):
-    """Form for creating/editing books"""
+    """Form for creating/editing books with Bangla support"""
     
     class Meta:
         model = Book
         fields = [
-            'title', 'author', 'publisher', 'isbn', 'description',
-            'short_description', 'category', 'language', 'price',
-            'discount_price', 'stock', 'cover_image', 'image2', 'image3',
-            'pages', 'publication_date', 'edition', 'is_active',
-            'is_featured', 'is_bestseller'
+            'title', 'title_bn', 'author', 'author_bn', 'publisher', 'publisher_bn',
+            'isbn', 'description', 'description_bn', 'short_description', 'short_description_bn',
+            'category', 'language', 'price', 'discount_price', 'stock',
+            'cover_image', 'image2', 'image3', 'pages', 'publication_date',
+            'edition', 'is_active', 'is_featured', 'is_bestseller'
         ]
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter book title'}),
-            'author': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter author name'}),
-            'publisher': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter publisher name'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter book title (English)'}),
+            'title_bn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter book title (Bangla)'}),
+            'author': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter author name (English)'}),
+            'author_bn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter author name (Bangla)'}),
+            'publisher': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter publisher name (English)'}),
+            'publisher_bn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter publisher name (Bangla)'}),
             'isbn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter ISBN'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
-            'short_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Book description in English'}),
+            'description_bn': forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Book description in Bangla'}),
+            'short_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Short description in English'}),
+            'short_description_bn': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Short description in Bangla'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'language': forms.Select(attrs={'class': 'form-select'}),
             'price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),

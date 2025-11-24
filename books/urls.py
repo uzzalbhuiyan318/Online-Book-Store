@@ -1,6 +1,7 @@
 from django.urls import path
 from django.shortcuts import redirect
 from . import views
+from .language_views import set_language_view
 
 app_name = 'books'
 
@@ -8,7 +9,10 @@ urlpatterns = [
     # Home
     path('', views.home, name='home'),
     
-    # Books
+    # Language switcher
+    path('set-language/', set_language_view, name='set_language'),
+    
+    # Books (Using str instead of slug to support Bangla Unicode characters)
     path('books/', views.book_list, name='book_list'),
     path('books/<str:slug>/', views.book_detail, name='book_detail'),
     path('category/<str:slug>/', views.category_books, name='category_books'),

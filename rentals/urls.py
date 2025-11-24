@@ -7,9 +7,9 @@ urlpatterns = [
     # Rental Plans
     path('plans/', views.rental_plans, name='rental_plans'),
     
-    # Book Rental
-    path('rent/<slug:slug>/', views.book_rental_detail, name='book_rental_detail'),
-    path('rent/<slug:slug>/create/', views.create_rental, name='create_rental'),
+    # Book Rental (Using str instead of slug to support Bangla Unicode characters)
+    path('rent/<str:slug>/', views.book_rental_detail, name='book_rental_detail'),
+    path('rent/<str:slug>/create/', views.create_rental, name='create_rental'),
     
     # My Rentals
     path('my-rentals/', views.my_rentals, name='my_rentals'),

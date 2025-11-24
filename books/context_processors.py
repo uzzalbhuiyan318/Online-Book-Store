@@ -2,6 +2,7 @@
 Context processors for books app
 """
 from .models import Cart, Category, Book
+from .language_utils import get_current_language, get_language_display
 from django.db.models import Count
 
 
@@ -47,4 +48,15 @@ def categories_context(request):
         'categories': categories,
         'nav_authors': nav_authors,
         'nav_publishers': nav_publishers,
+    }
+
+
+def language_context(request):
+    """Add current language information to context"""
+    current_language = get_current_language(request)
+    return {
+        'current_language': current_language,
+        'language_display': get_language_display(current_language),
+        'is_bangla': current_language == 'bn',
+        'is_english': current_language == 'en',
     }

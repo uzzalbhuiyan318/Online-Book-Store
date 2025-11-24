@@ -27,12 +27,21 @@ class Category(models.Model):
     def __str__(self):
         return self.name
     
+    def get_name(self, language='en'):
+        """Get category name in specified language"""
+        if language == 'bn' and self.name_bn:
+            return self.name_bn
+        return self.name
+    
     def save(self, *args, **kwargs):
         if not self.slug:
+            # Prefer Bangla name for slug if available
+            slug_source = self.name_bn if self.name_bn else self.name
             try:
                 # Use unicode-aware slugify for Bangla support
-                self.slug = slugify(self.name, allow_unicode=True)
+                self.slug = slugify(slug_source, allow_unicode=True)
             except TypeError:
+                # Fallback to English name
                 self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
@@ -47,13 +56,18 @@ class Book(models.Model):
     ]
     
     title = models.CharField(max_length=500, verbose_name='Book Title')
+    title_bn = models.CharField(max_length=500, null=True, blank=True, verbose_name='Book Title (Bangla)')
     slug = models.SlugField(max_length=500, unique=True, blank=True, allow_unicode=True)
     author = models.CharField(max_length=300, verbose_name='Author')
+    author_bn = models.CharField(max_length=300, null=True, blank=True, verbose_name='Author (Bangla)')
     publisher = models.CharField(max_length=300, null=True, blank=True, verbose_name='Publisher')
+    publisher_bn = models.CharField(max_length=300, null=True, blank=True, verbose_name='Publisher (Bangla)')
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True, verbose_name='ISBN')
     
     description = RichTextField(verbose_name='Description')
+    description_bn = RichTextField(null=True, blank=True, verbose_name='Description (Bangla)')
     short_description = models.TextField(max_length=500, blank=True, verbose_name='Short Description')
+    short_description_bn = models.TextField(max_length=500, null=True, blank=True, verbose_name='Short Description (Bangla)')
     
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='books')
     language = models.CharField(max_length=10, choices=LANGUAGE_CHOICES, default='en', verbose_name='Language')
@@ -95,11 +109,49 @@ class Book(models.Model):
     def __str__(self):
         return self.title
     
+    def get_title(self, language='en'):
+        """Get title in specified language"""
+        if language == 'bn' and self.title_bn:
+            return self.title_bn
+        return self.title
+    
+    def get_author(self, language='en'):
+        """Get author in specified language"""
+        if language == 'bn' and self.author_bn:
+            return self.author_bn
+        return self.author
+    
+    def get_publisher(self, language='en'):
+        """Get publisher in specified language"""
+        if language == 'bn' and self.publisher_bn:
+            return self.publisher_bn
+        return self.publisher or ''
+    
+    def get_description(self, language='en'):
+        """Get description in specified language"""
+        if language == 'bn' and self.description_bn:
+            return self.description_bn
+        return self.description
+    
+    def get_short_description(self, language='en'):
+        """Get short description in specified language"""
+        if language == 'bn' and self.short_description_bn:
+            return self.short_description_bn
+        return self.short_description
+    
     def save(self, *args, **kwargs):
         if not self.slug:
+            # Generate slug based on language preference
+            # If language is Bangla and title_bn exists, use it; otherwise use English title
+            if self.language == 'bn' and self.title_bn:
+                slug_source = self.title_bn
+            else:
+                slug_source = self.title
+            
             try:
-                self.slug = slugify(self.title, allow_unicode=True)
+                self.slug = slugify(slug_source, allow_unicode=True)
             except TypeError:
+                # Fallback to English title if Unicode slug fails
                 self.slug = slugify(self.title)
         
         # Validate featured books limit

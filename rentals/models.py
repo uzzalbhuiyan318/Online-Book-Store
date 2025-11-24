@@ -11,6 +11,9 @@ class RentalPlan(models.Model):
     """Rental Plan Model - Define different rental durations and pricing"""
     
     name = models.CharField(max_length=100, verbose_name='Plan Name')
+    name_bn = models.CharField(max_length=100, null=True, blank=True, verbose_name='Plan Name (Bangla)')
+    description = models.TextField(null=True, blank=True, verbose_name='Plan Description')
+    description_bn = models.TextField(null=True, blank=True, verbose_name='Plan Description (Bangla)')
     days = models.IntegerField(verbose_name='Duration (Days)', validators=[MinValueValidator(1)])
     price_percentage = models.DecimalField(
         max_digits=5, 
@@ -90,7 +93,9 @@ class BookRental(models.Model):
     
     # Notes
     customer_notes = models.TextField(null=True, blank=True, verbose_name='Customer Notes')
+    customer_notes_bn = models.TextField(null=True, blank=True, verbose_name='Customer Notes (Bangla)')
     admin_notes = models.TextField(null=True, blank=True, verbose_name='Admin Notes')
+    admin_notes_bn = models.TextField(null=True, blank=True, verbose_name='Admin Notes (Bangla)')
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

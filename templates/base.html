@@ -1,8 +1,10 @@
 {% load static %}
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}Online Bookstore - Buy books online in Bangladesh{% endblock %}">
     <title>{% block title %}BookStore - Online Book Shopping in Bangladesh{% endblock %}</title>

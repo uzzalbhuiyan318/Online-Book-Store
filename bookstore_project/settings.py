@@ -77,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'books.context_processors.cart_context',
                 'books.context_processors.categories_context',
+                'books.context_processors.language_context',
             ],
         },
     },
@@ -95,7 +96,7 @@ DATABASES = {
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='3306'),
         'OPTIONS': {
-            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES', character_set_connection=utf8mb4, collation_connection=utf8mb4_unicode_ci",
             'charset': 'utf8mb4',
         },
     }
@@ -132,9 +133,14 @@ USE_I18N = True
 USE_L10N = True
 USE_TZ = True
 
+# Locale paths for translation files
 LOCALE_PATHS = [
     BASE_DIR / 'locale',
 ]
+
+# Default charset for MySQL
+DATABASE_CHARSET = 'utf8mb4'
+DATABASE_COLLATION = 'utf8mb4_unicode_ci'
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'

@@ -791,6 +791,100 @@ def rental_list(request):
 
 
 @staff_member_required
+def rental_bulk_action(request):
+    """Handle bulk actions for rentals (activate, return, cancel, calculate fees, send reminders, export)"""
+    if request.method != 'POST':
+        return redirect('admin_panel:rental_list')
+
+    action = request.POST.get('action')
+    selected = request.POST.getlist('selected_rentals')
+    if not selected:
+        messages.error(request, 'No rentals selected!')
+        return redirect('admin_panel:rental_list')
+
+    rentals_qs = BookRental.objects.filter(id__in=selected)
+
+    if action == 'activate':
+        updated = rentals_qs.filter(status='pending').update(status='active', start_date=timezone.now())
+        messages.success(request, f'{updated} rental(s) marked as active.')
+    elif action == 'return':
+        count = 0
+        for r in rentals_qs.filter(status='active'):
+            if hasattr(r, 'mark_as_returned'):
+                r.mark_as_returned()
+            else:
+                r.status = 'returned'
+                r.return_date = timezone.now()
+                r.save()
+            count += 1
+        messages.success(request, f'{count} rental(s) marked as returned.')
+    elif action == 'cancel':
+        updated = rentals_qs.filter(status__in=['pending', 'active']).update(status='cancelled')
+        messages.success(request, f'{updated} rental(s) cancelled.')
+    elif action == 'calculate_late_fees':
+        count = 0
+        total_fee = 0
+        settings = RentalSettings.get_settings()
+        for r in rentals_qs.filter(status='active'):
+            if getattr(r, 'is_overdue', False):
+                fee = r.calculate_late_fee(settings.daily_late_fee)
+                total_fee += fee
+                count += 1
+        messages.success(request, f'Calculated late fees for {count} rental(s). Total: ৳{total_fee}')
+    elif action == 'send_due_reminder':
+        count = 0
+        for r in rentals_qs.filter(status='active'):
+            if getattr(r, 'days_remaining', 0) <= 3 and getattr(r, 'days_remaining', 0) > 0:
+                RentalNotification.objects.create(
+                    rental=r,
+                    user=r.user,
+                    notification_type='due_soon',
+                    title=f'Reminder: Book Due in {r.days_remaining} Days',
+                    message=f'Your rental for "{r.book.title}" is due on {r.due_date.strftime("%d %b, %Y")}. Please return or renew it soon.'
+                )
+                count += 1
+        messages.success(request, f'Sent due date reminders for {count} rental(s).')
+    elif action == 'send_overdue_notice':
+        count = 0
+        settings = RentalSettings.get_settings()
+        for r in rentals_qs.filter(status='active'):
+            if getattr(r, 'is_overdue', False):
+                late_fee = r.calculate_late_fee(settings.daily_late_fee)
+                RentalNotification.objects.create(
+                    rental=r,
+                    user=r.user,
+                    notification_type='overdue',
+                    title=f'⚠️ Book Overdue - Action Required',
+                    message=f'Your rental for "{r.book.title}" is {r.overdue_days} day(s) overdue. Late fee: ৳{late_fee}. Please return the book immediately.'
+                )
+                count += 1
+        messages.success(request, f'Sent overdue notices for {count} rental(s).')
+    elif action == 'export':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="rentals_export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Rental Number','User','Email','Book','Plan','Status','Start Date','Due Date','Amount','Created At'])
+        for r in rentals_qs.order_by('-created_at'):
+            writer.writerow([
+                getattr(r, 'rental_number', ''),
+                r.user.full_name or '',
+                r.user.email,
+                getattr(r.book, 'title', ''),
+                getattr(getattr(r, 'rental_plan', None), 'name', ''),
+                r.get_status_display(),
+                r.start_date.strftime('%Y-%m-%d') if r.start_date else '',
+                r.due_date.strftime('%Y-%m-%d') if r.due_date else '',
+                getattr(r, 'total_amount', getattr(r, 'amount', '')),
+                r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else ''
+            ])
+        return response
+    else:
+        messages.error(request, 'Invalid action selected!')
+
+    return redirect('admin_panel:rental_list')
+
+
+@staff_member_required
 def rental_detail(request, rental_number):
     """Rental Detail"""
     rental = get_object_or_404(BookRental, rental_number=rental_number)

@@ -32,42 +32,88 @@
         </form>
 
         {% if rentals %}
-        <div class="table-responsive">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Rental ID</th>
-                        <th>Customer</th>
-                        <th>Book</th>
-                        <th>Plan</th>
-                        <th>Start Date</th>
-                        <th>Due Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for rental in rentals %}
-                    <tr>
-                        <td><strong>#{{ rental.id }}</strong></td>
-                        <td>{{ rental.user.full_name|default:rental.user.email }}</td>
-                        <td>{{ rental.book.title|truncatewords:5 }}</td>
-                        <td>{{ rental.plan.name }}</td>
-                        <td>{{ rental.start_date|date:"M d, Y" }}</td>
-                        <td>{{ rental.due_date|date:"M d, Y" }}</td>
-                        <td>
-                            <span class="status-badge status-{{ rental.status }}">{{ rental.get_status_display }}</span>
-                        </td>
-                        <td>
-                            <a href="{% url 'admin_panel:rental_detail' rental.rental_number %}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+        <form method="post" action="{% url 'admin_panel:rental_bulk_action' %}">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between mb-3">
+                <div>
+                    <select name="action" class="form-select d-inline-block w-auto">
+                        <option value="">Bulk Actions</option>
+                        <option value="activate">Mark as Active</option>
+                        <option value="return">Mark as Returned</option>
+                        <option value="cancel">Cancel Rentals</option>
+                        <option value="calculate_late_fees">Calculate Late Fees</option>
+                        <option value="send_due_reminder">Send Due Reminders</option>
+                        <option value="send_overdue_notice">Send Overdue Notices</option>
+                        <option value="export">Export Selected (CSV)</option>
+                    </select>
+                    <button type="submit" class="btn btn-admin-primary ms-2">Apply</button>
+                    <a href="{% url 'admin_panel:rental_list' %}" class="btn btn-admin-secondary ms-2">Reset</a>
+                </div>
+                <div>
+                    <span class="text-muted">Selected: <span id="selected-count">0</span></span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all"></th>
+                            <th>Rental ID</th>
+                            <th>Customer</th>
+                            <th>Book</th>
+                            <th>Plan</th>
+                            <th>Start Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rental in rentals %}
+                        <tr>
+                            <td><input type="checkbox" name="selected_rentals" value="{{ rental.id }}" class="select-item"></td>
+                            <td><strong>#{{ rental.rental_number }}</strong></td>
+                            <td>{{ rental.user.full_name|default:rental.user.email }}</td>
+                            <td>{{ rental.book.title|truncatewords:5 }}</td>
+                            <td>{{ rental.rental_plan.name }}</td>
+                            <td>{{ rental.start_date|date:"M d, Y" }}</td>
+                            <td>{{ rental.due_date|date:"M d, Y" }}</td>
+                            <td>
+                                <span class="status-badge status-{{ rental.status }}">{{ rental.get_status_display }}</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_panel:rental_detail' rental.rental_number %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+        <script>
+        // Handle select all and selected count
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAll = document.getElementById('select-all');
+            const items = document.querySelectorAll('.select-item');
+            const countEl = document.getElementById('selected-count');
+
+            function updateCount() {
+                const c = document.querySelectorAll('.select-item:checked').length;
+                countEl.textContent = c;
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function() {
+                    items.forEach(i => i.checked = selectAll.checked);
+                    updateCount();
+                });
+                items.forEach(i => i.addEventListener('change', updateCount));
+            }
+        });
+        </script>
 
         {% if page_obj.has_other_pages %}
         <nav aria-label="Page navigation" class="mt-4">

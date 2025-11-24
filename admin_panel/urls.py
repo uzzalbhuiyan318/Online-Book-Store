@@ -50,6 +50,7 @@ urlpatterns = [
     path('rentals/plans/<int:pk>/edit/', views.rental_plan_edit, name='rental_plan_edit'),
     path('rentals/plans/<int:pk>/delete/', views.rental_plan_delete, name='rental_plan_delete'),
     path('rentals/settings/', views.rental_settings, name='rental_settings'),
+    path('rentals/bulk-action/', views.rental_bulk_action, name='rental_bulk_action'),
     path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
     path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
     

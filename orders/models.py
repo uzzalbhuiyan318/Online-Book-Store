@@ -57,7 +57,9 @@ class Order(models.Model):
     
     # Notes
     customer_notes = models.TextField(null=True, blank=True)
+    customer_notes_bn = models.TextField(null=True, blank=True, verbose_name='Customer Notes (Bangla)')
     admin_notes = models.TextField(null=True, blank=True)
+    admin_notes_bn = models.TextField(null=True, blank=True, verbose_name='Admin Notes (Bangla)')
     
     # Tracking
     tracking_number = models.CharField(max_length=100, null=True, blank=True)
@@ -171,6 +173,7 @@ class Coupon(models.Model):
     # Basic Info
     code = models.CharField(max_length=50, unique=True, help_text="Coupon code (case-insensitive)")
     description = models.TextField(blank=True, help_text="Description of the coupon")
+    description_bn = models.TextField(blank=True, null=True, help_text="Description of the coupon (Bangla)")
     
     # Discount Settings
     discount_type = models.CharField(max_length=20, choices=DISCOUNT_TYPE_CHOICES, default='percentage')
