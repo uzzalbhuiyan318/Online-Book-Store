@@ -4,6 +4,8 @@ from django.utils.html import format_html
 from django.db import models
 from django import forms
 from .models import Order, OrderItem, OrderStatusHistory, Coupon, CouponUsage
+from .models import GiftCity, GiftArea, GiftZone, GiftOccasion
+from .models import GiftForm
 
 
 class OrderItemInline(admin.TabularInline):
@@ -281,3 +283,60 @@ class CouponUsageAdmin(admin.ModelAdmin):
     list_filter = ['used_at', 'coupon']
     search_fields = ['coupon__code', 'user__email', 'order__order_number']
     readonly_fields = ['used_at']
+
+
+@admin.register(GiftCity)
+class GiftCityAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
+
+
+@admin.register(GiftArea)
+class GiftAreaAdmin(admin.ModelAdmin):
+    list_display = ['name', 'city']
+    list_filter = ['city']
+    search_fields = ['name', 'city__name']
+
+
+@admin.register(GiftZone)
+class GiftZoneAdmin(admin.ModelAdmin):
+    list_display = ['name', 'area']
+    list_filter = ['area__city']
+    search_fields = ['name', 'area__name']
+
+
+@admin.register(GiftOccasion)
+class GiftOccasionAdmin(admin.ModelAdmin):
+    list_display = ['key', 'label']
+    search_fields = ['key', 'label']
+
+
+@admin.register(GiftForm)
+class GiftFormAdmin(admin.ModelAdmin):
+    list_display = ['id', 'order', 'to_name', 'to_phone', 'city', 'area', 'zone', 'occasion', 'status', 'created_at']
+    list_filter = ['status', 'city', 'area', 'occasion', 'created_at']
+    search_fields = ['to_name', 'to_phone', 'from_name', 'order__order_number']
+    readonly_fields = ['created_at', 'updated_at']
+
+    fieldsets = (
+        ('Order Link', {'fields': ('order',)}),
+        ('Sender', {'fields': ('from_name', 'from_phone', 'from_alt_phone')}),
+        ('Recipient', {'fields': (
+            'to_name', 'to_phone', 'to_email', 'to_address_line1', 'to_address_line2',
+            'city', 'area', 'zone', 'postal_code', 'state', 'occasion'
+        )}),
+        ('Message & Delivery', {'fields': ('message', 'deliver_date')}),
+        ('Admin', {'fields': ('status', 'created_at', 'updated_at')}),
+    )
+
+    actions = ['mark_processed', 'mark_cancelled']
+
+    def mark_processed(self, request, queryset):
+        updated = queryset.update(status='processed')
+        self.message_user(request, f"Marked {updated} gift form(s) as processed")
+    mark_processed.short_description = 'Mark selected as processed'
+
+    def mark_cancelled(self, request, queryset):
+        updated = queryset.update(status='cancelled')
+        self.message_user(request, f"Marked {updated} gift form(s) as cancelled")
+    mark_cancelled.short_description = 'Mark selected as cancelled'

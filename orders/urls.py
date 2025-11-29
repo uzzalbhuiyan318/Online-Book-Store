@@ -20,6 +20,10 @@ urlpatterns = [
     # Coupon Management
     path('apply-coupon/', views.apply_coupon, name='apply_coupon'),
     path('remove-coupon/', views.remove_coupon, name='remove_coupon'),
+
+    # AJAX endpoints for gift form dynamic selects
+    path('locations/areas/', views.gift_areas, name='gift_areas'),
+    path('locations/zones/', views.gift_zones, name='gift_zones'),
     
     # Invoice
     path('invoice/<str:order_number>/', views.invoice, name='invoice'),

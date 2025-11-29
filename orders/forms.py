@@ -12,6 +12,13 @@ class CheckoutForm(forms.Form):
         empty_label=None,
         required=False
     )
+
+    gift_address = forms.ModelChoiceField(
+        queryset=Address.objects.none(),
+        widget=forms.RadioSelect,
+        empty_label=None,
+        required=False
+    )
     
     # New address fields
     full_name = forms.CharField(
@@ -70,6 +77,138 @@ class CheckoutForm(forms.Form):
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         required=False
     )
+
+    # Gift fields
+    is_gift = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'is_gift_checkbox'})
+    )
+    gift_from_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sender name'})
+    )
+    gift_from_alt_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Alternative Phone No'})
+    )
+    gift_from_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Sender phone'})
+    )
+    gift_message = forms.CharField(
+        max_length=120,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'id': 'gift_message', 'maxlength': '120', 'placeholder': 'Write a short message (max 120 characters)'}),
+        required=False
+    )
+    gift_deliver_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+
+    # Gift recipient fields (to whom the gift is sent)
+    gift_to_name = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Recipient name'})
+    )
+    gift_to_phone = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Recipient phone'})
+    )
+    gift_to_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Recipient email'})
+    )
+    # Recipient selects
+    COUNTRY_CHOICES = [
+        ('Bangladesh', 'Bangladesh'),
+    ]
+    CITY_CHOICES = [
+        ('', 'Select City'),
+        ('Dhaka', 'Dhaka'),
+        ('Chattogram', 'Chattogram'),
+        ('Khulna', 'Khulna'),
+        ('Rajshahi', 'Rajshahi'),
+        ('Barishal', 'Barishal'),
+        ('Rangpur', 'Rangpur'),
+        ('Mymensingh', 'Mymensingh'),
+        ('Sylhet', 'Sylhet'),
+    ]
+    AREA_CHOICES = [
+        ('', 'Select Area'),
+        ('Gulshan', 'Gulshan'),
+        ('Banani', 'Banani'),
+        ('Dhanmondi', 'Dhanmondi'),
+        ('Motijheel', 'Motijheel'),
+        ('Mirpur', 'Mirpur'),
+    ]
+
+    ZONE_CHOICES = [
+        ('', 'Select Zone'),
+        ('North', 'North'),
+        ('South', 'South'),
+        ('East', 'East'),
+        ('West', 'West'),
+        ('Central', 'Central'),
+    ]
+
+    gift_to_country = forms.ChoiceField(
+        choices=COUNTRY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    gift_to_city = forms.ChoiceField(
+        choices=CITY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    gift_to_area = forms.ChoiceField(
+        choices=AREA_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    gift_to_zone = forms.ChoiceField(
+        choices=ZONE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    gift_to_address_line1 = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address line 1'})
+    )
+    gift_to_address_line2 = forms.CharField(
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address line 2'})
+    )
+    gift_to_state = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State/Division'})
+    )
+    gift_to_postal_code = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Postal Code'})
+    )
+    OCCASION_CHOICES = [
+        ('', 'Select Occasion'),
+        ('birthday', 'Birthday'),
+        ('anniversary', 'Anniversary'),
+        ('congratulations', 'Congratulations'),
+        ('thanks', 'Thanks'),
+        ('other', 'Other'),
+    ]
+    gift_to_occasion = forms.ChoiceField(
+        choices=OCCASION_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
     
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -77,6 +216,23 @@ class CheckoutForm(forms.Form):
         
         if user:
             self.fields['address'].queryset = Address.objects.filter(user=user)
+            self.fields['gift_address'].queryset = Address.objects.filter(user=user)
+        # Populate dynamic choices from DB for gift selects
+        try:
+            from .models import GiftCity, GiftArea, GiftZone, GiftOccasion
+
+            cities = [("", "Select City")] + [(str(c.id), c.name) for c in GiftCity.objects.all()]
+            self.fields['gift_to_city'].choices = cities
+
+            # Default area and zone choices (empty) - JS will load dependent options via AJAX
+            self.fields['gift_to_area'].choices = [("", "Select Area")]
+            self.fields['gift_to_zone'].choices = [("", "Select Zone")]
+
+            occasions = [("", "Select Occasion")] + [(o.key, o.label) for o in GiftOccasion.objects.all()]
+            self.fields['gift_to_occasion'].choices = occasions
+        except Exception:
+            # If models not available during migrations or other scenarios, leave static defaults
+            pass
 
 
 class OrderTrackingForm(forms.Form):

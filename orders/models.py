@@ -60,6 +60,18 @@ class Order(models.Model):
     customer_notes_bn = models.TextField(null=True, blank=True, verbose_name='Customer Notes (Bangla)')
     admin_notes = models.TextField(null=True, blank=True)
     admin_notes_bn = models.TextField(null=True, blank=True, verbose_name='Admin Notes (Bangla)')
+
+    # Gift order fields
+    is_gift = models.BooleanField(default=False, help_text='Whether this order should be treated as a gift')
+    gift_from_name = models.CharField(max_length=255, null=True, blank=True)
+    gift_from_phone = models.CharField(max_length=20, null=True, blank=True)
+    gift_from_alt_phone = models.CharField(max_length=20, null=True, blank=True)
+    gift_from_alt_phone = models.CharField(max_length=20, null=True, blank=True)
+    gift_message = models.TextField(null=True, blank=True)
+    gift_message_bn = models.TextField(null=True, blank=True, verbose_name='Gift Message (Bangla)')
+    gift_deliver_date = models.DateField(null=True, blank=True)
+    gift_occasion = models.CharField(max_length=50, null=True, blank=True)
+    gift_zone = models.CharField(max_length=100, null=True, blank=True)
     
     # Tracking
     tracking_number = models.CharField(max_length=100, null=True, blank=True)
@@ -117,6 +129,106 @@ class Order(models.Model):
             'refunded': 'secondary',
         }
         return status_classes.get(self.status, 'secondary')
+
+
+# Models to drive dynamic gift form options (admin-manageable)
+class GiftCity(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name = 'Gift City'
+        verbose_name_plural = 'Gift Cities'
+
+    def __str__(self):
+        return self.name
+
+
+class GiftArea(models.Model):
+    city = models.ForeignKey(GiftCity, on_delete=models.CASCADE, related_name='areas')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'Gift Area'
+        verbose_name_plural = 'Gift Areas'
+        unique_together = ('city', 'name')
+
+    def __str__(self):
+        return f"{self.name} ({self.city.name})"
+
+
+class GiftZone(models.Model):
+    area = models.ForeignKey(GiftArea, on_delete=models.CASCADE, related_name='zones')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'Gift Zone'
+        verbose_name_plural = 'Gift Zones'
+        unique_together = ('area', 'name')
+
+    def __str__(self):
+        return f"{self.name} ({self.area.name})"
+
+
+class GiftOccasion(models.Model):
+    key = models.CharField(max_length=50, unique=True)
+    label = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = 'Gift Occasion'
+        verbose_name_plural = 'Gift Occasions'
+
+    def __str__(self):
+        return self.label
+
+
+
+class GiftForm(models.Model):
+    """Store submitted gift form data separately so admin can manage gift requests."""
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processed', 'Processed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    order = models.ForeignKey('Order', on_delete=models.SET_NULL, null=True, blank=True, related_name='gift_forms')
+    is_gift = models.BooleanField(default=True)
+
+    # From
+    from_name = models.CharField(max_length=255, null=True, blank=True)
+    from_phone = models.CharField(max_length=20, null=True, blank=True)
+    from_alt_phone = models.CharField(max_length=20, null=True, blank=True)
+
+    # To / recipient
+    to_name = models.CharField(max_length=255, null=True, blank=True)
+    to_phone = models.CharField(max_length=20, null=True, blank=True)
+    to_email = models.EmailField(null=True, blank=True)
+    to_address_line1 = models.CharField(max_length=255, null=True, blank=True)
+    to_address_line2 = models.CharField(max_length=255, null=True, blank=True)
+    city = models.ForeignKey(GiftCity, on_delete=models.SET_NULL, null=True, blank=True)
+    area = models.ForeignKey(GiftArea, on_delete=models.SET_NULL, null=True, blank=True)
+    zone = models.ForeignKey(GiftZone, on_delete=models.SET_NULL, null=True, blank=True)
+    postal_code = models.CharField(max_length=20, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    occasion = models.ForeignKey(GiftOccasion, on_delete=models.SET_NULL, null=True, blank=True)
+
+    message = models.TextField(null=True, blank=True)
+    deliver_date = models.DateField(null=True, blank=True)
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Gift Form'
+        verbose_name_plural = 'Gift Forms'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        if self.to_name:
+            return f"Gift for {self.to_name} ({self.pk})"
+        return f"Gift #{self.pk}"
 
 
 class OrderItem(models.Model):

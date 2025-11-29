@@ -6,6 +6,8 @@ from django.core.paginator import Paginator
 from django.conf import settings
 from decimal import Decimal
 from .models import Order, OrderItem, OrderStatusHistory
+from django.http import JsonResponse
+from .models import GiftCity, GiftArea, GiftZone, GiftForm, GiftOccasion
 from .forms import CheckoutForm, OrderTrackingForm
 from .email_utils import send_order_confirmation_email
 from books.models import Cart
@@ -65,35 +67,66 @@ def checkout(request):
         form = CheckoutForm(request.POST, user=request.user)
         if form.is_valid():
             # Get or create shipping address
-            address_id = request.POST.get('address_id')
-            
-            if address_id:
-                # Use existing address
-                address = get_object_or_404(Address, id=address_id, user=request.user)
-                shipping_data = {
-                    'shipping_full_name': address.full_name,
-                    'shipping_phone': address.phone,
-                    'shipping_email': address.email,
-                    'shipping_address_line1': address.address_line1,
-                    'shipping_address_line2': address.address_line2,
-                    'shipping_city': address.city,
-                    'shipping_state': address.state,
-                    'shipping_postal_code': address.postal_code,
-                    'shipping_country': address.country,
-                }
+            # If this is a gift order, prefer gift address fields
+            if form.cleaned_data.get('is_gift'):
+                # Check if user selected an existing address for the gift recipient
+                gift_address_id = request.POST.get('gift_address') or request.POST.get('gift_address_id')
+                if gift_address_id:
+                    gift_address = get_object_or_404(Address, id=gift_address_id, user=request.user)
+                    shipping_data = {
+                        'shipping_full_name': gift_address.full_name,
+                        'shipping_phone': gift_address.phone,
+                        'shipping_email': gift_address.email,
+                        'shipping_address_line1': gift_address.address_line1,
+                        'shipping_address_line2': gift_address.address_line2,
+                        'shipping_city': gift_address.city,
+                        'shipping_state': gift_address.state,
+                        'shipping_postal_code': gift_address.postal_code,
+                        'shipping_country': gift_address.country,
+                    }
+                else:
+                    # Use recipient fields submitted as part of gift form
+                    shipping_data = {
+                        'shipping_full_name': form.cleaned_data.get('gift_to_name') or form.cleaned_data.get('full_name'),
+                        'shipping_phone': form.cleaned_data.get('gift_to_phone') or form.cleaned_data.get('phone'),
+                        'shipping_email': form.cleaned_data.get('gift_to_email') or form.cleaned_data.get('email'),
+                        'shipping_address_line1': form.cleaned_data.get('gift_to_address_line1') or form.cleaned_data.get('address_line1'),
+                        'shipping_address_line2': form.cleaned_data.get('gift_to_address_line2') or form.cleaned_data.get('address_line2'),
+                        'shipping_city': form.cleaned_data.get('gift_to_city') or form.cleaned_data.get('city'),
+                        'shipping_state': form.cleaned_data.get('gift_to_state') or form.cleaned_data.get('state'),
+                        'shipping_postal_code': form.cleaned_data.get('gift_to_postal_code') or form.cleaned_data.get('postal_code'),
+                        'shipping_country': form.cleaned_data.get('gift_to_country') or 'Bangladesh',
+                    }
             else:
-                # Use new address
-                shipping_data = {
-                    'shipping_full_name': form.cleaned_data['full_name'],
-                    'shipping_phone': form.cleaned_data['phone'],
-                    'shipping_email': form.cleaned_data['email'],
-                    'shipping_address_line1': form.cleaned_data['address_line1'],
-                    'shipping_address_line2': form.cleaned_data['address_line2'],
-                    'shipping_city': form.cleaned_data['city'],
-                    'shipping_state': form.cleaned_data['state'],
-                    'shipping_postal_code': form.cleaned_data['postal_code'],
-                    'shipping_country': 'Bangladesh',
-                }
+                address_id = request.POST.get('address_id')
+                
+                if address_id:
+                    # Use existing address
+                    address = get_object_or_404(Address, id=address_id, user=request.user)
+                    shipping_data = {
+                        'shipping_full_name': address.full_name,
+                        'shipping_phone': address.phone,
+                        'shipping_email': address.email,
+                        'shipping_address_line1': address.address_line1,
+                        'shipping_address_line2': address.address_line2,
+                        'shipping_city': address.city,
+                        'shipping_state': address.state,
+                        'shipping_postal_code': address.postal_code,
+                        'shipping_country': address.country,
+                    }
+                else:
+                    # Use new address
+                    shipping_data = {
+                        'shipping_full_name': form.cleaned_data['full_name'],
+                        'shipping_phone': form.cleaned_data['phone'],
+                        'shipping_email': form.cleaned_data['email'],
+                        'shipping_address_line1': form.cleaned_data['address_line1'],
+                        'shipping_address_line2': form.cleaned_data['address_line2'],
+                        'shipping_city': form.cleaned_data['city'],
+                        'shipping_state': form.cleaned_data['state'],
+                        'shipping_postal_code': form.cleaned_data['postal_code'],
+                        'shipping_country': 'Bangladesh',
+                    }
             
             # Get discount from session
             discount = Decimal(str(request.session.get('discount', 0)))
@@ -108,8 +141,71 @@ def checkout(request):
                 discount=discount,
                 total=final_total,
                 customer_notes=form.cleaned_data.get('customer_notes', ''),
+                # Gift related fields
+                is_gift=form.cleaned_data.get('is_gift', False),
+                gift_from_name=form.cleaned_data.get('gift_from_name', '') or None,
+                gift_from_phone=form.cleaned_data.get('gift_from_phone', '') or None,
+                gift_from_alt_phone=form.cleaned_data.get('gift_from_alt_phone', '') or None,
+                gift_message=form.cleaned_data.get('gift_message', '') or None,
+                gift_occasion=form.cleaned_data.get('gift_to_occasion', '') or None,
+                gift_zone=form.cleaned_data.get('gift_to_zone', '') or None,
+                gift_deliver_date=form.cleaned_data.get('gift_deliver_date', None),
                 **shipping_data
             )
+
+            # If this was a gift order, create a separate GiftForm record for admin handling
+            if form.cleaned_data.get('is_gift'):
+                try:
+                    city_obj = None
+                    area_obj = None
+                    zone_obj = None
+                    occasion_obj = None
+
+                    city_id = form.cleaned_data.get('gift_to_city')
+                    area_id = form.cleaned_data.get('gift_to_area')
+                    zone_id = form.cleaned_data.get('gift_to_zone')
+                    occasion_key = form.cleaned_data.get('gift_to_occasion')
+
+                    if city_id:
+                        try:
+                            city_obj = GiftCity.objects.get(pk=city_id)
+                        except GiftCity.DoesNotExist:
+                            city_obj = None
+                    if area_id:
+                        try:
+                            area_obj = GiftArea.objects.get(pk=area_id)
+                        except GiftArea.DoesNotExist:
+                            area_obj = None
+                    if zone_id:
+                        try:
+                            zone_obj = GiftZone.objects.get(pk=zone_id)
+                        except GiftZone.DoesNotExist:
+                            zone_obj = None
+                    if occasion_key:
+                        occasion_obj = GiftOccasion.objects.filter(key=occasion_key).first()
+
+                    GiftForm.objects.create(
+                        order=order,
+                        is_gift=True,
+                        from_name=form.cleaned_data.get('gift_from_name') or None,
+                        from_phone=form.cleaned_data.get('gift_from_phone') or None,
+                        from_alt_phone=form.cleaned_data.get('gift_from_alt_phone') or None,
+                        to_name=form.cleaned_data.get('gift_to_name') or None,
+                        to_phone=form.cleaned_data.get('gift_to_phone') or None,
+                        to_email=form.cleaned_data.get('gift_to_email') or None,
+                        to_address_line1=form.cleaned_data.get('gift_to_address_line1') or None,
+                        to_address_line2=form.cleaned_data.get('gift_to_address_line2') or None,
+                        city=city_obj,
+                        area=area_obj,
+                        zone=zone_obj,
+                        postal_code=form.cleaned_data.get('gift_to_postal_code') or None,
+                        state=form.cleaned_data.get('gift_to_state') or None,
+                        occasion=occasion_obj,
+                        message=form.cleaned_data.get('gift_message') or None,
+                        deliver_date=form.cleaned_data.get('gift_deliver_date') or None,
+                    )
+                except Exception as e:
+                    logger.exception('Failed to create GiftForm record: %s', e)
             
             # Create order items
             for item in cart_items:
@@ -439,6 +535,32 @@ def track_order(request, order_number=None):
         'order': order,
     }
     return render(request, 'orders/track_order.html', context)
+
+
+def gift_areas(request):
+    """Return areas for a given city id (GET param: city_id)."""
+    city_id = request.GET.get('city_id')
+    try:
+        if not city_id:
+            return JsonResponse({'areas': []})
+        areas = GiftArea.objects.filter(city_id=city_id).order_by('name')
+        data = [{'id': a.id, 'name': a.name} for a in areas]
+        return JsonResponse({'areas': data})
+    except Exception as e:
+        return JsonResponse({'areas': [], 'error': str(e)})
+
+
+def gift_zones(request):
+    """Return zones for a given area id (GET param: area_id)."""
+    area_id = request.GET.get('area_id')
+    try:
+        if not area_id:
+            return JsonResponse({'zones': []})
+        zones = GiftZone.objects.filter(area_id=area_id).order_by('name')
+        data = [{'id': z.id, 'name': z.name} for z in zones]
+        return JsonResponse({'zones': data})
+    except Exception as e:
+        return JsonResponse({'zones': [], 'error': str(e)})
 
 
 @login_required
