@@ -147,23 +147,26 @@
                                 </div>
                             </div>
                             {% endif %}
-                            {% if not addresses %}
-                            {% comment %} <div class="alert alert-info mb-3">
-                                <i class="fas fa-info-circle"></i> Please add your delivery address
-                            </div> {% endcomment %}
-                            <div class="new-address-form">
+                            
+                            <!-- New Address Form (always rendered but hidden if user has saved addresses) -->
+                            <div class="new-address-form" style="{% if addresses %}display: none;{% endif %}" {% if addresses %}aria-hidden="true"{% endif %}>
+                                {% if not addresses %}
+                                {% comment %} <div class="alert alert-info mb-3">
+                                    <i class="fas fa-info-circle"></i> Please add your delivery address
+                                </div> {% endcomment %}
+                                {% endif %}
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="full_name" class="form-label">Full Name <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="full_name" name="full_name" required>
+                                        <input type="text" class="form-control" id="full_name" name="full_name" {% if not addresses %}required{% endif %}>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                                        <input type="tel" class="form-control" id="phone" name="phone" required>
+                                        <input type="tel" class="form-control" id="phone" name="phone" {% if not addresses %}required{% endif %}>
                                     </div>
                                     <div class="col-12">
                                         <label for="address_line1" class="form-label">Address Line 1 <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="address_line1" name="address_line1" required>
+                                        <input type="text" class="form-control" id="address_line1" name="address_line1" {% if not addresses %}required{% endif %}>
                                     </div>
                                     <div class="col-12">
                                         <label for="address_line2" class="form-label">Address Line 2 (Optional)</label>
@@ -171,19 +174,18 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label for="city" class="form-label">City <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="city" name="city" required>
+                                        <input type="text" class="form-control" id="city" name="city" {% if not addresses %}required{% endif %}>
                                     </div>
                                     <div class="col-md-4">
                                         <label for="state" class="form-label">State/Division <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="state" name="state" required>
+                                        <input type="text" class="form-control" id="state" name="state" {% if not addresses %}required{% endif %}>
                                     </div>
                                     <div class="col-md-4">
                                         <label for="postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="postal_code" name="postal_code" required>
+                                        <input type="text" class="form-control" id="postal_code" name="postal_code" {% if not addresses %}required{% endif %}>
                                     </div>
                                 </div>
                             </div>
-                            {% endif %}
                         </div>
                     </div>
 
@@ -710,6 +712,30 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
 
+    // Initialize form field requirements based on current state
+    (function initializeFormRequirements() {
+        // Gift form fields should not be required initially since gift section is hidden
+        const giftFields = document.querySelectorAll('#gift-details input, #gift-details select, #gift-details textarea');
+        giftFields.forEach(field => {
+            field.removeAttribute('required');
+        });
+
+        {% if addresses %}
+        // User has saved addresses - add listener to toggle new address form visibility
+        const addressRadios = document.querySelectorAll('input[name="address_id"]');
+        const newAddressForm = document.querySelector('.new-address-form');
+        const newAddressFields = newAddressForm ? newAddressForm.querySelectorAll('input:not([type="hidden"]), select') : [];
+        
+        // Initially ensure fields are not required since a saved address should be selected by default
+        newAddressFields.forEach(field => {
+            field.removeAttribute('required');
+        });
+        
+        // Note: Currently no option to select "new address" when saved addresses exist
+        // This would require UI enhancement to add a "Use new address" radio option
+        {% endif %}
+    })();
+
     // Form validation
     const checkoutForm = document.getElementById('checkout-form');
     if (checkoutForm) {
@@ -720,6 +746,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
                 showToast('Please select at least one item to checkout', 'warning');
                 return false;
+            }
+
+            // Ensure gift fields are not required if gift is not checked
+            const isGiftChecked = document.getElementById('is_gift')?.checked;
+            if (!isGiftChecked) {
+                const giftFields = document.querySelectorAll('#gift-details input, #gift-details select, #gift-details textarea');
+                giftFields.forEach(field => field.removeAttribute('required'));
             }
         });
     }
@@ -751,10 +784,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const orderAsGiftBtn = document.getElementById('order_as_gift_btn');
     if (isGiftCheckbox && deliveryCard) {
         isGiftCheckbox.addEventListener('change', function() {
+            const deliveryAddressFields = deliveryCard.querySelectorAll('input[required], select[required]');
+            
             if (this.checked) {
                 deliveryCard.style.display = 'none';
+                // Remove required from delivery address fields when gift is selected
+                deliveryAddressFields.forEach(field => {
+                    field.setAttribute('data-was-required', 'true');
+                    field.removeAttribute('required');
+                });
             } else {
                 deliveryCard.style.display = '';
+                // Restore required on delivery address fields when gift is unselected
+                deliveryAddressFields.forEach(field => {
+                    if (field.getAttribute('data-was-required') === 'true') {
+                        field.setAttribute('required', 'required');
+                        field.removeAttribute('data-was-required');
+                    }
+                });
             }
         });
     }

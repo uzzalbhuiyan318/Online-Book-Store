@@ -46,7 +46,10 @@ def checkout(request):
         # Require login to place order
         if not request.user.is_authenticated:
             messages.warning(request, 'Please login to complete your order.')
-            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
+            from django.urls import reverse
+            login_url = reverse(settings.LOGIN_URL)
+            return redirect(f"{login_url}?next={request.path}")
+
         
         # Check if cart is empty
         cart_items = Cart.objects.filter(user=request.user).select_related('book')
@@ -292,6 +295,13 @@ def checkout(request):
                 else:
                     messages.error(request, 'Payment initialization failed. Please try again.')
                     return redirect('orders:order_detail', order_number=order.order_number)
+        else:
+            # Form validation failed
+            logger.error(f"Checkout form validation failed. Errors: {form.errors.as_json()}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+            # Fall through to render the form with errors
     else:
         form = CheckoutForm(user=request.user if request.user.is_authenticated else None)
     
