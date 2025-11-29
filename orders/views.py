@@ -293,10 +293,13 @@ def checkout(request):
                     messages.error(request, 'Payment initialization failed. Please try again.')
                     return redirect('orders:order_detail', order_number=order.order_number)
     else:
-        form = CheckoutForm(user=request.user)
+        form = CheckoutForm(user=request.user if request.user.is_authenticated else None)
     
-    # Get user addresses
-    addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-created_at')
+    # Get user addresses only if authenticated
+    if request.user.is_authenticated:
+        addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-created_at')
+    else:
+        addresses = []
     
     # Prepare context (discount already calculated above)
     context = {
