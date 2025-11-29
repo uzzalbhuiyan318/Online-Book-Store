@@ -58,7 +58,7 @@
                 <!-- Sales -->
                 <div class="admin-nav-section">
                     <div class="admin-nav-section-title">Sales</div>
-                    <a href="{% url 'admin_panel:order_list' %}" class="admin-nav-item {% if 'order' in request.path %}active{% endif %}">
+                    <a href="{% url 'admin_panel:order_list' %}" class="admin-nav-item {% if 'order' in request.path and 'gift' not in request.path %}active{% endif %}">
                         <i class="fas fa-shopping-cart"></i>
                         <span>Orders</span>
                         {% if pending_orders %}
@@ -70,6 +70,57 @@
                         <span>Coupons</span>
                     </a>
                 </div>
+                
+                <!-- Rentals -->
+                <div class="admin-nav-section">
+                    <div class="admin-nav-section-title">Rentals</div>
+                    <a href="{% url 'admin_panel:rental_list' %}" class="admin-nav-item {% if 'rental' in request.path and 'plan' not in request.path and 'feedback' not in request.path and 'notification' not in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Rentals</span>
+                        {% if overdue_rentals %}
+                        <span class="badge bg-danger">{{ overdue_rentals }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'admin_panel:rental_plan_list' %}" class="admin-nav-item {% if 'plan' in request.path %}active{% endif %}">
+                        <i class="fas fa-list"></i>
+                        <span>Rental Plans</span>
+                    </a>
+                    <a href="{% url 'admin_panel:rental_feedback_list' %}" class="admin-nav-item {% if 'feedback' in request.path %}active{% endif %}">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>Feedback</span>
+                    </a>
+                    <a href="{% url 'admin_panel:rental_notification_list' %}" class="admin-nav-item {% if 'notification' in request.path %}active{% endif %}">
+                        <i class="fas fa-bell"></i>
+                        <span>Notifications</span>
+                    </a>
+                    <a href="{% url 'admin_panel:rental_settings' %}" class="admin-nav-item {% if 'settings' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+                
+                <!-- Gifts -->
+                <div class="admin-nav-section">
+                    <div class="admin-nav-section-title">Gifts</div>
+                    <a href="{% url 'admin_panel:gift_form_list' %}" class="admin-nav-item {% if 'gift' in request.path and 'cit' not in request.path and 'area' not in request.path and 'zone' not in request.path and 'occasion' not in request.path %}active{% endif %}">
+                        <i class="fas fa-gift"></i>
+                        <span>Gift Orders</span>
+                    </a>
+                    <a href="{% url 'admin_panel:gift_city_list' %}" class="admin-nav-item {% if 'cit' in request.path %}active{% endif %}">
+                        <i class="fas fa-city"></i>
+                        <span>Cities</span>
+                    </a>
+                    <a href="{% url 'admin_panel:gift_area_list' %}" class="admin-nav-item {% if 'area' in request.path %}active{% endif %}">
+                        <i class="fas fa-map-marked-alt"></i>
+                        <span>Areas</span>
+                    </a>
+                    <a href="{% url 'admin_panel:gift_zone_list' %}" class="admin-nav-item {% if 'zone' in request.path %}active{% endif %}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Zones</span>
+                    </a>
+                    <a href="{% url 'admin_panel:gift_occasion_list' %}" class="admin-nav-item {% if 'occasion' in request.path %}active{% endif %}">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Occasions</span>
                     </a>
                 </div>
                 

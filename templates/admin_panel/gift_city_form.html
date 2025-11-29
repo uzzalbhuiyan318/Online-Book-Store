@@ -8,7 +8,7 @@
             {% csrf_token %}
             <div class="mb-3">
                 <label class="form-label">City Name</label>
-                <input type="text" name="name" class="form-control" value="{{ city.name if city }}" required>
+                <input type="text" name="name" class="form-control" value="{% if city %}{{ city.name }}{% endif %}" required>
             </div>
             <button class="btn btn-admin-primary">{{ action }} City</button>
         </form>

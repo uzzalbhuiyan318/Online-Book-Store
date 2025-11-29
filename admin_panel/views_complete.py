@@ -1115,6 +1115,166 @@ def gift_occasion_edit(request, pk):
 
 
 @staff_member_required
+def gift_area_list(request):
+    """List all gift areas"""
+    from orders.models import GiftArea
+    areas = GiftArea.objects.all().select_related('city').order_by('city__name', 'name')
+    
+    # Filter by city
+    city_id = request.GET.get('city')
+    if city_id:
+        areas = areas.filter(city_id=city_id)
+    
+    paginator = Paginator(areas, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    cities = GiftCity.objects.all().order_by('name')
+    context = {'page_obj': page_obj, 'areas': page_obj.object_list, 'cities': cities}
+    return render(request, 'admin_panel/gift_area_list.html', context)
+
+
+@staff_member_required
+def gift_area_add(request):
+    """Add new gift area"""
+    if request.method == 'POST':
+        from orders.models import GiftArea
+        city_id = request.POST.get('city')
+        name = request.POST.get('name', '').strip()
+        if city_id and name:
+            try:
+                city = GiftCity.objects.get(pk=city_id)
+                GiftArea.objects.create(city=city, name=name)
+                messages.success(request, f'Area "{name}" added to {city.name}')
+                return redirect('admin_panel:gift_area_list')
+            except GiftCity.DoesNotExist:
+                messages.error(request, 'Invalid city selected')
+        else:
+            messages.error(request, 'Please provide both city and area name')
+    
+    cities = GiftCity.objects.all().order_by('name')
+    return render(request, 'admin_panel/gift_area_form.html', {'action': 'Add', 'cities': cities})
+
+
+@staff_member_required
+def gift_area_edit(request, pk):
+    """Edit gift area"""
+    from orders.models import GiftArea
+    area = get_object_or_404(GiftArea, pk=pk)
+    if request.method == 'POST':
+        city_id = request.POST.get('city')
+        name = request.POST.get('name', '').strip()
+        if city_id and name:
+            try:
+                city = GiftCity.objects.get(pk=city_id)
+                area.city = city
+                area.name = name
+                area.save()
+                messages.success(request, f'Area "{name}" updated')
+                return redirect('admin_panel:gift_area_list')
+            except GiftCity.DoesNotExist:
+                messages.error(request, 'Invalid city selected')
+        else:
+            messages.error(request, 'Please provide both city and area name')
+    
+    cities = GiftCity.objects.all().order_by('name')
+    return render(request, 'admin_panel/gift_area_form.html', {'action': 'Edit', 'area': area, 'cities': cities})
+
+
+@staff_member_required
+def gift_area_delete(request, pk):
+    """Delete gift area"""
+    from orders.models import GiftArea
+    area = get_object_or_404(GiftArea, pk=pk)
+    if request.method == 'POST':
+        name = area.name
+        area.delete()
+        messages.success(request, f'Area "{name}" deleted')
+        return redirect('admin_panel:gift_area_list')
+    return render(request, 'admin_panel/gift_area_confirm_delete.html', {'area': area})
+
+
+@staff_member_required
+def gift_zone_list(request):
+    """List all gift zones"""
+    from orders.models import GiftZone, GiftArea
+    zones = GiftZone.objects.all().select_related('area__city').order_by('area__city__name', 'area__name', 'name')
+    
+    # Filter by area
+    area_id = request.GET.get('area')
+    if area_id:
+        zones = zones.filter(area_id=area_id)
+    
+    paginator = Paginator(zones, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    areas = GiftArea.objects.all().select_related('city').order_by('city__name', 'name')
+    context = {'page_obj': page_obj, 'zones': page_obj.object_list, 'areas': areas}
+    return render(request, 'admin_panel/gift_zone_list.html', context)
+
+
+@staff_member_required
+def gift_zone_add(request):
+    """Add new gift zone"""
+    from orders.models import GiftZone, GiftArea
+    if request.method == 'POST':
+        area_id = request.POST.get('area')
+        name = request.POST.get('name', '').strip()
+        if area_id and name:
+            try:
+                area = GiftArea.objects.get(pk=area_id)
+                GiftZone.objects.create(area=area, name=name)
+                messages.success(request, f'Zone "{name}" added to {area.name}')
+                return redirect('admin_panel:gift_zone_list')
+            except GiftArea.DoesNotExist:
+                messages.error(request, 'Invalid area selected')
+        else:
+            messages.error(request, 'Please provide both area and zone name')
+    
+    areas = GiftArea.objects.all().select_related('city').order_by('city__name', 'name')
+    return render(request, 'admin_panel/gift_zone_form.html', {'action': 'Add', 'areas': areas})
+
+
+@staff_member_required
+def gift_zone_edit(request, pk):
+    """Edit gift zone"""
+    from orders.models import GiftZone, GiftArea
+    zone = get_object_or_404(GiftZone, pk=pk)
+    if request.method == 'POST':
+        area_id = request.POST.get('area')
+        name = request.POST.get('name', '').strip()
+        if area_id and name:
+            try:
+                area = GiftArea.objects.get(pk=area_id)
+                zone.area = area
+                zone.name = name
+                zone.save()
+                messages.success(request, f'Zone "{name}" updated')
+                return redirect('admin_panel:gift_zone_list')
+            except GiftArea.DoesNotExist:
+                messages.error(request, 'Invalid area selected')
+        else:
+            messages.error(request, 'Please provide both area and zone name')
+    
+    areas = GiftArea.objects.all().select_related('city').order_by('city__name', 'name')
+    return render(request, 'admin_panel/gift_zone_form.html', {'action': 'Edit', 'zone': zone, 'areas': areas})
+
+
+@staff_member_required
+def gift_zone_delete(request, pk):
+    """Delete gift zone"""
+    from orders.models import GiftZone
+    zone = get_object_or_404(GiftZone, pk=pk)
+    if request.method == 'POST':
+        name = zone.name
+        zone.delete()
+        messages.success(request, f'Zone "{name}" deleted')
+        return redirect('admin_panel:gift_zone_list')
+    return render(request, 'admin_panel/gift_zone_confirm_delete.html', {'zone': zone})
+
+
+@staff_member_required
 
 def order_update_status(request, order_number):
 

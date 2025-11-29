@@ -26,8 +26,8 @@
                         <td><a href="{% url 'admin_panel:gift_form_detail' gift.pk %}">{{ gift.pk }}</a></td>
                         <td>{{ gift.to_name }}<br><small>{{ gift.to_phone }}</small></td>
                         <td>{{ gift.from_name }}<br><small>{{ gift.from_phone }}</small></td>
-                        <td>{{ gift.occasion.label if gift.occasion }}</td>
-                        <td>{{ gift.deliver_date }}</td>
+                        <td>{% if gift.occasion %}{{ gift.occasion.label }}{% else %}-{% endif %}</td>
+                        <td>{{ gift.deliver_date|default:"-" }}</td>
                         <td>{{ gift.get_status_display }}</td>
                         <td>{{ gift.created_at|date:'Y-m-d H:i' }}</td>
                     </tr>
