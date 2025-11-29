@@ -1,0 +1,128 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Rental Status History - Admin Panel{% endblock %}
+{% block page_title %}Rental Status History{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-history"></i> Status History</h5>
+    </div>
+    <div class="admin-card-body">
+        <!-- Filters and Search -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <form method="get" class="d-flex gap-2">
+                    <select name="status" class="form-select w-auto" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="returned" {% if request.GET.status == 'returned' %}selected{% endif %}>Returned</option>
+                        <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
+                        <option value="cancelled" {% if request.GET.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                    
+                    <input type="date" name="date" class="form-control w-auto" value="{{ request.GET.date }}" onchange="this.form.submit()">
+                    
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search rental # or notes..." value="{{ request.GET.q }}">
+                        <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if history_items %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Rental #</th>
+                        <th>Status</th>
+                        <th>Changed By</th>
+                        <th>Date</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history_items %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'admin_panel:rental_detail' item.rental.rental_number %}">
+                                {{ item.rental.rental_number }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if item.status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                            {% elif item.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif item.status == 'returned' %}
+                                <span class="badge bg-secondary">Returned</span>
+                            {% elif item.status == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                            {% elif item.status == 'cancelled' %}
+                                <span class="badge bg-dark">Cancelled</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ item.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.changed_by %}
+                                {{ item.changed_by.full_name|default:item.changed_by.email }}
+                            {% else %}
+                                <span class="text-muted">System</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.created_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ item.notes|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.date %}&date={{ request.GET.date }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+        
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-history"></i>
+            <h5>No history found</h5>
+            <p class="text-muted">Try adjusting your search or filters</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

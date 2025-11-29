@@ -2,32 +2,34 @@
 {% load static %}
 
 {% block title %}Rental Notifications - Admin Panel{% endblock %}
-{% block page_title %}Rental Notifications Management{% endblock %}
+{% block page_title %}Rental Notifications{% endblock %}
 
 {% block content %}
-<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card border-info">
-            <div class="card-body text-center">
-                <h3 class="text-info">{{ total_count }}</h3>
-                <p class="mb-0"><i class="fas fa-bell"></i> Total Notifications</p>
+        <div class="stats-card primary">
+            <div class="icon"><i class="fas fa-bell"></i></div>
+            <div class="details">
+                <h3>{{ total_count }}</h3>
+                <span>Total Notifications</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-warning">
-            <div class="card-body text-center">
-                <h3 class="text-warning">{{ unread_count }}</h3>
-                <p class="mb-0"><i class="fas fa-envelope"></i> Unread</p>
+        <div class="stats-card danger">
+            <div class="icon"><i class="fas fa-envelope"></i></div>
+            <div class="details">
+                <h3>{{ unread_count }}</h3>
+                <span>Unread</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card border-success">
-            <div class="card-body text-center">
-                <h3 class="text-success">{{ sent_count }}</h3>
-                <p class="mb-0"><i class="fas fa-paper-plane"></i> Sent</p>
+        <div class="stats-card success">
+            <div class="icon"><i class="fas fa-paper-plane"></i></div>
+            <div class="details">
+                <h3>{{ sent_count }}</h3>
+                <span>Sent</span>
             </div>
         </div>
     </div>
@@ -35,173 +37,168 @@
 
 <div class="admin-card">
     <div class="admin-card-header">
-        <h5><i class="fas fa-bell"></i> Rental Notifications ({{ page_obj.paginator.count }})</h5>
+        <h5><i class="fas fa-bell"></i> Notification Management</h5>
     </div>
-    
     <div class="admin-card-body">
-        <!-- Filters -->
-        <form method="get" class="row g-3 mb-4">
-            <div class="col-md-4">
-                <input type="text" name="q" class="form-control" placeholder="Search by user, rental, or message..." value="{{ request.GET.q }}">
+        <!-- Filters and Search -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <form method="get" class="d-flex gap-2">
+                    <select name="notification_type" class="form-select w-auto" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="rental_confirmed" {% if request.GET.notification_type == 'rental_confirmed' %}selected{% endif %}>Rental Confirmed</option>
+                        <option value="rental_active" {% if request.GET.notification_type == 'rental_active' %}selected{% endif %}>Rental Active</option>
+                        <option value="due_soon" {% if request.GET.notification_type == 'due_soon' %}selected{% endif %}>Due Soon</option>
+                        <option value="due_tomorrow" {% if request.GET.notification_type == 'due_tomorrow' %}selected{% endif %}>Due Tomorrow</option>
+                        <option value="overdue" {% if request.GET.notification_type == 'overdue' %}selected{% endif %}>Overdue</option>
+                        <option value="returned" {% if request.GET.notification_type == 'returned' %}selected{% endif %}>Returned</option>
+                        <option value="renewal_confirmed" {% if request.GET.notification_type == 'renewal_confirmed' %}selected{% endif %}>Renewal Confirmed</option>
+                        <option value="feedback_request" {% if request.GET.notification_type == 'feedback_request' %}selected{% endif %}>Feedback Request</option>
+                    </select>
+                    
+                    <select name="is_read" class="form-select w-auto" onchange="this.form.submit()">
+                        <option value="">Read Status</option>
+                        <option value="1" {% if request.GET.is_read == '1' %}selected{% endif %}>Read</option>
+                        <option value="0" {% if request.GET.is_read == '0' %}selected{% endif %}>Unread</option>
+                    </select>
+                    
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Search..." value="{{ request.GET.q }}">
+                        <button type="submit" class="btn btn-outline-secondary"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-2">
-                <select name="notification_type" class="form-select">
-                    <option value="">All Types</option>
-                    <option value="rental_confirmed" {% if request.GET.notification_type == 'rental_confirmed' %}selected{% endif %}>Rental Confirmed</option>
-                    <option value="rental_due_soon" {% if request.GET.notification_type == 'rental_due_soon' %}selected{% endif %}>Due Soon</option>
-                    <option value="rental_overdue" {% if request.GET.notification_type == 'rental_overdue' %}selected{% endif %}>Overdue</option>
-                    <option value="rental_returned" {% if request.GET.notification_type == 'rental_returned' %}selected{% endif %}>Returned</option>
-                    <option value="late_fee_applied" {% if request.GET.notification_type == 'late_fee_applied' %}selected{% endif %}>Late Fee</option>
-                </select>
+            <div class="col-md-4 text-end">
+                <form method="post" action="{% url 'admin_panel:rental_notification_bulk_action' %}" id="bulkActionForm" class="d-inline-block">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <select name="action" class="form-select form-select-sm" required>
+                            <option value="">Bulk Actions</option>
+                            <option value="mark_read">Mark as Read</option>
+                            <option value="mark_unread">Mark as Unread</option>
+                            <option value="delete">Delete Selected</option>
+                        </select>
+                        <button type="submit" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Are you sure you want to perform this action?')">Apply</button>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-2">
-                <select name="is_read" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="0" {% if request.GET.is_read == '0' %}selected{% endif %}>Unread</option>
-                    <option value="1" {% if request.GET.is_read == '1' %}selected{% endif %}>Read</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="is_sent" class="form-select">
-                    <option value="">All Sent Status</option>
-                    <option value="1" {% if request.GET.is_sent == '1' %}selected{% endif %}>Sent</option>
-                    <option value="0" {% if request.GET.is_sent == '0' %}selected{% endif %}>Not Sent</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-admin-primary me-2">
-                    <i class="fas fa-search"></i> Search
-                </button>
-                <a href="{% url 'admin_panel:rental_notification_list' %}" class="btn btn-admin-secondary">Reset</a>
-            </div>
-        </form>
+        </div>
 
         {% if notifications %}
-        <!-- Bulk Actions -->
-        <form method="post" action="{% url 'admin_panel:rental_notification_bulk_action' %}">
-            {% csrf_token %}
-            <div class="d-flex justify-content-between mb-3">
-                <div>
-                    <select name="action" class="form-select d-inline-block w-auto">
-                        <option value="">Bulk Actions</option>
-                        <option value="mark_read">Mark as Read</option>
-                        <option value="mark_unread">Mark as Unread</option>
-                        <option value="delete">Delete Selected</option>
-                    </select>
-                    <button type="submit" class="btn btn-admin-primary ms-2">Apply</button>
-                </div>
-                <div>
-                    <span class="text-muted">Selected: <span id="selected-count">0</span></span>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="admin-table">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="select-all"></th>
-                            <th>User</th>
-                            <th>Rental</th>
-                            <th>Type</th>
-                            <th>Message</th>
-                            <th>Status</th>
-                            <th>Sent</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for notification in notifications %}
-                        <tr {% if not notification.is_read %}class="table-warning"{% endif %}>
-                            <td><input type="checkbox" name="notification_ids" value="{{ notification.id }}" class="select-item"></td>
-                            <td>{{ notification.rental.user.full_name|default:notification.rental.user.email }}</td>
-                            <td><a href="{% url 'admin_panel:rental_detail' notification.rental.rental_number %}">#{{ notification.rental.rental_number }}</a></td>
-                            <td>
-                                {% if notification.notification_type == 'rental_confirmed' %}
-                                    <span class="badge bg-success">Confirmed</span>
-                                {% elif notification.notification_type == 'rental_due_soon' %}
-                                    <span class="badge bg-warning">Due Soon</span>
-                                {% elif notification.notification_type == 'rental_overdue' %}
-                                    <span class="badge bg-danger">Overdue</span>
-                                {% elif notification.notification_type == 'rental_returned' %}
-                                    <span class="badge bg-info">Returned</span>
-                                {% elif notification.notification_type == 'late_fee_applied' %}
-                                    <span class="badge bg-danger">Late Fee</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ notification.get_notification_type_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ notification.message|truncatewords:10 }}</td>
-                            <td>
-                                {% if notification.is_read %}
-                                    <span class="badge bg-secondary">Read</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Unread</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if notification.is_sent %}
-                                    <i class="fas fa-check-circle text-success" title="Sent"></i>
-                                {% else %}
-                                    <i class="fas fa-times-circle text-danger" title="Not Sent"></i>
-                                {% endif %}
-                            </td>
-                            <td>{{ notification.created_at|date:"M d, Y H:i" }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </form>
-
-        <script>
-        // Handle select all and selected count
-        document.addEventListener('DOMContentLoaded', function() {
-            const selectAll = document.getElementById('select-all');
-            const items = document.querySelectorAll('.select-item');
-            const countEl = document.getElementById('selected-count');
-
-            function updateCount() {
-                const c = document.querySelectorAll('.select-item:checked').length;
-                countEl.textContent = c;
-            }
-
-            if (selectAll) {
-                selectAll.addEventListener('change', function() {
-                    items.forEach(i => i.checked = selectAll.checked);
-                    updateCount();
-                });
-                items.forEach(i => i.addEventListener('change', updateCount));
-            }
-        });
-        </script>
-
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="selectAll"></th>
+                        <th>User</th>
+                        <th>Type</th>
+                        <th>Title / Message</th>
+                        <th>Status</th>
+                        <th>Sent At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in notifications %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" name="notification_ids" value="{{ notification.id }}" form="bulkActionForm">
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ notification.user.full_name|default:notification.user.email }}</div>
+                            <small class="text-muted">{{ notification.user.email }}</small>
+                        </td>
+                        <td>
+                            {% if notification.notification_type == 'rental_confirmed' %}
+                                <span class="badge bg-success">Rental Confirmed</span>
+                            {% elif notification.notification_type == 'rental_active' %}
+                                <span class="badge bg-info text-dark">Rental Active</span>
+                            {% elif notification.notification_type == 'due_soon' %}
+                                <span class="badge bg-warning text-dark">Due Soon</span>
+                            {% elif notification.notification_type == 'due_tomorrow' %}
+                                <span class="badge" style="background-color: #fd7e14;">Due Tomorrow</span>
+                            {% elif notification.notification_type == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                            {% elif notification.notification_type == 'returned' %}
+                                <span class="badge bg-secondary">Returned</span>
+                            {% elif notification.notification_type == 'renewal_confirmed' %}
+                                <span class="badge" style="background-color: #20c997;">Renewal Confirmed</span>
+                            {% elif notification.notification_type == 'feedback_request' %}
+                                <span class="badge" style="background-color: #6f42c1;">Feedback Request</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ notification.notification_type|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ notification.title }}</div>
+                            <div class="text-muted small text-truncate" style="max-width: 300px;">{{ notification.message }}</div>
+                        </td>
+                        <td>
+                            {% if notification.is_read %}
+                            <span class="text-success"><i class="fas fa-check-double"></i> Read</span>
+                            {% else %}
+                            <span class="text-warning fw-bold"><i class="fas fa-circle"></i> Unread</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if notification.is_sent %}
+                                {{ notification.sent_at|date:"M d, Y H:i" }}
+                            {% else %}
+                                <span class="badge bg-secondary">Not Sent</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
         <nav aria-label="Page navigation" class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.notification_type %}&notification_type={{ request.GET.notification_type }}{% endif %}{% if request.GET.is_read %}&is_read={{ request.GET.is_read }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
                 {% endif %}
-                {% for num in page_obj.paginator.page_range %}
-                {% if page_obj.number == num %}
-                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
-                {% endif %}
+
+                {% for i in page_obj.paginator.page_range %}
+                    {% if page_obj.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.notification_type %}&notification_type={{ request.GET.notification_type }}{% endif %}{% if request.GET.is_read %}&is_read={{ request.GET.is_read }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
                 {% endfor %}
+
                 {% if page_obj.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.notification_type %}&notification_type={{ request.GET.notification_type }}{% endif %}{% if request.GET.is_read %}&is_read={{ request.GET.is_read }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
                 {% endif %}
             </ul>
         </nav>
         {% endif %}
-
+        
         {% else %}
         <div class="admin-empty-state">
             <i class="fas fa-bell"></i>
             <h5>No notifications found</h5>
+            <p class="text-muted">Try adjusting your search or filters</p>
         </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('input[name="notification_ids"]');
+        checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+</script>
 {% endblock %}

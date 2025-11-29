@@ -70,21 +70,6 @@
                         <span>Coupons</span>
                     </a>
                 </div>
-                
-                <!-- Rentals -->
-                <div class="admin-nav-section">
-                    <div class="admin-nav-section-title">Rentals</div>
-                    <a href="{% url 'admin_panel:rental_list' %}" class="admin-nav-item {% if 'rental' in request.path and 'plan' not in request.path and 'settings' not in request.path %}active{% endif %}">
-                        <i class="fas fa-book-reader"></i>
-                        <span>Rentals</span>
-                    </a>
-                    <a href="{% url 'admin_panel:rental_plan_list' %}" class="admin-nav-item {% if 'plan' in request.path %}active{% endif %}">
-                        <i class="fas fa-list"></i>
-                        <span>Rental Plans</span>
-                    </a>
-                    <a href="{% url 'admin_panel:rental_settings' %}" class="admin-nav-item {% if 'rental' in request.path and 'settings' in request.path %}active{% endif %}">
-                        <i class="fas fa-cog"></i>
-                        <span>Rental Settings</span>
                     </a>
                 </div>
                 
