@@ -1,0 +1,29 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Gift Occasions - Admin Panel{% endblock %}
+{% block page_title %}Gift Occasions{% endblock %}
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header d-flex justify-content-between align-items-center">
+        <h5>Occasions</h5>
+        <a href="{% url 'admin_panel:gift_occasion_add' %}" class="btn btn-sm btn-admin-primary">Add Occasion</a>
+    </div>
+    <div class="admin-card-body">
+        <table class="admin-table">
+            <thead><tr><th>#</th><th>Key</th><th>Label</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for occ in occasions %}
+                <tr>
+                    <td>{{ occ.pk }}</td>
+                    <td>{{ occ.key }}</td>
+                    <td>{{ occ.label }}</td>
+                    <td><a href="{% url 'admin_panel:gift_occasion_edit' occ.pk %}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-muted">No occasions found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include 'admin_panel/pagination.html' with page_obj=page_obj %}
+    </div>
+</div>
+{% endblock %}
