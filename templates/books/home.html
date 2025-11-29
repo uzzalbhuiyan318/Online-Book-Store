@@ -129,7 +129,7 @@
                         
                         {% if book.stock > 0 %}
                         <button class="btn btn-add-to-cart w-100 add-to-cart" data-book-id="{{ book.id }}">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                            Add to Cart
                         </button>
                         {% else %}
                         <button class="btn btn-out-of-stock w-100" disabled>
@@ -211,7 +211,7 @@
                         
                         {% if book.stock > 0 %}
                         <button class="btn btn-add-to-cart w-100 add-to-cart" data-book-id="{{ book.id }}">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                            Add to Cart
                         </button>
                         {% else %}
                         <button class="btn btn-out-of-stock w-100" disabled>
@@ -293,7 +293,7 @@
                         
                         {% if book.stock > 0 %}
                         <button class="btn btn-add-to-cart w-100 add-to-cart" data-book-id="{{ book.id }}">
-                            <i class="fas fa-shopping-cart"></i> Add to Cart
+                            Add to Cart
                         </button>
                         {% else %}
                         <button class="btn btn-out-of-stock w-100" disabled>
@@ -389,20 +389,20 @@ $(document).ready(function() {
                     button.prop('disabled', true);
                     
                     setTimeout(function() {
-                        button.html('<i class="fas fa-shopping-cart"></i> Add to Cart');
+                        button.html('Add to Cart');
                         button.removeClass('btn-success').addClass('btn-primary');
                         button.prop('disabled', false);
                     }, 2000);
                 } else {
                     // Silent error - just reset button
-                    button.html('<i class="fas fa-shopping-cart"></i> Add to Cart');
+                    button.html('Add to Cart');
                     button.prop('disabled', false);
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Error:', error);
                 // Silent error - just reset button
-                button.html('<i class="fas fa-shopping-cart"></i> Add to Cart');
+                button.html('Add to Cart');
                 button.prop('disabled', false);
             }
         });
