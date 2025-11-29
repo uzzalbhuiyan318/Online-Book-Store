@@ -1,0 +1,34 @@
+{% extends 'admin_panel/base.html' %}
+{% block title %}Gift #{{ gift.pk }} - Admin Panel{% endblock %}
+{% block page_title %}Gift #{{ gift.pk }}{% endblock %}
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header d-flex justify-content-between align-items-center">
+        <h5>Gift Details</h5>
+        <div>
+            <form method="post" style="display:inline-block;">
+                {% csrf_token %}
+                <button name="action" value="mark_processed" class="btn btn-sm btn-success">Mark Processed</button>
+                <button name="action" value="mark_cancelled" class="btn btn-sm btn-danger">Mark Cancelled</button>
+            </form>
+        </div>
+    </div>
+    <div class="admin-card-body">
+        <h6>Recipient</h6>
+        <p><strong>{{ gift.to_name }}</strong><br>{{ gift.to_phone }}<br>{{ gift.to_email }}</p>
+        <p>{{ gift.to_address_line1 }}{% if gift.to_address_line2 %}<br>{{ gift.to_address_line2 }}{% endif %}</p>
+        <p>{{ gift.city }}{% if gift.area %}, {{ gift.area }}{% endif %}{% if gift.zone %}, {{ gift.zone }}{% endif %}</p>
+
+        <h6>Sender</h6>
+        <p><strong>{{ gift.from_name }}</strong><br>{{ gift.from_phone }}{% if gift.from_alt_phone %}<br>{{ gift.from_alt_phone }}{% endif %}</p>
+
+        <h6>Message</h6>
+        <p>{{ gift.message }}</p>
+
+        <h6>Meta</h6>
+        <p><strong>Status:</strong> {{ gift.get_status_display }}</p>
+        <p><strong>Order:</strong> {% if gift.order %}<a href="{% url 'admin_panel:order_detail' gift.order.order_number %}">{{ gift.order.order_number }}</a>{% else %} - {% endif %}</p>
+        <p><strong>Created:</strong> {{ gift.created_at|date:'Y-m-d H:i' }}</p>
+    </div>
+</div>
+{% endblock %}

@@ -4,6 +4,14 @@ from django.utils.html import format_html
 from django.db import models
 from django import forms
 from .models import Order, OrderItem, OrderStatusHistory, Coupon, CouponUsage
+from .models import GiftCity, GiftArea, GiftZone, GiftOccasion
+from .models import GiftForm
+from django.http import HttpResponse
+import csv
+import logging
+from .email_utils import send_order_confirmation_email
+
+logger = logging.getLogger(__name__)
 
 
 class OrderItemInline(admin.TabularInline):
@@ -20,14 +28,22 @@ class OrderStatusHistoryInline(admin.TabularInline):
     can_delete = False
 
 
+class GiftFormInline(admin.StackedInline):
+    model = GiftForm
+    extra = 0
+    readonly_fields = ['created_at', 'updated_at']
+    fk_name = 'order'
+    can_delete = True
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['order_number', 'user', 'status', 'payment_status', 'payment_method', 'total', 'created_at']
-    list_filter = ['status', 'payment_status', 'payment_method', 'created_at']
-    search_fields = ['order_number', 'user__email', 'transaction_id', 'shipping_phone']
+    list_display = ['order_number', 'user', 'status', 'payment_status', 'is_gift', 'payment_method', 'total', 'shipping_full_name', 'shipping_phone', 'created_at']
+    list_filter = ['status', 'payment_status', 'payment_method', 'is_gift', 'created_at']
+    search_fields = ['order_number', 'user__email', 'transaction_id', 'shipping_phone', 'shipping_full_name']
     readonly_fields = ['order_number', 'created_at', 'updated_at']
-    inlines = [OrderItemInline, OrderStatusHistoryInline]
-    
+    inlines = [OrderItemInline, OrderStatusHistoryInline, GiftFormInline]
+
     fieldsets = (
         ('Order Information', {
             'fields': ('order_number', 'user', 'status', 'payment_status')
@@ -47,6 +63,9 @@ class OrderAdmin(admin.ModelAdmin):
         }),
         ('Notes & Tracking', {
             'fields': ('customer_notes', 'admin_notes', 'tracking_number')
+        }),
+        ('Gift Info', {
+            'fields': ('is_gift', 'gift_from_name', 'gift_from_phone', 'gift_from_alt_phone', 'gift_message', 'gift_occasion', 'gift_zone', 'gift_deliver_date')
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at', 'confirmed_at', 'shipped_at', 'delivered_at')
@@ -74,6 +93,90 @@ class OrderAdmin(admin.ModelAdmin):
                     obj.delivered_at = timezone.now()
         
         super().save_model(request, obj, form, change)
+
+    actions = ['mark_confirmed', 'mark_shipped', 'mark_delivered', 'mark_cancelled', 'export_as_csv', 'send_confirmation_email']
+
+    def mark_confirmed(self, request, queryset):
+        count = 0
+        for order in queryset:
+            if order.status != 'confirmed':
+                order.status = 'confirmed'
+                order.confirmed_at = timezone.now()
+                order.save()
+                OrderStatusHistory.objects.create(order=order, status='confirmed', changed_by=request.user)
+                count += 1
+        self.message_user(request, f"Marked {count} order(s) as confirmed")
+    mark_confirmed.short_description = 'Mark selected orders as confirmed'
+
+    def mark_shipped(self, request, queryset):
+        count = 0
+        for order in queryset:
+            if order.status != 'shipped':
+                order.status = 'shipped'
+                order.shipped_at = timezone.now()
+                order.save()
+                OrderStatusHistory.objects.create(order=order, status='shipped', changed_by=request.user)
+                count += 1
+        self.message_user(request, f"Marked {count} order(s) as shipped")
+    mark_shipped.short_description = 'Mark selected orders as shipped'
+
+    def mark_delivered(self, request, queryset):
+        count = 0
+        for order in queryset:
+            if order.status != 'delivered':
+                order.status = 'delivered'
+                order.delivered_at = timezone.now()
+                order.save()
+                OrderStatusHistory.objects.create(order=order, status='delivered', changed_by=request.user)
+                count += 1
+        self.message_user(request, f"Marked {count} order(s) as delivered")
+    mark_delivered.short_description = 'Mark selected orders as delivered'
+
+    def mark_cancelled(self, request, queryset):
+        count = 0
+        for order in queryset:
+            if order.status != 'cancelled':
+                order.status = 'cancelled'
+                order.save()
+                OrderStatusHistory.objects.create(order=order, status='cancelled', changed_by=request.user)
+                count += 1
+        self.message_user(request, f"Marked {count} order(s) as cancelled")
+    mark_cancelled.short_description = 'Mark selected orders as cancelled'
+
+    def export_as_csv(self, request, queryset):
+        """Export selected orders as CSV download."""
+        field_names = ['order_number', 'user_email', 'status', 'payment_status', 'payment_method', 'total', 'shipping_full_name', 'shipping_phone', 'created_at']
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename=orders_export.csv'
+
+        writer = csv.writer(response)
+        writer.writerow(field_names)
+        for obj in queryset:
+            writer.writerow([
+                obj.order_number,
+                obj.user.email if obj.user else '',
+                obj.status,
+                obj.payment_status,
+                obj.payment_method,
+                str(obj.total),
+                obj.shipping_full_name,
+                obj.shipping_phone,
+                obj.created_at,
+            ])
+        return response
+    export_as_csv.short_description = 'Export selected orders as CSV'
+
+    def send_confirmation_email(self, request, queryset):
+        sent = 0
+        for order in queryset:
+            try:
+                if send_order_confirmation_email(order):
+                    sent += 1
+            except Exception:
+                logger.exception('Failed to send confirmation email for order %s', order.order_number)
+        self.message_user(request, f'Sent confirmation email for {sent} order(s)')
+    send_confirmation_email.short_description = 'Send order confirmation email for selected orders'
 
 
 @admin.register(OrderItem)
@@ -281,3 +384,60 @@ class CouponUsageAdmin(admin.ModelAdmin):
     list_filter = ['used_at', 'coupon']
     search_fields = ['coupon__code', 'user__email', 'order__order_number']
     readonly_fields = ['used_at']
+
+
+@admin.register(GiftCity)
+class GiftCityAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    search_fields = ['name']
+
+
+@admin.register(GiftArea)
+class GiftAreaAdmin(admin.ModelAdmin):
+    list_display = ['name', 'city']
+    list_filter = ['city']
+    search_fields = ['name', 'city__name']
+
+
+@admin.register(GiftZone)
+class GiftZoneAdmin(admin.ModelAdmin):
+    list_display = ['name', 'area']
+    list_filter = ['area__city']
+    search_fields = ['name', 'area__name']
+
+
+@admin.register(GiftOccasion)
+class GiftOccasionAdmin(admin.ModelAdmin):
+    list_display = ['key', 'label']
+    search_fields = ['key', 'label']
+
+
+@admin.register(GiftForm)
+class GiftFormAdmin(admin.ModelAdmin):
+    list_display = ['id', 'order', 'to_name', 'to_phone', 'city', 'area', 'zone', 'occasion', 'status', 'created_at']
+    list_filter = ['status', 'city', 'area', 'occasion', 'created_at']
+    search_fields = ['to_name', 'to_phone', 'from_name', 'order__order_number']
+    readonly_fields = ['created_at', 'updated_at']
+
+    fieldsets = (
+        ('Order Link', {'fields': ('order',)}),
+        ('Sender', {'fields': ('from_name', 'from_phone', 'from_alt_phone')}),
+        ('Recipient', {'fields': (
+            'to_name', 'to_phone', 'to_email', 'to_address_line1', 'to_address_line2',
+            'city', 'area', 'zone', 'postal_code', 'state', 'occasion'
+        )}),
+        ('Message & Delivery', {'fields': ('message', 'deliver_date')}),
+        ('Admin', {'fields': ('status', 'created_at', 'updated_at')}),
+    )
+
+    actions = ['mark_processed', 'mark_cancelled']
+
+    def mark_processed(self, request, queryset):
+        updated = queryset.update(status='processed')
+        self.message_user(request, f"Marked {updated} gift form(s) as processed")
+    mark_processed.short_description = 'Mark selected as processed'
+
+    def mark_cancelled(self, request, queryset):
+        updated = queryset.update(status='cancelled')
+        self.message_user(request, f"Marked {updated} gift form(s) as cancelled")
+    mark_cancelled.short_description = 'Mark selected as cancelled'

@@ -104,8 +104,10 @@
                         </div>
                     </div>
 
-                    <!-- Delivery Address Card -->
-                    <div class="checkout-section-card mb-4">
+                        
+
+                        <!-- Delivery Address Card -->
+                    <div class="checkout-section-card mb-4" id="delivery-address-card">
                         <div class="checkout-section-header">
                             <div class="section-title">
                                 <i class="fas fa-map-marker-alt"></i>
@@ -144,7 +146,8 @@
                                     </a>
                                 </div>
                             </div>
-                            {% else %}
+                            {% endif %}
+                            {% if not addresses %}
                             {% comment %} <div class="alert alert-info mb-3">
                                 <i class="fas fa-info-circle"></i> Please add your delivery address
                             </div> {% endcomment %}
@@ -184,7 +187,110 @@
                         </div>
                     </div>
 
-                    <!-- Payment Method Card -->
+                        <!-- Gift Option Card (hidden until 'Order as Gift' clicked) -->
+                        <div class="checkout-section-card mb-4" id="gift-section-card" style="display: none;">
+                            <div class="checkout-section-header">
+                                <div class="section-title">
+                                    <i class="fas fa-gift"></i>
+                                    <span>Gift Order</span>
+                                </div>
+                            </div>
+                            <div class="checkout-section-body">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_gift" name="is_gift">
+                                    <label class="form-check-label" for="is_gift">This order is a gift</label>
+                                </div>
+
+                                <div id="gift-details" style="display: none;">
+                                    <div class="row g-3">
+                                        <div class="col-md-5">
+                                            <h5 style="font-family: 'Brush Script MT', cursive; color:#2f8f2f;">Gift From</h5>
+                                            <label for="gift_from_name" class="form-label">Name</label>
+                                            <input type="text" class="form-control" id="gift_from_name" name="gift_from_name" placeholder="Sender name">
+                                            <label for="gift_from_phone" class="form-label mt-2">Phone</label>
+                                            <input type="tel" class="form-control" id="gift_from_phone" name="gift_from_phone" placeholder="Sender phone">
+                                        </div>
+
+                                        <div class="col-md-1 d-none d-md-flex align-items-stretch justify-content-center">
+                                            <div class="vr my-2" style="width:1px;"></div>
+                                        </div>
+
+                                        <div class="col-md-6" style="background:#fde8ef; padding:18px; border-radius:4px;">
+                                            <h5 style="font-family: 'Brush Script MT', cursive; color:#2f8f2f;">Gift To</h5>
+                                            {% if addresses %}
+                                            <div class="form-text mb-2">Choose a saved address for recipient (optional)</div>
+                                            <div class="gift-address-selection mb-2">
+                                                {% for address in addresses %}
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="radio" name="gift_address" id="gift_address{{ address.id }}" value="{{ address.id }}">
+                                                    <label class="form-check-label" for="gift_address{{ address.id }}">
+                                                        <strong>{{ address.full_name }}</strong> — {{ address.address_line1 }}{% if address.address_line2 %}, {{ address.address_line2 }}{% endif %}, {{ address.city }}
+                                                    </label>
+                                                </div>
+                                                {% endfor %}
+                                                <div class="form-check mt-1">
+                                                    <input class="form-check-input" type="radio" name="gift_address" id="gift_address_none" value="" checked>
+                                                    <label class="form-check-label" for="gift_address_none">Enter a new recipient address</label>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+
+                                            <label for="gift_to_name" class="form-label">Name</label>
+                                            <input type="text" class="form-control" id="gift_to_name" name="gift_to_name" placeholder="Name">
+                                            <label for="gift_to_phone" class="form-label mt-2">Phone No</label>
+                                            <input type="tel" class="form-control" id="gift_to_phone" name="gift_to_phone" placeholder="Phone No">
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label for="gift_message" class="form-label">Gift Message</label>
+                                            <textarea class="form-control" id="gift_message" name="gift_message" rows="3" maxlength="120" placeholder="Gift Message"></textarea>
+                                            <div class="form-text text-end"><small><span id="gift_message_remaining">120</span> Character(s) Remaining</small></div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="gift_deliver_date" class="form-label">Deliver On (Optional)</label>
+                                            <input type="date" class="form-control" id="gift_deliver_date" name="gift_deliver_date">
+                                        </div>
+
+                                        <div class="col-12 mt-2">
+                                            <h6>Recipient Address (if entering manually)</h6>
+                                            <div class="row g-2">
+                                                <div class="col-md-6">
+                                                    {{ form.gift_to_address_line1 }}
+                                                </div>
+                                                <div class="col-md-6">
+                                                    {{ form.gift_to_address_line2 }}
+                                                </div>
+                                                <div class="col-md-4 mt-2">
+                                                    <label class="form-label visually-hidden" for="id_gift_to_city">City</label>
+                                                    {{ form.gift_to_city }}
+                                                </div>
+                                                <div class="col-md-4 mt-2">
+                                                    <label class="form-label visually-hidden" for="id_gift_to_area">Area</label>
+                                                    {{ form.gift_to_area }}
+                                                </div>
+                                                <div class="col-md-4 mt-2">
+                                                    <label class="form-label visually-hidden" for="id_gift_to_zone">Zone</label>
+                                                    {{ form.gift_to_zone }}
+                                                </div>
+                                                <div class="col-md-4 mt-2">
+                                                    {{ form.gift_to_postal_code }}
+                                                </div>
+                                                <div class="col-md-6 mt-2">
+                                                    {{ form.gift_to_state }}
+                                                </div>
+                                                <div class="col-md-6 mt-2">
+                                                    <label class="form-label">Occasion</label>
+                                                    {{ form.gift_to_occasion }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method Card -->
                     <div class="checkout-section-card">
                         <div class="checkout-section-header">
                             <div class="section-title">
@@ -344,9 +450,15 @@
                                 <button type="submit" class="btn-proceed-checkout" {% if not cart_items %}disabled{% endif %}>
                                     <i class="fas fa-lock"></i> Place Order
                                 </button>
+                                 <div class="mt-2">
+                                    <button type="button" id="order_as_gift_btn" class="btn btn-outline-primary">
+                                        <i class="fas fa-gift"></i> Order as Gift
+                                    </button>
+                                </div>
                                 <a href="{% url 'books:book_list' %}" class="btn-back-to-cart">
                                     <i class="fas fa-arrow-left"></i> Continue Shopping
                                 </a>
+                               
                             </div>
 
                             <!-- Security Badge -->
@@ -611,8 +723,144 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Gift toggle and message counter
+    const isGiftCheckbox = document.getElementById('is_gift');
+    const giftDetails = document.getElementById('gift-details');
+    const giftMessage = document.getElementById('gift_message');
+    const giftRemaining = document.getElementById('gift_message_remaining');
+
+    if (isGiftCheckbox && giftDetails) {
+        isGiftCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // show gift card and details
+                const giftCard = document.getElementById('gift-section-card');
+                if (giftCard) giftCard.style.display = '';
+                giftDetails.style.display = '';
+            } else {
+                // hide gift card and details
+                const giftCard = document.getElementById('gift-section-card');
+                if (giftCard) giftCard.style.display = 'none';
+                giftDetails.style.display = 'none';
+            }
+        });
+    }
+
+    // Also toggle delivery address visibility when gift mode is toggled
+    const deliveryCard = document.getElementById('delivery-address-card');
+    const orderAsGiftBtn = document.getElementById('order_as_gift_btn');
+    if (isGiftCheckbox && deliveryCard) {
+        isGiftCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                deliveryCard.style.display = 'none';
+            } else {
+                deliveryCard.style.display = '';
+            }
+        });
+    }
+
+    if (orderAsGiftBtn && isGiftCheckbox) {
+        orderAsGiftBtn.addEventListener('click', function() {
+            // Ensure gift card is visible, check box and trigger change
+            const giftCard = document.getElementById('gift-section-card');
+            if (giftCard) giftCard.style.display = '';
+            if (!isGiftCheckbox.checked) {
+                isGiftCheckbox.checked = true;
+                isGiftCheckbox.dispatchEvent(new Event('change'));
+            }
+            // Scroll to gift details area
+            if (giftDetails) {
+                giftDetails.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+
+    if (giftMessage && giftRemaining) {
+        const maxLen = parseInt(giftMessage.getAttribute('maxlength')) || 120;
+        const updateRemaining = () => {
+            const len = giftMessage.value.length;
+            const remaining = Math.max(0, maxLen - len);
+            giftRemaining.textContent = remaining;
+        };
+        giftMessage.addEventListener('input', updateRemaining);
+        updateRemaining();
+    }
 });
 
+// Linked selects for City -> Area -> Zone (gift recipient)
+(function() {
+    function getEl(id) { return document.getElementById(id); }
+
+    const citySelect = getEl('id_gift_to_city');
+    const areaSelect = getEl('id_gift_to_area');
+    const zoneSelect = getEl('id_gift_to_zone');
+
+    function clearSelect(sel) { if (!sel) return; sel.innerHTML = ''; }
+    function addOption(sel, value, label, selected) {
+        const opt = document.createElement('option'); opt.value = value; opt.textContent = label; if (selected) opt.selected = true; sel.appendChild(opt);
+    }
+
+    async function fetchAreas(cityId) {
+        const url = new URL("{% url 'orders:gift_areas' %}", window.location.origin);
+        url.searchParams.set('city_id', cityId);
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        return res.ok ? await res.json() : { areas: [] };
+    }
+
+    async function fetchZones(areaId) {
+        const url = new URL("{% url 'orders:gift_zones' %}", window.location.origin);
+        url.searchParams.set('area_id', areaId);
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        return res.ok ? await res.json() : { zones: [] };
+    }
+
+    async function populateAreas(cityId, preserveArea) {
+        if (!areaSelect) return;
+        clearSelect(areaSelect);
+        addOption(areaSelect, '', 'Select Area');
+        try {
+            const data = await fetchAreas(cityId);
+            (data.areas || []).forEach(a => addOption(areaSelect, a.id, a.name, String(a.id) === String(preserveArea)));
+            areaSelect.dispatchEvent(new Event('change'));
+        } catch (e) { console.warn('Failed to load areas', e); }
+    }
+
+    async function populateZones(areaId, preserveZone) {
+        if (!zoneSelect) return;
+        clearSelect(zoneSelect);
+        addOption(zoneSelect, '', 'Select Zone');
+        try {
+            const data = await fetchZones(areaId);
+            (data.zones || []).forEach(z => addOption(zoneSelect, z.id, z.name, String(z.id) === String(preserveZone)));
+        } catch (e) { console.warn('Failed to load zones', e); }
+    }
+
+    if (citySelect) {
+        citySelect.addEventListener('change', function() {
+            const cityId = this.value || '';
+            populateAreas(cityId);
+            clearSelect(zoneSelect); addOption(zoneSelect, '', 'Select Zone');
+        });
+    }
+
+    if (areaSelect) {
+        areaSelect.addEventListener('change', function() {
+            const areaId = this.value || '';
+            populateZones(areaId);
+        });
+    }
+
+    // Initialize selects if values present
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const preCity = citySelect ? citySelect.value : '';
+            const preArea = areaSelect ? areaSelect.value : '';
+            const preZone = zoneSelect ? zoneSelect.value : '';
+            if (preCity) populateAreas(preCity, preArea);
+            if (preArea) populateZones(preArea, preZone);
+        } catch (e) { console.warn('Error initializing location selects', e); }
+    });
+})();
 // Update cart quantity via AJAX
 function updateCartQuantity(cartId, quantity) {
     if (!cartId) {

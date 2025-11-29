@@ -50,9 +50,9 @@
                         <div class="filter-group">
                             <label class="filter-label">Language</label>
                             <select name="language" class="filter-select" onchange="this.form.submit()">
-                                <option value="">All Languages</option>
-                                <option value="English" {% if request.GET.language == "English" %}selected{% endif %}>English</option>
-                                <option value="Bangla" {% if request.GET.language == "Bangla" %}selected{% endif %}>বাংলা</option>
+                                    <option value="">All Languages</option>
+                                    <option value="en" {% if request.GET.language == "en" %}selected{% endif %}>English</option>
+                                    <option value="bn" {% if request.GET.language == "bn" %}selected{% endif %}>বাংলা</option>
                             </select>
                         </div>
                         

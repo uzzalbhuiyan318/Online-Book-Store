@@ -96,4 +96,13 @@ urlpatterns = [
     path('export/orders/', views.export_orders_csv, name='export_orders_csv'),
     path('export/customers/', views.export_customers_csv, name='export_customers_csv'),
     path('export/books/', views.export_books_csv, name='export_books_csv'),
+    # Gift Form / Gift Locations Management
+    path('gifts/', views.gift_form_list, name='gift_form_list'),
+    path('gifts/<int:pk>/', views.gift_form_detail, name='gift_form_detail'),
+    path('gifts/cities/', views.gift_city_list, name='gift_city_list'),
+    path('gifts/cities/add/', views.gift_city_add, name='gift_city_add'),
+    path('gifts/cities/<int:pk>/edit/', views.gift_city_edit, name='gift_city_edit'),
+    path('gifts/occasions/', views.gift_occasion_list, name='gift_occasion_list'),
+    path('gifts/occasions/add/', views.gift_occasion_add, name='gift_occasion_add'),
+    path('gifts/occasions/<int:pk>/edit/', views.gift_occasion_edit, name='gift_occasion_edit'),
 ]
