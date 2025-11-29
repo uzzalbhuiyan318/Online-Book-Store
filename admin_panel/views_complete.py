@@ -466,11 +466,22 @@ def order_list(request):
     paginator = Paginator(orders, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+    # Additional stats used by the template
+    pending_count = Order.objects.filter(status='pending').count()
+    processing_count = Order.objects.filter(status='processing').count()
+    shipped_count = Order.objects.filter(status='shipped').count()
+    delivered_count = Order.objects.filter(status='delivered').count()
+    total_revenue = Order.objects.filter(payment_status='paid').aggregate(total=Sum('total'))['total'] or 0
+
     context = {
         'page_obj': page_obj,
         'orders': page_obj.object_list,
         'total_count': orders.count(),
+        'pending_count': pending_count,
+        'processing_count': processing_count,
+        'shipped_count': shipped_count,
+        'delivered_count': delivered_count,
+        'total_revenue': total_revenue,
     }
     return render(request, 'admin_panel/order_list.html', context)
 
