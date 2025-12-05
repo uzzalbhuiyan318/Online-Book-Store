@@ -161,13 +161,10 @@ class CheckoutForm(forms.Form):
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    gift_to_city = forms.ChoiceField(
-        choices=[('', 'Select City')],
+    gift_to_city = forms.IntegerField(
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-    # Area and Zone are populated dynamically by JavaScript, so we use IntegerField
-    # to avoid validation errors when choices aren't pre-populated
     gift_to_area = forms.IntegerField(
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
@@ -196,8 +193,16 @@ class CheckoutForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Postal Code'})
     )
+    OCCASION_CHOICES = [
+        ('', 'Select Occasion'),
+        ('birthday', 'Birthday'),
+        ('anniversary', 'Anniversary'),
+        ('congratulations', 'Congratulations'),
+        ('thanks', 'Thanks'),
+        ('other', 'Other'),
+    ]
     gift_to_occasion = forms.ChoiceField(
-        choices=[('', 'Select Occasion')],
+        choices=OCCASION_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -210,19 +215,9 @@ class CheckoutForm(forms.Form):
             self.fields['address'].queryset = Address.objects.filter(user=user)
             self.fields['gift_address'].queryset = Address.objects.filter(user=user)
         
-        # Populate city dropdown from database
-        from .models import GiftCity, GiftOccasion
-        cities = GiftCity.objects.all().order_by('name')
-        city_choices = [('', 'Select City')] + [(str(city.id), city.name) for city in cities]
-        self.fields['gift_to_city'].choices = city_choices
-        
-        # Populate occasion dropdown from database
-        occasions = GiftOccasion.objects.all().order_by('label')
-        occasion_choices = [('', 'Select Occasion')] + [(occasion.key, occasion.label) for occasion in occasions]
-        self.fields['gift_to_occasion'].choices = occasion_choices
-        
-        # Note: gift_to_area and gift_to_zone are IntegerFields
-        # They accept any integer value and are populated dynamically via JavaScript
+        # Note: gift_to_city, gift_to_area, gift_to_zone are IntegerFields
+        # The select options are populated dynamically via JavaScript from the database
+        # No need to set choices here as they accept any integer value
 
 
 class OrderTrackingForm(forms.Form):

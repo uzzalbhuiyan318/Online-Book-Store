@@ -31,17 +31,26 @@
                         
                         <!-- Price Range -->
                         <div class="filter-group">
-                            <label class="filter-label">Price Range</label>
-                            <div class="price-inputs">
-                                <div class="price-input-group">
-                                    <span class="currency-symbol">৳</span>
-                                    <input type="number" name="min_price" class="filter-input" placeholder="Min" 
-                                           value="{{ request.GET.min_price }}">
+                            <label class="filter-label">Price</label>
+                            <div class="price-range-container">
+                                <div class="price-values">
+                                    <span class="price-value price-min">৳<span id="minPriceDisplay">{{ request.GET.min_price|default:'0' }}</span></span>
+                                    <span class="price-value price-max">৳<span id="maxPriceDisplay">{{ request.GET.max_price|default:'5400' }}</span></span>
                                 </div>
-                                <div class="price-input-group">
-                                    <span class="currency-symbol">৳</span>
-                                    <input type="number" name="max_price" class="filter-input" placeholder="Max"
-                                           value="{{ request.GET.max_price }}">
+                                <div class="range-slider-wrapper">
+                                    <div class="range-slider">
+                                        <div class="range-track"></div>
+                                        <div class="range-fill" id="rangeFill"></div>
+                                        <input type="range" name="min_price" id="minPriceRange" min="0" max="5400" step="50" value="{{ request.GET.min_price|default:'0' }}" class="range-input range-min">
+                                        <input type="range" name="max_price" id="maxPriceRange" min="0" max="5400" step="50" value="{{ request.GET.max_price|default:'5400' }}" class="range-input range-max">
+                                    </div>
+                                    <div class="range-labels">
+                                        <span class="range-label-min">0</span>
+                                        <span class="range-label-mid">1 350</span>
+                                        <span class="range-label-mid2">2 700</span>
+                                        <span class="range-label-mid3">4 050</span>
+                                        <span class="range-label-max">5 400</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -355,5 +364,48 @@ document.querySelectorAll('.toggle-wishlist').forEach(button => {
         });
     });
 });
+
+// Price Range Slider functionality
+const minPriceRange = document.getElementById('minPriceRange');
+const maxPriceRange = document.getElementById('maxPriceRange');
+const minPriceDisplay = document.getElementById('minPriceDisplay');
+const maxPriceDisplay = document.getElementById('maxPriceDisplay');
+const rangeFill = document.getElementById('rangeFill');
+
+function updateRangeSlider() {
+    const minVal = parseInt(minPriceRange.value);
+    const maxVal = parseInt(maxPriceRange.value);
+    const minRange = parseInt(minPriceRange.min);
+    const maxRange = parseInt(minPriceRange.max);
+    
+    // Ensure min doesn't exceed max
+    if (minVal > maxVal - 100) {
+        minPriceRange.value = maxVal - 100;
+    }
+    
+    // Ensure max doesn't go below min
+    if (maxVal < minVal + 100) {
+        maxPriceRange.value = minVal + 100;
+    }
+    
+    // Update display values
+    minPriceDisplay.textContent = minPriceRange.value;
+    maxPriceDisplay.textContent = maxPriceRange.value;
+    
+    // Update range fill
+    const minPercent = ((minPriceRange.value - minRange) / (maxRange - minRange)) * 100;
+    const maxPercent = ((maxPriceRange.value - minRange) / (maxRange - minRange)) * 100;
+    
+    rangeFill.style.left = minPercent + '%';
+    rangeFill.style.width = (maxPercent - minPercent) + '%';
+}
+
+if (minPriceRange && maxPriceRange) {
+    minPriceRange.addEventListener('input', updateRangeSlider);
+    maxPriceRange.addEventListener('input', updateRangeSlider);
+    
+    // Initialize slider on page load
+    updateRangeSlider();
+}
 </script>
 {% endblock %}

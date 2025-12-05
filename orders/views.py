@@ -46,10 +46,7 @@ def checkout(request):
         # Require login to place order
         if not request.user.is_authenticated:
             messages.warning(request, 'Please login to complete your order.')
-            from django.urls import reverse
-            login_url = reverse(settings.LOGIN_URL)
-            return redirect(f"{login_url}?next={request.path}")
-
+            return redirect(f"{settings.LOGIN_URL}?next={request.path}")
         
         # Check if cart is empty
         cart_items = Cart.objects.filter(user=request.user).select_related('book')
