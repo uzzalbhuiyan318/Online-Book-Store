@@ -70,33 +70,34 @@ main {
 .navbar {
     padding: 0.75rem 0; /* symmetric top/bottom padding */
     transition: all 0.3s ease;
-    background: linear-gradient(90deg, var(--premium-blue) 0%, var(--premium-blue-dark) 100%) !important;
-    color: #ffffff;
+    background: #ffffff !important;
+    color: #333;
 }
 
-/* Navbar link and brand color adjustments for premium-blue background */
+/* Navbar link and brand color adjustments for white background */
 .navbar .nav-link,
 .navbar .nav-icon,
 .navbar .icon-label {
-    color: rgba(255,255,255,0.95);
+    color: var(--premium-blue);
 }
 
 .navbar .navbar-brand .brand-name {
-    color: #ffffff;
+    color: var(--premium-blue);
 }
 
 .navbar .navbar-brand .brand-tagline {
-    color: rgba(255,255,255,0.85);
+    color: #6c757d;
 }
 
 .navbar .btn-outline-primary {
-    color: #ffffff;
-    border-color: rgba(255,255,255,0.2);
+    color: var(--premium-blue);
+    border-color: var(--premium-blue);
 }
 
 .navbar .btn-outline-primary:hover {
-    background: rgba(255,255,255,0.08);
+    background: var(--premium-blue);
     color: #ffffff;
+    border-color: var(--premium-blue);
 }
 
 .navbar.sticky-top {
@@ -104,6 +105,18 @@ main {
     top: 0;
     z-index: 1030;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.navbar-toggler {
+    border-color: var(--premium-blue);
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(37, 99, 235, 0.25);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(37, 99, 235, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 .navbar-brand {
@@ -119,7 +132,7 @@ main {
 .brand-name {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #0d6efd;
+    color: var(--premium-blue);
     line-height: 1.2;
     letter-spacing: -0.5px;
 }
@@ -306,7 +319,7 @@ main {
     flex-direction: column;
     align-items: center;
     padding: 0.5rem 0.875rem !important;
-    color: #495057;
+    color: var(--premium-blue);
     transition: all 0.3s ease;
     position: relative;
 }
@@ -324,7 +337,7 @@ main {
 }
 
 .nav-icon:hover {
-    color: var(--primary-color);
+    color: #0257d5;
     transform: translateY(-2px);
 }
 
