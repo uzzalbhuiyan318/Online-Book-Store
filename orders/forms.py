@@ -1,5 +1,5 @@
 from django import forms
-from .models import Order
+from .models import Order, GiftCity, GiftArea, GiftZone
 from accounts.models import Address
 
 
@@ -163,35 +163,20 @@ class CheckoutForm(forms.Form):
     )
     gift_to_city = forms.IntegerField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_gift_to_city'})
     )
     gift_to_area = forms.IntegerField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_gift_to_area'})
     )
     gift_to_zone = forms.IntegerField(
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_gift_to_zone'})
     )
     gift_to_address_line1 = forms.CharField(
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address line 1'})
-    )
-    gift_to_address_line2 = forms.CharField(
-        max_length=255,
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address line 2'})
-    )
-    gift_to_state = forms.CharField(
-        max_length=100,
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State/Division'})
-    )
-    gift_to_postal_code = forms.CharField(
-        max_length=20,
-        required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Postal Code'})
     )
     OCCASION_CHOICES = [
         ('', 'Select Occasion'),
@@ -215,9 +200,26 @@ class CheckoutForm(forms.Form):
             self.fields['address'].queryset = Address.objects.filter(user=user)
             self.fields['gift_address'].queryset = Address.objects.filter(user=user)
         
-        # Note: gift_to_city, gift_to_area, gift_to_zone are IntegerFields
-        # The select options are populated dynamically via JavaScript from the database
-        # No need to set choices here as they accept any integer value
+        # Populate gift_to_city with all cities from database
+        city_choices = [('', 'Select City')]
+        cities = GiftCity.objects.all().order_by('name')
+        for city in cities:
+            city_choices.append((city.id, city.name))
+        self.fields['gift_to_city'].widget.choices = city_choices
+        
+        # Populate gift_to_area with all areas from database
+        area_choices = [('', 'Select Area')]
+        areas = GiftArea.objects.all().order_by('name')
+        for area in areas:
+            area_choices.append((area.id, area.name))
+        self.fields['gift_to_area'].widget.choices = area_choices
+        
+        # Populate gift_to_zone with all zones from database
+        zone_choices = [('', 'Select Zone')]
+        zones = GiftZone.objects.all().order_by('name')
+        for zone in zones:
+            zone_choices.append((zone.id, zone.name))
+        self.fields['gift_to_zone'].widget.choices = zone_choices
 
 
 class OrderTrackingForm(forms.Form):

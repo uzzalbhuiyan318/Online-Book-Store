@@ -257,11 +257,8 @@
                                         <div class="col-12 mt-2">
                                             <h6>Recipient Address (if entering manually)</h6>
                                             <div class="row g-2">
-                                                <div class="col-md-6">
+                                                <div class="col-md-12">
                                                     {{ form.gift_to_address_line1 }}
-                                                </div>
-                                                <div class="col-md-6">
-                                                    {{ form.gift_to_address_line2 }}
                                                 </div>
                                                 <div class="col-md-4 mt-2">
                                                     <label class="form-label visually-hidden" for="id_gift_to_city">City</label>
@@ -274,12 +271,6 @@
                                                 <div class="col-md-4 mt-2">
                                                     <label class="form-label visually-hidden" for="id_gift_to_zone">Zone</label>
                                                     {{ form.gift_to_zone }}
-                                                </div>
-                                                <div class="col-md-4 mt-2">
-                                                    {{ form.gift_to_postal_code }}
-                                                </div>
-                                                <div class="col-md-6 mt-2">
-                                                    {{ form.gift_to_state }}
                                                 </div>
                                                 <div class="col-md-6 mt-2">
                                                     <label class="form-label">Occasion</label>
@@ -786,6 +777,10 @@ document.addEventListener('DOMContentLoaded', function() {
         isGiftCheckbox.addEventListener('change', function() {
             const deliveryAddressFields = deliveryCard.querySelectorAll('input[required], select[required]');
             
+            // Get payment method elements
+            const codPayment = document.getElementById('cod');
+            const sslcommerzPayment = document.getElementById('sslcommerz');
+            
             if (this.checked) {
                 deliveryCard.style.display = 'none';
                 // Remove required from delivery address fields when gift is selected
@@ -793,6 +788,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     field.setAttribute('data-was-required', 'true');
                     field.removeAttribute('required');
                 });
+                
+                // Hide Cash on Delivery and show only SSLCommerz for gift orders
+                if (codPayment && codPayment.parentElement) {
+                    codPayment.parentElement.style.display = 'none';
+                    codPayment.removeAttribute('checked');
+                }
+                if (sslcommerzPayment) {
+                    sslcommerzPayment.checked = true;
+                }
             } else {
                 deliveryCard.style.display = '';
                 // Restore required on delivery address fields when gift is unselected
@@ -802,6 +806,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         field.removeAttribute('data-was-required');
                     }
                 });
+                
+                // Show Cash on Delivery again for regular orders
+                if (codPayment && codPayment.parentElement) {
+                    codPayment.parentElement.style.display = '';
+                    codPayment.checked = true;
+                }
             }
         });
     }
