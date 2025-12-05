@@ -1,0 +1,65 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Delete City - Admin Panel{% endblock %}
+{% block page_title %}Delete City{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="admin-card">
+            <div class="admin-card-header bg-danger text-white">
+                <h5><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+            </div>
+            <div class="admin-card-body text-center p-4">
+                <h4>{{ city.name }}</h4>
+                
+                <div class="alert alert-danger mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                
+                {% if areas_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    <p class="mb-0">This city has <strong>{{ areas_count }}</strong> area(s) associated with it.</p>
+                    <p class="mb-0">You must delete all areas before deleting this city.</p>
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'admin_panel:gift_city_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <a href="{% url 'admin_panel:gift_area_list' %}?city={{ city.pk }}" class="btn btn-primary">
+                        <i class="fas fa-list"></i> View Areas
+                    </a>
+                </div>
+                {% else %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <p class="mb-2"><strong>City has:</strong></p>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-success">0 areas</span></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <p class="text-muted mb-4">
+                    Are you sure you want to delete the city <strong>"{{ city.name }}"</strong>?
+                </p>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Yes, Delete City
+                    </button>
+                </form>
+                
+                <a href="{% url 'admin_panel:gift_city_list' %}" class="btn btn-secondary ms-2">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

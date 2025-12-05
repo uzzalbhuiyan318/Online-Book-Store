@@ -1076,6 +1076,25 @@ def gift_city_edit(request, pk):
 
 
 @staff_member_required
+def gift_city_delete(request, pk):
+    """Delete gift city"""
+    city = get_object_or_404(GiftCity, pk=pk)
+    if request.method == 'POST':
+        name = city.name
+        # Check if city has areas
+        areas_count = city.areas.count()
+        if areas_count > 0:
+            messages.error(request, f'Cannot delete city "{name}" because it has {areas_count} area(s) associated with it. Please delete the areas first.')
+            return redirect('admin_panel:gift_city_list')
+        city.delete()
+        messages.success(request, f'City "{name}" deleted successfully')
+        return redirect('admin_panel:gift_city_list')
+    # If GET, check areas count for warning
+    areas_count = city.areas.count()
+    return render(request, 'admin_panel/gift_city_confirm_delete.html', {'city': city, 'areas_count': areas_count})
+
+
+@staff_member_required
 def gift_occasion_list(request):
     occasions = GiftOccasion.objects.all().order_by('label')
     paginator = Paginator(occasions, 50)

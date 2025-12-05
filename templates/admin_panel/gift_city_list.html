@@ -15,7 +15,10 @@
                 <tr>
                     <td>{{ city.pk }}</td>
                     <td>{{ city.name }}</td>
-                    <td><a href="{% url 'admin_panel:gift_city_edit' city.pk %}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+                    <td>
+                        <a href="{% url 'admin_panel:gift_city_edit' city.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="{% url 'admin_panel:gift_city_delete' city.pk %}" class="btn btn-sm btn-outline-danger ms-1">Delete</a>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="3" class="text-center text-muted">No cities found</td></tr>

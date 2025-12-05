@@ -102,6 +102,7 @@ urlpatterns = [
     path('gifts/cities/', views.gift_city_list, name='gift_city_list'),
     path('gifts/cities/add/', views.gift_city_add, name='gift_city_add'),
     path('gifts/cities/<int:pk>/edit/', views.gift_city_edit, name='gift_city_edit'),
+    path('gifts/cities/<int:pk>/delete/', views.gift_city_delete, name='gift_city_delete'),
     path('gifts/areas/', views.gift_area_list, name='gift_area_list'),
     path('gifts/areas/add/', views.gift_area_add, name='gift_area_add'),
     path('gifts/areas/<int:pk>/edit/', views.gift_area_edit, name='gift_area_edit'),
