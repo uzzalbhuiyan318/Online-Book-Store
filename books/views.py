@@ -19,6 +19,24 @@ def home(request):
     bestsellers = Book.objects.filter(is_active=True, is_bestseller=True).exclude(slug__isnull=True).exclude(slug='')[:8]
     new_arrivals = Book.objects.filter(is_active=True).exclude(slug__isnull=True).exclude(slug='').order_by('-created_at')[:8]
     
+    # Get categories with books for category-wise section
+    categories_with_books = []
+    categories = Category.objects.filter(is_active=True).annotate(
+        book_count=Count('books', filter=Q(books__is_active=True))
+    ).filter(book_count__gt=0).order_by('name')[:10]  # Get up to 10 categories
+    
+    for category in categories:
+        books = Book.objects.filter(
+            category=category,
+            is_active=True
+        ).exclude(slug__isnull=True).exclude(slug='')[:4]  # Get 4 books per category
+        
+        if books.exists():
+            categories_with_books.append({
+                'category': category,
+                'books': books
+            })
+    
     # Get user's wishlist book IDs for authenticated users
     wishlist_book_ids = []
     if request.user.is_authenticated:
@@ -26,6 +44,7 @@ def home(request):
     
     context = {
         'banners': banners,
+        'categories_with_books': categories_with_books,
         'featured_books': featured_books,
         'bestsellers': bestsellers,
         'new_arrivals': new_arrivals,
