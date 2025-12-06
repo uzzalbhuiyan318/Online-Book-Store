@@ -581,37 +581,6 @@
 </section>
 {% endif %}
 
-<!-- Categories Section -->
-{% if categories %}
-<section class="mb-5 bg-light py-5">
-    <div class="container">
-        <h2 class="section-title">Browse by Category</h2>
-        <div class="row g-3">
-            {% for category in categories %}
-            <div class="col-md-3 col-sm-6">
-                <a href="{% url 'books:book_list' %}?category={{ category.slug }}" class="text-decoration-none">
-                    <div class="card text-center h-100 border-0 shadow-sm">
-                        {% if category.image %}
-                        <img src="{{ category.image.url }}" class="card-img-top" alt="{{ category.name }}" style="height: 150px; object-fit: cover;">
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ category.name }}</h5>
-                            {% if category.name_bn %}
-                            <p class="card-text text-muted small">{{ category.name_bn }}</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        <div class="text-center mt-4">
-            <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary">View All Books</a>
-        </div>
-    </div>
-</section>
-{% endif %}
-
 <!-- Empty State -->
 {% if not featured_books and not bestsellers and not new_arrivals %}
 <div class="container text-center py-5">
