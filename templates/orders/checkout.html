@@ -3,6 +3,11 @@
 
 {% block title %}Checkout - BookStore{% endblock %}
 
+{% block extra_css %}
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{% endblock %}
+
 {% block content %}
 <div class="checkout-page">
     <div class="container py-4">
@@ -1109,5 +1114,180 @@ function showToast(message, type = 'info') {
         this.remove();
     });
 }
+</script>
+
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// Client-side validation for gift fields with SweetAlert
+document.addEventListener('DOMContentLoaded', function() {
+    const checkoutForm = document.getElementById('checkout-form');
+    
+    // Add real-time validation for gift fields
+    const giftFromName = document.getElementById('gift_from_name');
+    const giftFromPhone = document.getElementById('gift_from_phone');
+    const giftToName = document.getElementById('gift_to_name');
+    const giftToPhone = document.getElementById('gift_to_phone');
+    
+    // Validation functions
+    function validateName(name) {
+        const nameRegex = /^[a-zA-Z\s]+$/;
+        return nameRegex.test(name);
+    }
+    
+    function validatePhone(phone) {
+        const phoneRegex = /^\d{11}$/;
+        return phoneRegex.test(phone);
+    }
+    
+    // Add blur event listeners for real-time validation
+    if (giftFromName) {
+        giftFromName.addEventListener('blur', function() {
+            const field = this;
+            const value = this.value.trim();
+            if (value && !validateName(value)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Name',
+                    text: 'Name must contain only letters and spaces',
+                    confirmButtonColor: '#81b197'
+                }).then(() => {
+                    field.focus();
+                });
+            }
+        });
+    }
+    
+    if (giftFromPhone) {
+        giftFromPhone.addEventListener('blur', function() {
+            const field = this;
+            const value = this.value.trim();
+            if (value && !validatePhone(value)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Phone Number',
+                    text: 'Phone number must be exactly 11 digits',
+                    confirmButtonColor: '#81b197'
+                }).then(() => {
+                    field.focus();
+                });
+            }
+        });
+    }
+    
+    if (giftToName) {
+        giftToName.addEventListener('blur', function() {
+            const field = this;
+            const value = this.value.trim();
+            if (value && !validateName(value)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Name',
+                    text: 'Name must contain only letters and spaces',
+                    confirmButtonColor: '#81b197'
+                }).then(() => {
+                    field.focus();
+                });
+            }
+        });
+    }
+    
+    if (giftToPhone) {
+        giftToPhone.addEventListener('blur', function() {
+            const field = this;
+            const value = this.value.trim();
+            if (value && !validatePhone(value)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Phone Number',
+                    text: 'Phone number must be exactly 11 digits',
+                    confirmButtonColor: '#81b197'
+                }).then(() => {
+                    field.focus();
+                });
+            }
+        });
+    }
+    
+    // Form submission validation
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(e) {
+            const isGiftChecked = document.getElementById('is_gift')?.checked;
+            
+            if (isGiftChecked) {
+                // Validate gift from name
+                const fromName = giftFromName?.value.trim();
+                if (fromName && !validateName(fromName)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Sender Name',
+                        text: 'Sender name must contain only letters and spaces',
+                        confirmButtonColor: '#81b197'
+                    });
+                    giftFromName.focus();
+                    return false;
+                }
+                
+                // Validate gift from phone
+                const fromPhone = giftFromPhone?.value.trim();
+                if (fromPhone && !validatePhone(fromPhone)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Sender Phone',
+                        text: 'Sender phone number must be exactly 11 digits',
+                        confirmButtonColor: '#81b197'
+                    });
+                    giftFromPhone.focus();
+                    return false;
+                }
+                
+                // Validate gift to name
+                const toName = giftToName?.value.trim();
+                if (toName && !validateName(toName)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Recipient Name',
+                        text: 'Recipient name must contain only letters and spaces',
+                        confirmButtonColor: '#81b197'
+                    });
+                    giftToName.focus();
+                    return false;
+                }
+                
+                // Validate gift to phone
+                const toPhone = giftToPhone?.value.trim();
+                if (toPhone && !validatePhone(toPhone)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Recipient Phone',
+                        text: 'Recipient phone number must be exactly 11 digits',
+                        confirmButtonColor: '#81b197'
+                    });
+                    giftToPhone.focus();
+                    return false;
+                }
+            }
+        });
+    }
+});
+
+// Convert Django messages to SweetAlert
+{% if messages %}
+document.addEventListener('DOMContentLoaded', function() {
+    {% for message in messages %}
+    Swal.fire({
+        icon: '{% if message.tags == "error" or message.tags == "danger" %}error{% elif message.tags == "success" %}success{% elif message.tags == "warning" %}warning{% else %}info{% endif %}',
+        title: '{% if message.tags == "error" or message.tags == "danger" %}Error{% elif message.tags == "success" %}Success{% elif message.tags == "warning" %}Warning{% else %}Information{% endif %}',
+        text: '{{ message|escapejs }}',
+        confirmButtonColor: '#81b197'
+    });
+    {% endfor %}
+});
+{% endif %}
 </script>
 {% endblock %}

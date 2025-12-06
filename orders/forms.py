@@ -221,6 +221,66 @@ class CheckoutForm(forms.Form):
             zone_choices.append((zone.id, zone.name))
         self.fields['gift_to_zone'].widget.choices = zone_choices
 
+    def clean_gift_from_phone(self):
+        """Validate gift sender phone number - must be exactly 11 digits"""
+        import re
+        phone = self.cleaned_data.get('gift_from_phone', '').strip()
+        
+        # Skip validation if field is empty (it's optional)
+        if not phone:
+            return phone
+        
+        # Check if phone number is exactly 11 digits
+        if not re.match(r'^\d{11}$', phone):
+            raise forms.ValidationError('Phone number must be exactly 11 digits')
+        
+        return phone
+    
+    def clean_gift_to_phone(self):
+        """Validate gift recipient phone number - must be exactly 11 digits"""
+        import re
+        phone = self.cleaned_data.get('gift_to_phone', '').strip()
+        
+        # Skip validation if field is empty (it's optional)
+        if not phone:
+            return phone
+        
+        # Check if phone number is exactly 11 digits
+        if not re.match(r'^\d{11}$', phone):
+            raise forms.ValidationError('Phone number must be exactly 11 digits')
+        
+        return phone
+    
+    def clean_gift_from_name(self):
+        """Validate gift sender name - must contain only letters and spaces"""
+        import re
+        name = self.cleaned_data.get('gift_from_name', '').strip()
+        
+        # Skip validation if field is empty (it's optional)
+        if not name:
+            return name
+        
+        # Check if name contains only letters and spaces
+        if not re.match(r'^[a-zA-Z\s]+$', name):
+            raise forms.ValidationError('Name must contain only letters and spaces')
+        
+        return name
+    
+    def clean_gift_to_name(self):
+        """Validate gift recipient name - must contain only letters and spaces"""
+        import re
+        name = self.cleaned_data.get('gift_to_name', '').strip()
+        
+        # Skip validation if field is empty (it's optional)
+        if not name:
+            return name
+        
+        # Check if name contains only letters and spaces
+        if not re.match(r'^[a-zA-Z\s]+$', name):
+            raise forms.ValidationError('Name must contain only letters and spaces')
+        
+        return name
+
 
 class OrderTrackingForm(forms.Form):
     """Order Tracking Form"""
