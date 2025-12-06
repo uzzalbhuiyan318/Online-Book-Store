@@ -176,7 +176,7 @@ class CheckoutForm(forms.Form):
     gift_to_address_line1 = forms.CharField(
         max_length=255,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address line 1'})
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter full address'})
     )
     OCCASION_CHOICES = [
         ('', 'Select Occasion'),

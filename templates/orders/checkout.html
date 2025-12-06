@@ -255,16 +255,13 @@
                                         </div>
 
                                         <div class="col-md-6">
-                                            <label for="gift_deliver_date" class="form-label">Deliver On (Optional)</label>
+                                            <label for="gift_deliver_date" class="form-label">Deliver Date</label>
                                             <input type="date" class="form-control" id="gift_deliver_date" name="gift_deliver_date">
                                         </div>
 
                                         <div class="col-12 mt-2">
                                             <h6>Recipient Address (if entering manually)</h6>
                                             <div class="row g-2">
-                                                <div class="col-md-12">
-                                                    {{ form.gift_to_address_line1 }}
-                                                </div>
                                                 <div class="col-md-4 mt-2">
                                                     <label class="form-label visually-hidden" for="id_gift_to_city">City</label>
                                                     {{ form.gift_to_city }}
@@ -276,6 +273,10 @@
                                                 <div class="col-md-4 mt-2">
                                                     <label class="form-label visually-hidden" for="id_gift_to_zone">Zone</label>
                                                     {{ form.gift_to_zone }}
+                                                </div>
+                                                <div class="col-md-12 mt-2">
+                                                    <label class="form-label" for="id_gift_to_address_line1">Full Address</label>
+                                                    {{ form.gift_to_address_line1 }}
                                                 </div>
                                                 <div class="col-md-6 mt-2">
                                                     <label class="form-label">Occasion</label>
