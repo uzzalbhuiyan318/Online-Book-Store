@@ -248,39 +248,55 @@
                                             <input type="tel" class="form-control" id="gift_to_phone" name="gift_to_phone" placeholder="Phone No">
                                         </div>
 
-                                        <div class="col-12">
-                                            <label for="gift_message" class="form-label">Gift Message</label>
-                                            <textarea class="form-control" id="gift_message" name="gift_message" rows="3" maxlength="120" placeholder="Gift Message"></textarea>
-                                            <div class="form-text text-end"><small><span id="gift_message_remaining">120</span> Character(s) Remaining</small></div>
-                                        </div>
 
-                                        <div class="col-md-6">
-                                            <label for="gift_deliver_date" class="form-label">Deliver Date</label>
-                                            <input type="date" class="form-control" id="gift_deliver_date" name="gift_deliver_date">
-                                        </div>
+                                        <!-- Gift Details Section with Envelope Design -->
+                                        <div style="background-color: #fff5f8; padding: 25px; border-radius: 8px; margin-top: 15px; border: 3px double #e8b4c8; box-shadow: 0 2px 8px rgba(232, 180, 200, 0.3); position: relative;">
+                                            <!-- Envelope Stamp Design -->
+                                            <div style="position: absolute; top: 10px; right: 15px; width: 50px; height: 50px; border: 2px dashed #e8b4c8; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: white; font-size: 20px;">
+                                                🎁
+                                            </div>
+                                            
+                                            <!-- Decorative Envelope Lines -->
+                                            <div style="border-bottom: 2px dashed #f5d5e0; margin-bottom: 20px; padding-bottom: 5px;">
+                                                <small style="color: #d4779d; font-style: italic;">✉️ Gift Details</small>
+                                            </div>
+                                            
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label for="gift_message" class="form-label">Gift Message</label>
+                                                    <textarea class="form-control" id="gift_message" name="gift_message" rows="3" maxlength="120" placeholder="Gift Message"></textarea>
+                                                    <div class="form-text text-end"><small><span id="gift_message_remaining">120</span> Character(s) Remaining</small></div>
+                                                </div>
 
-                                        <div class="col-12 mt-2">
-                                            <h6>Recipient Address (if entering manually)</h6>
-                                            <div class="row g-2">
-                                                <div class="col-md-4 mt-2">
-                                                    <label class="form-label visually-hidden" for="id_gift_to_city">City</label>
-                                                    {{ form.gift_to_city }}
+                                                <div class="col-md-6">
+                                                    <label for="gift_deliver_date" class="form-label">Delivery Date</label>
+                                                    <input type="date" class="form-control" id="gift_deliver_date" name="gift_deliver_date">
                                                 </div>
-                                                <div class="col-md-4 mt-2">
-                                                    <label class="form-label visually-hidden" for="id_gift_to_area">Area</label>
-                                                    {{ form.gift_to_area }}
-                                                </div>
-                                                <div class="col-md-4 mt-2">
-                                                    <label class="form-label visually-hidden" for="id_gift_to_zone">Zone</label>
-                                                    {{ form.gift_to_zone }}
-                                                </div>
-                                                <div class="col-md-12 mt-2">
-                                                    <label class="form-label" for="id_gift_to_address_line1">Full Address</label>
-                                                    {{ form.gift_to_address_line1 }}
-                                                </div>
-                                                <div class="col-md-6 mt-2">
-                                                    <label class="form-label">Occasion</label>
-                                                    {{ form.gift_to_occasion }}
+
+                                                <div class="col-12 mt-2">
+                                                    <h6>Recipient Address</h6>
+                                                    <div class="row g-2">
+                                                        <div class="col-md-4 mt-2">
+                                                            <label class="form-label visually-hidden" for="id_gift_to_city">City</label>
+                                                            {{ form.gift_to_city }}
+                                                        </div>
+                                                        <div class="col-md-4 mt-2">
+                                                            <label class="form-label visually-hidden" for="id_gift_to_area">Area</label>
+                                                            {{ form.gift_to_area }}
+                                                        </div>
+                                                        <div class="col-md-4 mt-2">
+                                                            <label class="form-label visually-hidden" for="id_gift_to_zone">Zone</label>
+                                                            {{ form.gift_to_zone }}
+                                                        </div>
+                                                        <div class="col-md-12 mt-2">
+                                                            <label class="form-label" for="id_gift_to_address_line1">Full Address</label>
+                                                            {{ form.gift_to_address_line1 }}
+                                                        </div>
+                                                        <div class="col-md-6 mt-2">
+                                                            <label class="form-label">Occasion</label>
+                                                            {{ form.gift_to_occasion }}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
