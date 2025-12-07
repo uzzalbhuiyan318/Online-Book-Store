@@ -1,6 +1,6 @@
 from django import forms
 from django.db.models import Q
-from books.models import Book, Category, Review, Banner
+from books.models import Book, Category, Review, Banner, SiteSettings
 from orders.models import Order, Coupon
 from rentals.models import RentalPlan, BookRental, RentalSettings
 from support.models import SupportAgent, QuickReply, ChatSettings
@@ -335,4 +335,33 @@ class ReviewApprovalForm(forms.ModelForm):
         fields = ['is_approved']
         widgets = {
             'is_approved': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class SiteSettingsForm(forms.ModelForm):
+    """Form for site-wide settings"""
+    
+    class Meta:
+        model = SiteSettings
+        fields = [
+            'site_name', 'tagline', 'logo', 'favicon', 'footer_logo',
+            'contact_email', 'contact_phone', 'address',
+            'facebook_url', 'twitter_url', 'instagram_url', 'youtube_url',
+            'meta_description', 'meta_keywords'
+        ]
+        widgets = {
+            'site_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'BookStore'}),
+            'tagline': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Your tagline here'}),
+            'logo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'favicon': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'footer_logo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
+            'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'info@bookstore.com'}),
+            'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+880 1700-000000'}),
+            'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Physical address'}),
+            'facebook_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://facebook.com/...'}),
+            'twitter_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://twitter.com/...'}),
+            'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/...'}),
+            'youtube_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://youtube.com/...'}),
+            'meta_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'meta_keywords': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }

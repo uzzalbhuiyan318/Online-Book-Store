@@ -156,6 +156,10 @@
                 <!-- System -->
                 <div class="admin-nav-section">
                     <div class="admin-nav-section-title">System</div>
+                    <a href="{% url 'admin_panel:site_settings' %}" class="admin-nav-item {% if 'settings' in request.path %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
                     <a href="/admin/" class="admin-nav-item" target="_blank">
                         <i class="fas fa-cogs"></i>
                         <span>Django Admin</span>

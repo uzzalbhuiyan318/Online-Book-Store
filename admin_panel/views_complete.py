@@ -4151,3 +4151,30 @@ def rental_feedback_respond(request, pk):
 
     return redirect('admin_panel:rental_feedback_list')
 
+
+# ==================== SITE SETTINGS ====================
+
+@staff_member_required
+def site_settings(request):
+    """Site-wide settings management"""
+    from books.models import SiteSettings
+    from .forms import SiteSettingsForm
+    
+    settings_obj = SiteSettings.get_settings()
+    
+    if request.method == 'POST':
+        form = SiteSettingsForm(request.POST, request.FILES, instance=settings_obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Site settings updated successfully!')
+            return redirect('admin_panel:site_settings')
+    else:
+        form = SiteSettingsForm(instance=settings_obj)
+    
+    context = {
+        'form': form,
+        'settings': settings_obj
+    }
+    
+    return render(request, 'admin_panel/site_settings.html', context)
+

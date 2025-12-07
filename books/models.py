@@ -280,3 +280,56 @@ class Banner(models.Model):
     
     def __str__(self):
         return self.title
+
+
+class SiteSettings(models.Model):
+    """Site-wide Settings Model (Singleton Pattern)"""
+    
+    # Site Information
+    site_name = models.CharField(max_length=200, default='BookStore', verbose_name='Site Name')
+    tagline = models.CharField(max_length=300, null=True, blank=True, verbose_name='Tagline')
+    
+    # Images
+    logo = models.ImageField(upload_to='site_settings/', null=True, blank=True, verbose_name='Site Logo')
+    favicon = models.ImageField(upload_to='site_settings/', null=True, blank=True, verbose_name='Favicon')
+    footer_logo = models.ImageField(upload_to='site_settings/', null=True, blank=True, verbose_name='Footer Logo')
+    
+    # Contact Information
+    contact_email = models.EmailField(null=True, blank=True, verbose_name='Contact Email')
+    contact_phone = models.CharField(max_length=20, null=True, blank=True, verbose_name='Contact Phone')
+    address = models.TextField(null=True, blank=True, verbose_name='Physical Address')
+    
+    # Social Media Links
+    facebook_url = models.URLField(null=True, blank=True, verbose_name='Facebook URL')
+    twitter_url = models.URLField(null=True, blank=True, verbose_name='Twitter URL')
+    instagram_url = models.URLField(null=True, blank=True, verbose_name='Instagram URL')
+    youtube_url = models.URLField(null=True, blank=True, verbose_name='YouTube URL')
+    
+    # SEO
+    meta_description = models.TextField(null=True, blank=True, verbose_name='Meta Description')
+    meta_keywords = models.TextField(null=True, blank=True, verbose_name='Meta Keywords')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Site Settings'
+        verbose_name_plural = 'Site Settings'
+    
+    def __str__(self):
+        return f"Site Settings - {self.site_name}"
+    
+    def save(self, *args, **kwargs):
+        """Ensure only one instance exists (Singleton Pattern)"""
+        self.pk = 1
+        super().save(*args, **kwargs)
+    
+    def delete(self, *args, **kwargs):
+        """Prevent deletion"""
+        pass
+    
+    @classmethod
+    def get_settings(cls):
+        """Get or create the singleton settings instance"""
+        settings, created = cls.objects.get_or_create(pk=1)
+        return settings

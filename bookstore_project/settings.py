@@ -78,6 +78,7 @@ TEMPLATES = [
                 'books.context_processors.cart_context',
                 'books.context_processors.categories_context',
                 'books.context_processors.language_context',
+                'books.context_processors.site_settings_context',
             ],
         },
     },

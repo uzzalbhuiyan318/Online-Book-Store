@@ -1,0 +1,142 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Site Settings - Admin Panel{% endblock %}
+{% block page_title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-cog"></i> Manage Site Settings</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Site Information -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Site Information</h6>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Site Name</label>
+                    {{ form.site_name }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tagline</label>
+                    {{ form.tagline }}
+                </div>
+            </div>
+            
+            <!-- Images -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-images"></i> Site Images</h6>
+                </div>
+                
+                <!-- Logo -->
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Site Logo</label>
+                    {{ form.logo }}
+                    {% if settings.logo %}
+                    <div class="mt-2">
+                        <img src="{{ settings.logo.url }}" alt="Current Logo" style="max-height: 100px;" class="img-thumbnail">
+                        <p class="text-muted small mt-1">Current logo</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Favicon -->
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Favicon</label>
+                    {{ form.favicon }}
+                    {% if settings.favicon %}
+                    <div class="mt-2">
+                        <img src="{{ settings.favicon.url }}" alt="Current Favicon" style="max-height: 50px;" class="img-thumbnail">
+                        <p class="text-muted small mt-1">Current favicon</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Footer Logo -->
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Footer Logo</label>
+                    {{ form.footer_logo }}
+                    {% if settings.footer_logo %}
+                    <div class="mt-2">
+                        <img src="{{ settings.footer_logo.url }}" alt="Current Footer Logo" style="max-height: 100px;" class="img-thumbnail">
+                        <p class="text-muted small mt-1">Current footer logo</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-address-book"></i> Contact Information</h6>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Contact Email</label>
+                    {{ form.contact_email }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Contact Phone</label>
+                    {{ form.contact_phone }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Address</label>
+                    {{ form.address }}
+                </div>
+            </div>
+            
+            <!-- Social Media Links -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-share-alt"></i> Social Media Links</h6>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Facebook URL</label>
+                    {{ form.facebook_url }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Twitter URL</label>
+                    {{ form.twitter_url }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Instagram URL</label>
+                    {{ form.instagram_url }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">YouTube URL</label>
+                    {{ form.youtube_url }}
+                </div>
+            </div>
+            
+            <!-- SEO -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-search"></i> SEO Settings</h6>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Description</label>
+                    {{ form.meta_description }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Meta Keywords</label>
+                    {{ form.meta_keywords }}
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="row">
+                <div class="col-12">
+                    <button type="submit" class="btn btn-admin-primary">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

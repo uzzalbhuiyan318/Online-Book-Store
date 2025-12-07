@@ -60,3 +60,17 @@ def language_context(request):
         'is_bangla': current_language == 'bn',
         'is_english': current_language == 'en',
     }
+
+
+def site_settings_context(request):
+    """Add site settings to context"""
+    from .models import SiteSettings
+    try:
+        settings = SiteSettings.get_settings()
+    except Exception:
+        # Return None if settings don't exist yet
+        settings = None
+    
+    return {
+        'site_settings': settings
+    }

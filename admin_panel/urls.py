@@ -114,4 +114,7 @@ urlpatterns = [
     path('gifts/occasions/', views.gift_occasion_list, name='gift_occasion_list'),
     path('gifts/occasions/add/', views.gift_occasion_add, name='gift_occasion_add'),
     path('gifts/occasions/<int:pk>/edit/', views.gift_occasion_edit, name='gift_occasion_edit'),
+    
+    # Site Settings
+    path('settings/', views.site_settings, name='site_settings'),
 ]
