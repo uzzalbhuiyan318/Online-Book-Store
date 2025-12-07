@@ -118,6 +118,11 @@
                 <div class="col-12">
                     <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-search"></i> SEO Settings</h6>
                 </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Meta Title</label>
+                    {{ form.meta_title }}
+                    <small class="text-muted">SEO title for homepage (recommended: 50-60 characters)</small>
+                </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Meta Description</label>
                     {{ form.meta_description }}
@@ -125,6 +130,18 @@
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Meta Keywords</label>
                     {{ form.meta_keywords }}
+                </div>
+            </div>
+            
+            <!-- Footer Settings -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-copyright"></i> Footer Settings</h6>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Copyright Text</label>
+                    {{ form.copyright_text }}
+                    <small class="text-muted">Custom copyright text (e.g., "All rights reserved")</small>
                 </div>
             </div>
             

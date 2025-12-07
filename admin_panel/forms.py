@@ -1,6 +1,6 @@
 from django import forms
 from django.db.models import Q
-from books.models import Book, Category, Review, Banner, SiteSettings
+from books.models import Book, Category, Review, Banner, SiteSettings, QuickLink
 from orders.models import Order, Coupon
 from rentals.models import RentalPlan, BookRental, RentalSettings
 from support.models import SupportAgent, QuickReply, ChatSettings
@@ -347,7 +347,8 @@ class SiteSettingsForm(forms.ModelForm):
             'site_name', 'tagline', 'logo', 'favicon', 'footer_logo',
             'contact_email', 'contact_phone', 'address',
             'facebook_url', 'twitter_url', 'instagram_url', 'youtube_url',
-            'meta_description', 'meta_keywords'
+            'meta_title', 'meta_description', 'meta_keywords',
+            'copyright_text'
         ]
         widgets = {
             'site_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'BookStore'}),
@@ -362,6 +363,23 @@ class SiteSettingsForm(forms.ModelForm):
             'twitter_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://twitter.com/...'}),
             'instagram_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://instagram.com/...'}),
             'youtube_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://youtube.com/...'}),
+            'meta_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SEO title for homepage'}),
             'meta_description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'meta_keywords': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'copyright_text': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'All rights reserved'}),
+        }
+
+
+class QuickLinkForm(forms.ModelForm):
+    """Form for managing footer quick links"""
+    
+    class Meta:
+        model = QuickLink
+        fields = ['display_name', 'url', 'is_active', 'order', 'open_new_tab']
+        widgets = {
+            'display_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Home, About Us'}),
+            'url': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., /books/ or https://example.com'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'open_new_tab': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

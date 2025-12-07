@@ -1,0 +1,58 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Quick Link - Admin Panel{% endblock %}
+{% block page_title %}{{ action }} Quick Link{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-link"></i> {{ action }} Quick Link</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Display Name *</label>
+                    {{ form.display_name }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">URL *</label>
+                    {{ form.url }}
+                    <small class="text-muted">Internal: /books/ or External: https://example.com</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Display Order</label>
+                    {{ form.order }}
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label">Active</label>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.open_new_tab }}
+                        <label class="form-check-label">Open in New Tab</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <button type="submit" class="btn btn-admin-primary">
+                    <i class="fas fa-save"></i> Save Quick Link
+                </button>
+                <a href="{% url 'admin_panel:quick_link_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

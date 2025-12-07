@@ -306,8 +306,12 @@ class SiteSettings(models.Model):
     youtube_url = models.URLField(null=True, blank=True, verbose_name='YouTube URL')
     
     # SEO
+    meta_title = models.CharField(max_length=200, null=True, blank=True, verbose_name='Meta Title', help_text='SEO title for homepage')
     meta_description = models.TextField(null=True, blank=True, verbose_name='Meta Description')
     meta_keywords = models.TextField(null=True, blank=True, verbose_name='Meta Keywords')
+    
+    # Footer
+    copyright_text = models.CharField(max_length=200, null=True, blank=True, verbose_name='Copyright Text', help_text='e.g., "All rights reserved" or custom text')
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -333,3 +337,24 @@ class SiteSettings(models.Model):
         """Get or create the singleton settings instance"""
         settings, created = cls.objects.get_or_create(pk=1)
         return settings
+
+
+class QuickLink(models.Model):
+    """Footer Quick Links Model"""
+    
+    display_name = models.CharField(max_length=100, verbose_name='Display Name')
+    url = models.CharField(max_length=500, verbose_name='URL', help_text='Can be internal (/books/) or external (https://...)')
+    is_active = models.BooleanField(default=True, verbose_name='Active')
+    order = models.IntegerField(default=0, verbose_name='Display Order')
+    open_new_tab = models.BooleanField(default=False, verbose_name='Open in New Tab')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Quick Link'
+        verbose_name_plural = 'Quick Links'
+        ordering = ['order', 'display_name']
+    
+    def __str__(self):
+        return self.display_name

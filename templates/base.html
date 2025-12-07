@@ -6,8 +6,8 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}Online Bookstore - Buy books online in Bangladesh{% endblock %}">
-    <title>{% block title %}{% if site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %} - Online Book Shopping in Bangladesh{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{% if site_settings and site_settings.meta_description %}{{ site_settings.meta_description }}{% else %}Online Bookstore - Buy books online in Bangladesh{% endif %}{% endblock %}">
+    <title>{% block title %}{% if site_settings and site_settings.meta_title %}{{ site_settings.meta_title }}{% elif site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %} - Online Book Shopping in Bangladesh{% endblock %}</title>
     
     <!-- Favicon -->
     {% if site_settings and site_settings.favicon %}
@@ -50,11 +50,15 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center" href="{% url 'books:home' %}">
-                <i class="fas fa-book-open text-primary fs-3 me-2"></i>
-                <div>
-                    <div class="brand-name">BookStore</div>
-                    <small class="brand-tagline">Your Reading Partner</small>
-                </div>
+                {% if site_settings and site_settings.logo %}
+                    <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="max-height: 50px;">
+                {% else %}
+                    <i class="fas fa-book-open text-primary fs-3 me-2"></i>
+                    <div>
+                        <div class="brand-name">{% if site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %}</div>
+                        <small class="brand-tagline">{% if site_settings and site_settings.tagline %}{{ site_settings.tagline }}{% else %}Your Reading Partner{% endif %}</small>
+                    </div>
+                {% endif %}
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -264,9 +268,20 @@
                 <div class="col-md-4">
                     <h5>Quick Links</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{% url 'books:home' %}" class="text-light">Home</a></li>
-                        <li><a href="{% url 'books:book_list' %}" class="text-light">Books</a></li>
-                        <li><a href="{% url 'orders:track_order' %}" class="text-light">Track Order</a></li>
+                        {% load static %}
+                        {% if quick_links %}
+                            {% for link in quick_links %}
+                            <li>
+                                <a href="{{ link.url }}" class="text-light" {% if link.open_new_tab %}target="_blank"{% endif %}>
+                                    {{ link.display_name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            <li><a href="{% url 'books:home' %}" class="text-light">Home</a></li>
+                            <li><a href="{% url 'books:book_list' %}" class="text-light">Books</a></li>
+                            <li><a href="{% url 'orders:track_order' %}" class="text-light">Track Order</a></li>
+                        {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-4">
@@ -282,7 +297,7 @@
             </div>
             <hr>
             <div class="text-center">
-                <p>&copy; 2025 {% if site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %}. All rights reserved.</p>
+                <p>&copy; 2025 {% if site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %}. {% if site_settings and site_settings.copyright_text %}{{ site_settings.copyright_text }}{% else %}All rights reserved.{% endif %}</p>
             </div>
         </div>
     </footer>

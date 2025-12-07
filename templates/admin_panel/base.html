@@ -160,6 +160,10 @@
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
                     </a>
+                    <a href="{% url 'admin_panel:quick_link_list' %}" class="admin-nav-item {% if 'quick-link' in request.path %}active{% endif %}">
+                        <i class="fas fa-link"></i>
+                        <span>Quick Links</span>
+                    </a>
                     <a href="/admin/" class="admin-nav-item" target="_blank">
                         <i class="fas fa-cogs"></i>
                         <span>Django Admin</span>

@@ -117,4 +117,10 @@ urlpatterns = [
     
     # Site Settings
     path('settings/', views.site_settings, name='site_settings'),
+    
+    # Quick Links
+    path('quick-links/', views.quick_link_list, name='quick_link_list'),
+    path('quick-links/add/', views.quick_link_add, name='quick_link_add'),
+    path('quick-links/<int:pk>/edit/', views.quick_link_edit, name='quick_link_edit'),
+    path('quick-links/<int:pk>/delete/', views.quick_link_delete, name='quick_link_delete'),
 ]

@@ -64,13 +64,17 @@ def language_context(request):
 
 def site_settings_context(request):
     """Add site settings to context"""
-    from .models import SiteSettings
+    from .models import SiteSettings, QuickLink
     try:
         settings = SiteSettings.get_settings()
     except Exception:
         # Return None if settings don't exist yet
         settings = None
     
+    # Get active quick links
+    quick_links = QuickLink.objects.filter(is_active=True).order_by('order', 'display_name')
+    
     return {
-        'site_settings': settings
+        'site_settings': settings,
+        'quick_links': quick_links
     }

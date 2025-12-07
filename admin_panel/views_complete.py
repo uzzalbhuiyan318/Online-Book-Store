@@ -4178,3 +4178,69 @@ def site_settings(request):
     
     return render(request, 'admin_panel/site_settings.html', context)
 
+
+# ==================== QUICK LINKS ====================
+
+@staff_member_required
+def quick_link_list(request):
+    """List all quick links"""
+    from books.models import QuickLink
+    
+    quick_links = QuickLink.objects.all().order_by('order', 'display_name')
+    
+    context = {'quick_links': quick_links}
+    return render(request, 'admin_panel/quick_link_list.html', context)
+
+
+@staff_member_required
+def quick_link_add(request):
+    """Add new quick link"""
+    from books.models import QuickLink
+    from .forms import QuickLinkForm
+    
+    if request.method == 'POST':
+        form = QuickLinkForm(request.POST)
+        if form.is_valid():
+            quick_link = form.save()
+            messages.success(request, f'Quick link "{quick_link.display_name}" added successfully!')
+            return redirect('admin_panel:quick_link_list')
+    else:
+        form = QuickLinkForm()
+    
+    context = {'form': form, 'action': 'Add'}
+    return render(request, 'admin_panel/quick_link_form.html', context)
+
+
+@staff_member_required
+def quick_link_edit(request, pk):
+    """Edit quick link"""
+    from books.models import QuickLink
+    from .forms import QuickLinkForm
+    
+    quick_link = get_object_or_404(QuickLink, pk=pk)
+    
+    if request.method == 'POST':
+        form = QuickLinkForm(request.POST, instance=quick_link)
+        if form.is_valid():
+            quick_link = form.save()
+            messages.success(request, f'Quick link "{quick_link.display_name}" updated successfully!')
+            return redirect('admin_panel:quick_link_list')
+    else:
+        form = QuickLinkForm(instance=quick_link)
+    
+    context = {'form': form, 'action': 'Edit', 'quick_link': quick_link}
+    return render(request, 'admin_panel/quick_link_form.html', context)
+
+
+@staff_member_required
+def quick_link_delete(request, pk):
+    """Delete quick link"""
+    from books.models import QuickLink
+    
+    quick_link = get_object_or_404(QuickLink, pk=pk)
+    display_name = quick_link.display_name
+    quick_link.delete()
+    
+    messages.success(request, f'Quick link "{display_name}" deleted successfully!')
+    return redirect('admin_panel:quick_link_list')
+

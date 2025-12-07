@@ -2,7 +2,9 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Home - BookStore{% endblock %}
+
+{% block title %}Home - {% if site_settings %}{{ site_settings.site_name }}{% else %}BookStore{% endif %}{% endblock %}
+
 
 {% block extra_css %}
 <style>
