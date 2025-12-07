@@ -100,8 +100,6 @@
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="fas fa-user"></i> My Profile</a></li>
                             <li><a class="dropdown-item" href="{% url 'orders:my_orders' %}"><i class="fas fa-shopping-bag"></i> My Orders</a></li>
-                            <li><a class="dropdown-item" href="{% url 'rentals:my_rentals' %}"><i class="fas fa-book-reader"></i> My Rentals</a></li>
-                            <li><a class="dropdown-item" href="{% url 'rentals:notifications' %}"><i class="fas fa-bell"></i> Notifications</a></li>
                             <li><a class="dropdown-item" href="{% url 'accounts:address_list' %}"><i class="fas fa-map-marker-alt"></i> My Addresses</a></li>
                             {% if user.is_staff %}
                             <li><hr class="dropdown-divider"></li>
@@ -213,10 +211,6 @@
                         </div>
                     </div>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'rentals:rental_plans' %}">
-                        <i class="fas fa-book-reader"></i> Rent Books
-                    </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-danger" href="{% url 'books:book_list' %}?sort=popular">
@@ -264,7 +258,6 @@
                     <ul class="list-unstyled">
                         <li><a href="{% url 'books:home' %}" class="text-light">Home</a></li>
                         <li><a href="{% url 'books:book_list' %}" class="text-light">Books</a></li>
-                        <li><a href="{% url 'rentals:rental_plans' %}" class="text-light">Rent Books</a></li>
                         <li><a href="{% url 'orders:track_order' %}" class="text-light">Track Order</a></li>
                     </ul>
                 </div>

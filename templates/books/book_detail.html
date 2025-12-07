@@ -116,30 +116,15 @@
                     </div>
                 </div>
                 
-                <!-- Action Buttons & Rental -->
+                <!-- Action Buttons -->
                 {% if book.stock > 0 %}
-                <div class="action-rental-section mb-5">
+                <div class="action-section mb-5">
                     <form method="post" action="{% url 'books:add_to_cart' book.id %}" class="add-to-cart-form">
                         {% csrf_token %}
                         <button type="submit" class="btn-add-to-cart-detail">
                             Add to Cart
                         </button>
                     </form>
-                    
-                    <div class="rental-section">
-                        <div class="rental-info">
-                            <div class="rental-icon">
-                                <i class="fas fa-book-reader"></i>
-                            </div>
-                            <div class="rental-text">
-                                <h5>Want to rent instead?</h5>
-                                <p>Rent this book for as low as 10% of the price!</p>
-                            </div>
-                        </div>
-                        <a href="{% url 'rentals:book_rental_detail' book.slug %}" class="btn-rent-book">
-                            <i class="fas fa-hand-holding"></i> Rent This Book
-                        </a>
-                    </div>
                 </div>
                 
                 <!-- Wishlist Button & Share Section -->

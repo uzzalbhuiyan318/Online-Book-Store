@@ -71,33 +71,8 @@
                     </a>
                 </div>
                 
-                <!-- Rentals -->
-                <div class="admin-nav-section">
-                    <div class="admin-nav-section-title">Rentals</div>
-                    <a href="{% url 'admin_panel:rental_list' %}" class="admin-nav-item {% if 'rental' in request.path and 'plan' not in request.path and 'feedback' not in request.path and 'notification' not in request.path %}active{% endif %}">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Rentals</span>
-                        {% if overdue_rentals %}
-                        <span class="badge bg-danger">{{ overdue_rentals }}</span>
-                        {% endif %}
-                    </a>
-                    <a href="{% url 'admin_panel:rental_plan_list' %}" class="admin-nav-item {% if 'plan' in request.path %}active{% endif %}">
-                        <i class="fas fa-list"></i>
-                        <span>Rental Plans</span>
-                    </a>
-                    <a href="{% url 'admin_panel:rental_feedback_list' %}" class="admin-nav-item {% if 'feedback' in request.path %}active{% endif %}">
-                        <i class="fas fa-comment-dots"></i>
-                        <span>Feedback</span>
-                    </a>
-                    <a href="{% url 'admin_panel:rental_notification_list' %}" class="admin-nav-item {% if 'notification' in request.path %}active{% endif %}">
-                        <i class="fas fa-bell"></i>
-                        <span>Notifications</span>
-                    </a>
-                    <a href="{% url 'admin_panel:rental_settings' %}" class="admin-nav-item {% if 'settings' in request.path %}active{% endif %}">
-                        <i class="fas fa-cog"></i>
-                        <span>Settings</span>
-                    </a>
-                </div>
+                
+                <!-- Rentals section removed - UI disabled, models preserved -->
                 
                 <!-- Gifts -->
                 <div class="admin-nav-section">

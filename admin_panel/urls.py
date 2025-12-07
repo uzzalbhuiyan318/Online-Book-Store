@@ -43,30 +43,30 @@ urlpatterns = [
     path('coupons/<int:pk>/edit/', views.coupon_edit, name='coupon_edit'),
     path('coupons/<int:pk>/delete/', views.coupon_delete, name='coupon_delete'),
     
-    # Rental Management
-    path('rentals/', views.rental_list, name='rental_list'),
-    path('rentals/plans/', views.rental_plan_list, name='rental_plan_list'),
-    path('rentals/plans/add/', views.rental_plan_add, name='rental_plan_add'),
-    path('rentals/plans/<int:pk>/edit/', views.rental_plan_edit, name='rental_plan_edit'),
-    path('rentals/plans/<int:pk>/delete/', views.rental_plan_delete, name='rental_plan_delete'),
-    path('rentals/plans/bulk-action/', views.rental_plan_bulk_action, name='rental_plan_bulk_action'),
-    path('rentals/plans/<int:pk>/toggle-status/', views.rental_plan_toggle_status, name='rental_plan_toggle_status'),
-    path('rentals/settings/', views.rental_settings, name='rental_settings'),
-    path('rentals/bulk-action/', views.rental_bulk_action, name='rental_bulk_action'),
-    path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
-    path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
-    path('rentals/history/', views.rental_status_history_list, name='rental_status_history_list'),
-    
-    # Rental Feedback Management
-    path('rentals/feedback/', views.rental_feedback_list, name='rental_feedback_list'),
-    path('rentals/feedback/<int:pk>/approve/', views.rental_feedback_approve, name='rental_feedback_approve'),
-    path('rentals/feedback/<int:pk>/respond/', views.rental_feedback_respond, name='rental_feedback_respond'),
-    path('rentals/feedback/<int:pk>/delete/', views.rental_feedback_delete, name='rental_feedback_delete'),
-    path('rentals/feedback/bulk-action/', views.rental_feedback_bulk_action, name='rental_feedback_bulk_action'),
-    
-    # Rental Notification Management
-    path('rentals/notifications/', views.rental_notification_list, name='rental_notification_list'),
-    path('rentals/notifications/bulk-action/', views.rental_notification_bulk_action, name='rental_notification_bulk_action'),
+    # Rental Management URLs - Disabled (models preserved, UI hidden)
+    # path('rentals/', views.rental_list, name='rental_list'),
+    # path('rentals/plans/', views.rental_plan_list, name='rental_plan_list'),
+    # path('rentals/plans/add/', views.rental_plan_add, name='rental_plan_add'),
+    # path('rentals/plans/<int:pk>/edit/', views.rental_plan_edit, name='rental_plan_edit'),
+    # path('rentals/plans/<int:pk>/delete/', views.rental_plan_delete, name='rental_plan_delete'),
+    # path('rentals/plans/bulk-action/', views.rental_plan_bulk_action, name='rental_plan_bulk_action'),
+    # path('rentals/plans/<int:pk>/toggle-status/', views.rental_plan_toggle_status, name='rental_plan_toggle_status'),
+    # path('rentals/settings/', views.rental_settings, name='rental_settings'),
+    # path('rentals/bulk-action/', views.rental_bulk_action, name='rental_bulk_action'),
+    # path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
+    # path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
+    # path('rentals/history/', views.rental_status_history_list, name='rental_status_history_list'),
+    # 
+    # # Rental Feedback Management
+    # path('rentals/feedback/', views.rental_feedback_list, name='rental_feedback_list'),
+    # path('rentals/feedback/<int:pk>/approve/', views.rental_feedback_approve, name='rental_feedback_approve'),
+    # path('rentals/feedback/<int:pk>/respond/', views.rental_feedback_respond, name='rental_feedback_respond'),
+    # path('rentals/feedback/<int:pk>/delete/', views.rental_feedback_delete, name='rental_feedback_delete'),
+    # path('rentals/feedback/bulk-action/', views.rental_feedback_bulk_action, name='rental_feedback_bulk_action'),
+    # 
+    # # Rental Notification Management
+    # path('rentals/notifications/', views.rental_notification_list, name='rental_notification_list'),
+    # path('rentals/notifications/bulk-action/', views.rental_notification_bulk_action, name='rental_notification_bulk_action'),
     
     # Banner Management
     path('banners/', views.banner_list, name='banner_list'),

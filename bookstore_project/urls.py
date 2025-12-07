@@ -19,7 +19,7 @@ urlpatterns += i18n_patterns(
     path('orders/', include('orders.urls')),
     path('payments/', include('payments.urls')),
     path('admin-panel/', include('admin_panel.urls')),
-    path('rentals/', include('rentals.urls')),
+    # path('rentals/', include('rentals.urls')),  # Rental UI disabled - models preserved
     path('support/', include('support.urls')),
     path('api/', include('books.api_urls')),
     prefix_default_language=False,

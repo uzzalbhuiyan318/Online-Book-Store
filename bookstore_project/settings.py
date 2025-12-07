@@ -290,22 +290,21 @@ CELERY_TIMEZONE = TIME_ZONE
 from celery.schedules import crontab
 
 CELERY_BEAT_SCHEDULE = {
-    # Daily rental reminders and late fee calculations (9 AM every day)
-    'send-daily-rental-reminders': {
-        'task': 'rentals.tasks.send_daily_rental_reminders',
-        'schedule': crontab(hour=9, minute=0),  # 9:00 AM daily
-        'options': {
-            'expires': 3600,  # Task expires after 1 hour if not executed
-        },
-    },
-    # Update overdue rental status (every hour)
-    'update-overdue-status': {
-        'task': 'rentals.tasks.update_overdue_status',
-        'schedule': crontab(minute=0),  # Every hour at :00
-        'options': {
-            'expires': 1800,  # Task expires after 30 minutes if not executed
-        },
-    },
+    # Rental system tasks disabled - UI removed but models preserved
+    # 'send-daily-rental-reminders': {
+    #     'task': 'rentals.tasks.send_daily_rental_reminders',
+    #     'schedule': crontab(hour=9, minute=0),  # 9:00 AM daily
+    #     'options': {
+    #         'expires': 3600,  # Task expires after 1 hour if not executed
+    #     },
+    # },
+    # 'update-overdue-status': {
+    #     'task': 'rentals.tasks.update_overdue_status',
+    #     'schedule': crontab(minute=0),  # Every hour at :00
+    #     'options': {
+    #         'expires': 1800,  # Task expires after 30 minutes if not executed
+    #     },
+    # },
 }
 
 # Logging Configuration
