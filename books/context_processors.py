@@ -64,7 +64,7 @@ def language_context(request):
 
 def site_settings_context(request):
     """Add site settings to context"""
-    from .models import SiteSettings, QuickLink
+    from .models import SiteSettings, QuickLink, NavMenu
     try:
         settings = SiteSettings.get_settings()
     except Exception:
@@ -74,7 +74,11 @@ def site_settings_context(request):
     # Get active quick links
     quick_links = QuickLink.objects.filter(is_active=True).order_by('order', 'display_name')
     
+    # Get active top-level navigation menus
+    nav_menus = NavMenu.objects.filter(is_active=True, parent__isnull=True).order_by('order', 'display_name')
+    
     return {
         'site_settings': settings,
-        'quick_links': quick_links
+        'quick_links': quick_links,
+        'nav_menus': nav_menus
     }

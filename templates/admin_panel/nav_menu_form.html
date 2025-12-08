@@ -1,0 +1,128 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}{{ action }} Navigation Menu - Admin Panel{% endblock %}
+{% block page_title %}{{ action }} Navigation Menu{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-bars"></i> {{ action }} Navigation Menu</h5>
+    </div>
+    <div class="admin-card-body">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Display Name *</label>
+                    {{ form.display_name }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Menu Type *</label>
+                    {{ form.menu_type }}
+                    <small class="text-muted">Single: Regular link | Dropdown: Has child items</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Link Type *</label>
+                    {{ form.link_type }}
+                    <small class="text-muted">How this menu links to content</small>
+                </div>
+                <div class="col-md-6 mb-3" id="url_field">
+                    <label class="form-label">Custom URL</label>
+                    {{ form.url }}
+                    <small class="text-muted">For custom URL type</small>
+                </div>
+                <div class="col-md-6 mb-3" id="category_field" style="display: none;">
+                    <label class="form-label">Select Category</label>
+                    {{ form.linked_category }}
+                    <small class="text-muted">Link to a category page</small>
+                </div>
+                <div class="col-md-6 mb-3" id="book_field" style="display: none;">
+                    <label class="form-label">Select Book</label>
+                    {{ form.linked_book }}
+                    <small class="text-muted">Link to a book detail page</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Parent Menu</label>
+                    {{ form.parent }}
+                    <small class="text-muted">Leave empty for top-level menu</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Icon Class (Optional)</label>
+                    {{ form.icon_class }}
+                    <small class="text-muted">e.g., fas fa-home</small>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Display Order</label>
+                    {{ form.order }}
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.is_active }}
+                        <label class="form-check-label">Active</label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check mt-4">
+                        {{ form.open_new_tab }}
+                        <label class="form-check-label">Open in New Tab</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-3">
+                <button type="submit" class="btn btn-admin-primary">
+                    <i class="fas fa-save"></i> Save Menu
+                </button>
+                <a href="{% url 'admin_panel:nav_menu_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Dynamic field visibility based on link type
+document.addEventListener('DOMContentLoaded', function() {
+    const linkTypeSelect = document.getElementById('id_link_type');
+    const urlField = document.getElementById('url_field');
+    const categoryField = document.getElementById('category_field');
+    const bookField = document.getElementById('book_field');
+    
+    function updateFieldVisibility() {
+        const linkType = linkTypeSelect.value;
+        
+        // Hide all fields first
+        urlField.style.display = 'none';
+        categoryField.style.display = 'none';
+        bookField.style.display = 'none';
+        
+        // Show relevant field
+        if (linkType === 'url') {
+            urlField.style.display = 'block';
+        } else if (linkType === 'category') {
+            categoryField.style.display = 'block';
+        } else if (linkType === 'book') {
+            bookField.style.display = 'block';
+        }
+    }
+    
+    // Initial state
+    updateFieldVisibility();
+    
+    // Update on change
+    linkTypeSelect.addEventListener('change', updateFieldVisibility);
+});
+</script>
+{% endblock %}

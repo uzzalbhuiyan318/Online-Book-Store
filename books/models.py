@@ -358,3 +358,67 @@ class QuickLink(models.Model):
     
     def __str__(self):
         return self.display_name
+
+
+class NavMenu(models.Model):
+    """Dynamic Navigation Menu Model"""
+    
+    MENU_TYPE_CHOICES = [
+        ('single', 'Single Menu'),
+        ('dropdown', 'Dropdown Menu'),
+    ]
+    
+    LINK_TYPE_CHOICES = [
+        ('url', 'Custom URL'),
+        ('category', 'Category'),
+        ('book', 'Book'),
+    ]
+    
+    display_name = models.CharField(max_length=100, verbose_name='Display Name')
+    menu_type = models.CharField(max_length=20, choices=MENU_TYPE_CHOICES, default='single', verbose_name='Menu Type')
+    link_type = models.CharField(max_length=20, choices=LINK_TYPE_CHOICES, default='url', verbose_name='Link Type')
+    url = models.CharField(max_length=500, null=True, blank=True, verbose_name='Custom URL', help_text='For custom URL type')
+    linked_category = models.ForeignKey('Category', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Linked Category', help_text='For category link type')
+    linked_book = models.ForeignKey('Book', on_delete=models.CASCADE, null=True, blank=True, verbose_name='Linked Book', help_text='For book link type')
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name='Parent Menu')
+    is_active = models.BooleanField(default=True, verbose_name='Active')
+    order = models.IntegerField(default=0, verbose_name='Display Order')
+    open_new_tab = models.BooleanField(default=False, verbose_name='Open in New Tab')
+    icon_class = models.CharField(max_length=100, null=True, blank=True, verbose_name='Icon Class', help_text='e.g., fas fa-home')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Navigation Menu'
+        verbose_name_plural = 'Navigation Menus'
+        ordering = ['order', 'display_name']
+    
+    def __str__(self):
+        if self.parent:
+            return f"{self.parent.display_name} > {self.display_name}"
+        return self.display_name
+    
+    def save(self, *args, **kwargs):
+        """Auto-generate URL based on link type"""
+        from django.urls import reverse
+        
+        if self.link_type == 'category' and self.linked_category:
+            self.url = reverse('books:category_books', kwargs={'slug': self.linked_category.slug})
+        elif self.link_type == 'book' and self.linked_book:
+            self.url = reverse('books:book_detail', kwargs={'slug': self.linked_book.slug})
+        # For 'url' type, keep the custom URL as is
+        
+        super().save(*args, **kwargs)
+    
+    def has_children(self):
+        """Check if this menu has child items"""
+        return self.children.filter(is_active=True).exists()
+    
+    def get_children(self):
+        """Get active child menu items"""
+        return self.children.filter(is_active=True).order_by('order', 'display_name')
+    
+    def get_url(self):
+        """Get the final URL for this menu item"""
+        return self.url or '#'

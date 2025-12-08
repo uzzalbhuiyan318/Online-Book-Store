@@ -143,6 +143,7 @@
     <nav class="category-nav bg-light border-bottom">
         <div class="container">
             <ul class="nav category-nav-list">
+                <!-- All Categories Mega Menu -->
                 <li class="nav-item dropdown mega-dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" aria-expanded="false">
                         <i class="fas fa-bars"></i> All Categories
@@ -166,35 +167,45 @@
                         </div>
                     </div>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'books:book_list' %}">
-                        <i class="fas fa-book"></i> All Books
-                    </a>
-                </li>
-                <li class="nav-item dropdown mega-dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" aria-expanded="false">
-                        <i class="fas fa-user-edit"></i> Authors
-                    </a>
-                    <div class="dropdown-menu mega-menu">
-                        <div class="container">
-                            <div class="row g-2">
-                                {% for author in nav_authors %}
-                                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                                    <a href="{% url 'books:book_list' %}?author={{ author.author|urlencode }}" class="category-item">
-                                        <i class="fas fa-user text-info me-2"></i>
-                                        <span>{{ author.author }}</span>
-                                        <small class="text-muted ms-1">({{ author.book_count }})</small>
-                                    </a>
-                                </div>
-                                {% empty %}
-                                <div class="col-12 text-center py-4">
-                                    <p class="text-muted mb-0">No authors available</p>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </li>
+                
+                <!-- Dynamic Navigation Menus -->
+                {% if nav_menus %}
+                    {% for menu in nav_menus %}
+                        {% if menu.menu_type == 'dropdown' and menu.has_children %}
+                            <!-- Dropdown Menu -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    {% if menu.icon_class %}<i class="{{ menu.icon_class }}"></i> {% endif %}{{ menu.display_name }}
+                                </a>
+                                <ul class="dropdown-menu">
+                                    {% for child in menu.get_children %}
+                                        <li>
+                                            <a class="dropdown-item" href="{{ child.url }}" {% if child.open_new_tab %}target="_blank"{% endif %}>
+                                                {% if child.icon_class %}<i class="{{ child.icon_class }}"></i> {% endif %}{{ child.display_name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% else %}
+                            <!-- Single Menu -->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ menu.url }}" {% if menu.open_new_tab %}target="_blank"{% endif %}>
+                                    {% if menu.icon_class %}<i class="{{ menu.icon_class }}"></i> {% endif %}{{ menu.display_name }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <!-- Fallback menus if no dynamic menus configured -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'books:book_list' %}">
+                            <i class="fas fa-book"></i> All Books
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <!-- Publishers Mega Menu -->
                 <li class="nav-item dropdown mega-dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" aria-expanded="false">
                         <i class="fas fa-building"></i> Publishers

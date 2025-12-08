@@ -123,4 +123,10 @@ urlpatterns = [
     path('quick-links/add/', views.quick_link_add, name='quick_link_add'),
     path('quick-links/<int:pk>/edit/', views.quick_link_edit, name='quick_link_edit'),
     path('quick-links/<int:pk>/delete/', views.quick_link_delete, name='quick_link_delete'),
+    
+    # Navigation Menus
+    path('nav-menus/', views.nav_menu_list, name='nav_menu_list'),
+    path('nav-menus/add/', views.nav_menu_add, name='nav_menu_add'),
+    path('nav-menus/<int:pk>/edit/', views.nav_menu_edit, name='nav_menu_edit'),
+    path('nav-menus/<int:pk>/delete/', views.nav_menu_delete, name='nav_menu_delete'),
 ]

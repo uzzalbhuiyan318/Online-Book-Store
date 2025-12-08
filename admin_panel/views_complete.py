@@ -4244,3 +4244,70 @@ def quick_link_delete(request, pk):
     messages.success(request, f'Quick link "{display_name}" deleted successfully!')
     return redirect('admin_panel:quick_link_list')
 
+
+# ==================== NAVIGATION MENUS ====================
+
+@staff_member_required
+def nav_menu_list(request):
+    """List all navigation menus"""
+    from books.models import NavMenu
+    
+    # Get top-level menus (no parent)
+    nav_menus = NavMenu.objects.filter(parent__isnull=True).order_by('order', 'display_name')
+    
+    context = {'nav_menus': nav_menus}
+    return render(request, 'admin_panel/nav_menu_list.html', context)
+
+
+@staff_member_required
+def nav_menu_add(request):
+    """Add new navigation menu"""
+    from books.models import NavMenu
+    from .forms import NavMenuForm
+    
+    if request.method == 'POST':
+        form = NavMenuForm(request.POST)
+        if form.is_valid():
+            nav_menu = form.save()
+            messages.success(request, f'Navigation menu "{nav_menu.display_name}" added successfully!')
+            return redirect('admin_panel:nav_menu_list')
+    else:
+        form = NavMenuForm()
+    
+    context = {'form': form, 'action': 'Add'}
+    return render(request, 'admin_panel/nav_menu_form.html', context)
+
+
+@staff_member_required
+def nav_menu_edit(request, pk):
+    """Edit navigation menu"""
+    from books.models import NavMenu
+    from .forms import NavMenuForm
+    
+    nav_menu = get_object_or_404(NavMenu, pk=pk)
+    
+    if request.method == 'POST':
+        form = NavMenuForm(request.POST, instance=nav_menu)
+        if form.is_valid():
+            nav_menu = form.save()
+            messages.success(request, f'Navigation menu "{nav_menu.display_name}" updated successfully!')
+            return redirect('admin_panel:nav_menu_list')
+    else:
+        form = NavMenuForm(instance=nav_menu)
+    
+    context = {'form': form, 'action': 'Edit', 'nav_menu': nav_menu}
+    return render(request, 'admin_panel/nav_menu_form.html', context)
+
+
+@staff_member_required
+def nav_menu_delete(request, pk):
+    """Delete navigation menu"""
+    from books.models import NavMenu
+    
+    nav_menu = get_object_or_404(NavMenu, pk=pk)
+    display_name = nav_menu.display_name
+    nav_menu.delete()
+    
+    messages.success(request, f'Navigation menu "{display_name}" deleted successfully!')
+    return redirect('admin_panel:nav_menu_list')
+

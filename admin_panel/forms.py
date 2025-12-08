@@ -1,6 +1,6 @@
 from django import forms
 from django.db.models import Q
-from books.models import Book, Category, Review, Banner, SiteSettings, QuickLink
+from books.models import Book, Category, Review, Banner, SiteSettings, QuickLink, NavMenu
 from orders.models import Order, Coupon
 from rentals.models import RentalPlan, BookRental, RentalSettings
 from support.models import SupportAgent, QuickReply, ChatSettings
@@ -383,3 +383,31 @@ class QuickLinkForm(forms.ModelForm):
             'order': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'open_new_tab': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class NavMenuForm(forms.ModelForm):
+    """Form for managing navigation menus"""
+    
+    class Meta:
+        model = NavMenu
+        fields = ['display_name', 'menu_type', 'link_type', 'url', 'linked_category', 'linked_book', 'parent', 'is_active', 'order', 'open_new_tab', 'icon_class']
+        widgets = {
+            'display_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., Home, Products'}),
+            'menu_type': forms.Select(attrs={'class': 'form-control'}),
+            'link_type': forms.Select(attrs={'class': 'form-control', 'id': 'id_link_type'}),
+            'url': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., /books/ or https://example.com', 'id': 'id_url'}),
+            'linked_category': forms.Select(attrs={'class': 'form-control', 'id': 'id_linked_category'}),
+            'linked_book': forms.Select(attrs={'class': 'form-control', 'id': 'id_linked_book'}),
+            'parent': forms.Select(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'order': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'open_new_tab': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'icon_class': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g., fas fa-home (optional)'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Only show parent menus that are dropdown type or have no parent
+        self.fields['parent'].queryset = NavMenu.objects.filter(
+            Q(menu_type='dropdown') | Q(parent__isnull=True)
+        ).exclude(pk=self.instance.pk if self.instance.pk else None)

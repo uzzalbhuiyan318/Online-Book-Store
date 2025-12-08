@@ -1,0 +1,117 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Navigation Menus - Admin Panel{% endblock %}
+{% block page_title %}Navigation Menus{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header d-flex justify-content-between align-items-center">
+        <h5><i class="fas fa-bars"></i> Navigation Menus</h5>
+        <a href="{% url 'admin_panel:nav_menu_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Menu Item
+        </a>
+    </div>
+    <div class="admin-card-body">
+        {% if nav_menus %}
+        <div class="table-responsive">
+            <table class="table admin-table">
+                <thead>
+                    <tr>
+                        <th>Display Name</th>
+                        <th>Type</th>
+                        <th>URL</th>
+                        <th>Order</th>
+                        <th>Status</th>
+                        <th>Children</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for menu in nav_menus %}
+                    <tr>
+                        <td>
+                            {% if menu.icon_class %}<i class="{{ menu.icon_class }}"></i> {% endif %}
+                            <strong>{{ menu.display_name }}</strong>
+                            {% if menu.link_type == 'category' and menu.linked_category %}
+                                <br><small class="text-muted">→ Category: {{ menu.linked_category.name }}</small>
+                            {% elif menu.link_type == 'book' and menu.linked_book %}
+                                <br><small class="text-muted">→ Book: {{ menu.linked_book.title }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if menu.menu_type == 'dropdown' %}
+                                <span class="badge bg-info">Dropdown</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Single</span>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">
+                                {% if menu.link_type == 'category' %}
+                                    <i class="fas fa-tag"></i> Category
+                                {% elif menu.link_type == 'book' %}
+                                    <i class="fas fa-book"></i> Book
+                                {% else %}
+                                    <i class="fas fa-link"></i> Custom URL
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td><code>{{ menu.url|default:"-" }}</code></td>
+                        <td>{{ menu.order }}</td>
+                        <td>
+                            {% if menu.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ menu.children.count }}</td>
+                        <td>
+                            <a href="{% url 'admin_panel:nav_menu_edit' menu.pk %}" class="btn btn-sm btn-admin-secondary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'admin_panel:nav_menu_delete' menu.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Delete this menu and all its children?')">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </td>
+                    </tr>
+                    {% if menu.get_children %}
+                        {% for child in menu.get_children %}
+                        <tr class="table-secondary">
+                            <td class="ps-5">
+                                <i class="fas fa-level-up-alt fa-rotate-90"></i>
+                                {% if child.icon_class %}<i class="{{ child.icon_class }}"></i> {% endif %}
+                                {{ child.display_name }}
+                            </td>
+                            <td><span class="badge bg-secondary">Child</span></td>
+                            <td><code>{{ child.url|default:"-" }}</code></td>
+                            <td>{{ child.order }}</td>
+                            <td>
+                                {% if child.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>-</td>
+                            <td>
+                                <a href="{% url 'admin_panel:nav_menu_edit' child.pk %}" class="btn btn-sm btn-admin-secondary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'admin_panel:nav_menu_delete' child.pk %}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No navigation menus found. <a href="{% url 'admin_panel:nav_menu_add' %}">Add one now</a>.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
