@@ -131,7 +131,7 @@
                         </div>
                         
                         <!-- Books List Container -->
-                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                        <div class="border rounded p-2" style="max-height: 450px; overflow-y: auto; background-color: #fafbfc;">
                             <div id="booksContainer">
                                 <!-- Books will be loaded here via JavaScript -->
                                 <div class="text-center text-muted py-4">
@@ -204,6 +204,93 @@
         </div>
     </div>
 </div>
+
+<style>
+/* Professional Book Card Styles */
+.book-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 100%;
+}
+
+.book-card:hover {
+    border-color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+    transform: translateY(-1px);
+}
+
+.book-card-selected {
+    background: #f0f7ff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+}
+
+.book-card .form-check {
+    margin: 0;
+}
+
+.book-card .form-check-input {
+    margin-top: 0.15rem;
+    cursor: pointer;
+}
+
+.book-card .form-check-label {
+    cursor: pointer;
+    padding-left: 0.5rem;
+}
+
+.book-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.book-author {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+}
+
+.book-isbn {
+    font-size: 0.7rem;
+    color: #adb5bd;
+    margin-bottom: 4px;
+}
+
+.book-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* Scrollable container styling */
+#booksContainer {
+    padding: 0;
+}
+
+/* Category header styling */
+.book-card + .book-card {
+    margin-top: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .book-card {
+        padding: 10px;
+    }
+    
+    .book-title {
+        font-size: 0.85rem;
+    }
+}
+</style>
 
 <script>
 // Live price calculator
@@ -358,36 +445,43 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.keys(booksByCategory).sort().forEach(categoryName => {
             html += `
                 <div class="mb-3">
-                    <h6 class="text-muted mb-2"><i class="fas fa-folder"></i> ${categoryName}</h6>
-                    <div class="row">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-folder me-2" style="color: #6c757d;"></i>
+                        <h6 class="mb-0 text-muted fw-semibold">${categoryName}</h6>
+                    </div>
+                    <div class="row g-2">
             `;
             
             booksByCategory[categoryName].forEach(book => {
                 const isChecked = selectedBookIds.has(book.id);
                 const stockBadge = book.stock > 0 
-                    ? `<span class="badge bg-success">In Stock: ${book.stock}</span>` 
-                    : `<span class="badge bg-danger">Out of Stock</span>`;
+                    ? `<span class="badge bg-success" style="font-size: 0.7rem; padding: 2px 6px;">In Stock: ${book.stock}</span>` 
+                    : `<span class="badge bg-danger" style="font-size: 0.7rem; padding: 2px 6px;">Out of Stock</span>`;
                 
                 html += `
-                    <div class="col-md-6 mb-2">
-                        <div class="form-check border rounded p-2 book-item ${isChecked ? 'bg-light' : ''}" 
+                    <div class="col-md-6 col-lg-4">
+                        <div class="book-card ${isChecked ? 'book-card-selected' : ''}" 
                              data-book-id="${book.id}"
                              data-title="${book.title.toLowerCase()}"
                              data-author="${(book.author || '').toLowerCase()}"
                              data-isbn="${(book.isbn || '').toLowerCase()}"
                              data-category="${book.category_id || ''}">
-                            <input class="form-check-input book-checkbox" 
-                                   type="checkbox" 
-                                   value="${book.id}" 
-                                   id="book_${book.id}"
-                                   ${isChecked ? 'checked' : ''}>
-                            <label class="form-check-label w-100" for="book_${book.id}">
-                                <strong>${book.title}</strong>
-                                ${book.author ? `<br><small class="text-muted">by ${book.author}</small>` : ''}
-                                ${book.isbn ? `<br><small class="text-muted">ISBN: ${book.isbn}</small>` : ''}
-                                <br>${stockBadge}
-                                ${book.price ? `<span class="badge bg-info">৳${book.price}</span>` : ''}
-                            </label>
+                            <div class="form-check">
+                                <input class="form-check-input book-checkbox" 
+                                       type="checkbox" 
+                                       value="${book.id}" 
+                                       id="book_${book.id}"
+                                       ${isChecked ? 'checked' : ''}>
+                                <label class="form-check-label w-100" for="book_${book.id}">
+                                    <div class="book-title">${book.title}</div>
+                                    ${book.author ? `<div class="book-author">by ${book.author}</div>` : ''}
+                                    ${book.isbn ? `<div class="book-isbn">ISBN: ${book.isbn}</div>` : ''}
+                                    <div class="book-meta mt-2">
+                                        ${stockBadge}
+                                        ${book.price ? `<span class="badge bg-info" style="font-size: 0.7rem; padding: 2px 6px; margin-left: 4px;">৳${book.price}</span>` : ''}
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -410,14 +504,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle individual book selection
     function handleBookSelection(event) {
         const bookId = parseInt(event.target.value);
-        const bookItem = event.target.closest('.book-item');
+        const bookCard = event.target.closest('.book-card');
         
         if (event.target.checked) {
             selectedBookIds.add(bookId);
-            bookItem.classList.add('bg-light');
+            bookCard.classList.add('book-card-selected');
         } else {
             selectedBookIds.delete(bookId);
-            bookItem.classList.remove('bg-light');
+            bookCard.classList.remove('book-card-selected');
         }
         
         updateSelectedCount();
@@ -481,7 +575,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allBooks.forEach(book => selectedBookIds.add(book.id));
         document.querySelectorAll('.book-checkbox').forEach(cb => {
             cb.checked = true;
-            cb.closest('.book-item').classList.add('bg-light');
+            cb.closest('.book-card').classList.add('book-card-selected');
         });
         updateSelectedCount();
         syncHiddenSelect();
@@ -492,7 +586,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedBookIds.clear();
         document.querySelectorAll('.book-checkbox').forEach(cb => {
             cb.checked = false;
-            cb.closest('.book-item').classList.remove('bg-light');
+            cb.closest('.book-card').classList.remove('book-card-selected');
         });
         updateSelectedCount();
         syncHiddenSelect();
@@ -501,11 +595,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Select visible books (based on current filter)
     document.getElementById('selectVisibleBooks').addEventListener('click', function() {
         document.querySelectorAll('.book-checkbox:not(:checked)').forEach(cb => {
-            const bookItem = cb.closest('.book-item');
-            if (bookItem && bookItem.style.display !== 'none') {
+            const bookCard = cb.closest('.book-card');
+            if (bookCard && bookCard.style.display !== 'none') {
                 cb.checked = true;
                 selectedBookIds.add(parseInt(cb.value));
-                bookItem.classList.add('bg-light');
+                bookCard.classList.add('book-card-selected');
             }
         });
         updateSelectedCount();
