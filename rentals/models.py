@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from accounts.models import User
 from books.models import Book
 from datetime import timedelta
+from decimal import Decimal
 import uuid
 
 
@@ -15,12 +16,18 @@ class RentalPlan(models.Model):
     description = models.TextField(null=True, blank=True, verbose_name='Plan Description')
     description_bn = models.TextField(null=True, blank=True, verbose_name='Plan Description (Bangla)')
     days = models.IntegerField(verbose_name='Duration (Days)', validators=[MinValueValidator(1)])
+    
+    # Books available for this rental plan
+    books = models.ManyToManyField('books.Book', related_name='rental_plans', blank=True, verbose_name='Available Books')
+    
+    # Legacy field - kept for backward compatibility but no longer used in calculations
     price_percentage = models.DecimalField(
         max_digits=5, 
         decimal_places=2,
-        verbose_name='Price Percentage of Book Price',
-        help_text='Percentage of book price to charge (e.g., 10 for 10%)',
-        validators=[MinValueValidator(0), MaxValueValidator(100)]
+        verbose_name='Price Percentage of Book Price (Legacy)',
+        help_text='This field is no longer used. Pricing is now: 10 + (2 × days)',
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0
     )
     is_active = models.BooleanField(default=True, verbose_name='Active')
     order = models.IntegerField(default=0, verbose_name='Display Order')
@@ -34,11 +41,21 @@ class RentalPlan(models.Model):
         ordering = ['order', 'days']
     
     def __str__(self):
-        return f"{self.name} - {self.days} days ({self.price_percentage}%)"
+        rental_price = self.calculate_rental_price()
+        return f"{self.name} - {self.days} days (৳{rental_price})"
     
-    def calculate_rental_price(self, book_price):
-        """Calculate rental price based on book price"""
-        return (book_price * self.price_percentage) / 100
+    def calculate_rental_price(self, book_price=None):
+        """Calculate rental price: 10 + (2 × days)
+        
+        Args:
+            book_price: Not used anymore, kept for backward compatibility
+            
+        Returns:
+            Decimal: Rental price in BDT
+        """
+        base_fee = 10
+        per_day_cost = 2
+        return Decimal(base_fee + (per_day_cost * self.days))
 
 
 class BookRental(models.Model):
@@ -370,7 +387,7 @@ class RentalSettings(models.Model):
     daily_late_fee = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=10,
+        default=3,
         verbose_name='Daily Late Fee (BDT)',
         help_text='Amount charged per day for overdue rentals'
     )

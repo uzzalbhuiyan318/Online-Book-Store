@@ -26,7 +26,13 @@ def rental_plans(request):
 def book_rental_detail(request, slug):
     """Book detail page with rental options"""
     book = get_object_or_404(Book, slug=slug, is_active=True)
-    rental_plans = RentalPlan.objects.filter(is_active=True).order_by('order', 'days')
+    
+    # Filter rental plans to only show those that include this book
+    rental_plans = RentalPlan.objects.filter(
+        is_active=True,
+        books=book
+    ).order_by('order', 'days')
+    
     settings = RentalSettings.get_settings()
     
     # Check if book is available for rental
@@ -43,7 +49,7 @@ def book_rental_detail(request, slug):
     # Calculate rental prices for each plan
     rental_prices = []
     for plan in rental_plans:
-        rental_price = plan.calculate_rental_price(book.final_price)
+        rental_price = plan.calculate_rental_price()  # No longer needs book price
         security_deposit = (book.final_price * settings.security_deposit_percentage) / 100
         total = rental_price + security_deposit
         
@@ -97,7 +103,7 @@ def create_rental(request, slug):
             return redirect('rentals:my_rentals')
         
         # Calculate prices
-        rental_price = rental_plan.calculate_rental_price(book.final_price)
+        rental_price = rental_plan.calculate_rental_price()  # No longer needs book price
         security_deposit = (book.final_price * settings.security_deposit_percentage) / 100
         total_amount = rental_price + security_deposit
         

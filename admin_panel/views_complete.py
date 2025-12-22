@@ -2260,8 +2260,29 @@ def rental_plan_add(request):
         form = RentalPlanForm()
 
     
-
-    context = {'form': form, 'action': 'Add'}
+    # Prepare books data for JavaScript
+    from books.models import Book
+    import json
+    
+    books = Book.objects.filter(is_active=True).select_related('category').order_by('title')
+    books_data = []
+    for book in books:
+        books_data.append({
+            'id': book.id,
+            'title': book.title,
+            'author': book.author or '',
+            'isbn': book.isbn or '',
+            'price': float(book.final_price) if hasattr(book, 'final_price') else float(book.price),
+            'stock': book.stock,
+            'category_name': book.category.name if book.category else 'Uncategorized',
+            'category_id': book.category.id if book.category else ''
+        })
+    
+    context = {
+        'form': form, 
+        'action': 'Add',
+        'books_json': json.dumps(books_data)
+    }
 
     return render(request, 'admin_panel/rental_plan_form.html', context)
 
@@ -2296,8 +2317,34 @@ def rental_plan_edit(request, pk):
         form = RentalPlanForm(instance=plan)
 
     
-
-    context = {'form': form, 'plan': plan, 'action': 'Edit'}
+    # Prepare books data for JavaScript
+    from books.models import Book
+    import json
+    
+    books = Book.objects.filter(is_active=True).select_related('category').order_by('title')
+    books_data = []
+    for book in books:
+        books_data.append({
+            'id': book.id,
+            'title': book.title,
+            'author': book.author or '',
+            'isbn': book.isbn or '',
+            'price': float(book.final_price) if hasattr(book, 'final_price') else float(book.price),
+            'stock': book.stock,
+            'category_name': book.category.name if book.category else 'Uncategorized',
+            'category_id': book.category.id if book.category else ''
+        })
+    
+    # Get currently selected book IDs
+    selected_book_ids = list(plan.books.values_list('id', flat=True))
+    
+    context = {
+        'form': form, 
+        'plan': plan, 
+        'action': 'Edit',
+        'books_json': json.dumps(books_data),
+        'selected_books_json': json.dumps(selected_book_ids)
+    }
 
     return render(request, 'admin_panel/rental_plan_form.html', context)
 

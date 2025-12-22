@@ -6,48 +6,520 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="admin-card">
             <div class="admin-card-body">
                 <form method="post">
                     {% csrf_token %}
-                    <div class="admin-form-group">
-                        <label>Name</label>
-                        {{ form.name }}
-                    </div>
-                    <div class="admin-form-group">
-                        <label>Duration (Days)</label>
-                        {{ form.days }}
-                        {% if form.days.errors %}
-                        <div class="text-danger small">{{ form.days.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="admin-form-group">
-                        <label>Price Percentage of Book Price (%)</label>
-                        {{ form.price_percentage }}
-                        <small class="text-muted">Percentage of book price to charge (e.g., 10 for 10%)</small>
-                        {% if form.price_percentage.errors %}
-                        <div class="text-danger small">{{ form.price_percentage.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="admin-form-group">
-                        <label>Display Order</label>
-                        {{ form.order }}
-                        {% if form.order.errors %}
-                        <div class="text-danger small">{{ form.order.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="admin-form-group">
-                        <div class="form-check">
-                            {{ form.is_active }}
-                            <label class="form-check-label">Active</label>
+                    
+                    <!-- Basic Information Section -->
+                    <!-- <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-info-circle"></i> Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>Name (English) <span class="text-danger">*</span></label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>নাম (বাংলা)</label>
+                                    {{ form.name_bn }}
+                                    {% if form.name_bn.errors %}
+                                    <div class="text-danger small">{{ form.name_bn.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>Description (English)</label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                    <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>বিবরণ (বাংলা)</label>
+                                    {{ form.description_bn }}
+                                    {% if form.description_bn.errors %}
+                                    <div class="text-danger small">{{ form.description_bn.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div> -->
+                    
+                    <!-- Pricing & Duration Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-calendar-alt"></i> Duration & Pricing</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>Duration (Days) <span class="text-danger">*</span></label>
+                                    {{ form.days }}
+                                    <small class="text-muted d-block">{{ form.days.help_text }}</small>
+                                    {% if form.days.errors %}
+                                    <div class="text-danger small">{{ form.days.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Live Price Calculator -->
+                                <div class="alert alert-info mt-2" id="priceCalculator">
+                                    <strong>Calculated Rental Price:</strong> 
+                                    <span class="fs-5 text-primary">৳<span id="calculatedPrice">10</span></span>
+                                    <br>
+                                    <small class="text-muted">Formula: ৳10 (base) + ৳2 × <span id="daysDisplay">0</span> days</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>Price Percentage (Legacy)</label>
+                                    {{ form.price_percentage }}
+                                    <small class="text-warning d-block">{{ form.price_percentage.help_text }}</small>
+                                    {% if form.price_percentage.errors %}
+                                    <div class="text-danger small">{{ form.price_percentage.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-admin-primary">Save</button>
-                    <a href="{% url 'admin_panel:rental_plan_list' %}" class="btn btn-admin-secondary">Cancel</a>
+                    
+                    <!-- Book Assignment Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-book"></i> Book Assignment</h5>
+                        
+                        <!-- Search and Filter Controls -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="bookSearch" class="form-control" placeholder="Search books by title, author, or ISBN...">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select id="categoryFilter" class="form-select">
+                                    <option value="">All Categories</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Selection Controls -->
+                        <div class="mb-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllBooks">
+                                    <i class="fas fa-check-square"></i> Select All
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllBooks">
+                                    <i class="fas fa-square"></i> Deselect All
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" id="selectVisibleBooks">
+                                    <i class="fas fa-eye"></i> Select Visible
+                                </button>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary" id="selectedCount">0</span> books selected
+                            </div>
+                        </div>
+                        
+                        <!-- Books List Container -->
+                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa;">
+                            <div id="booksContainer">
+                                <!-- Books will be loaded here via JavaScript -->
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-spinner fa-spin"></i> Loading books...
+                                </div>
+                            </div>
+                            <div id="noResults" class="text-center text-muted py-4" style="display: none;">
+                                <i class="fas fa-search"></i> No books found matching your criteria
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden select for form submission -->
+                        <select name="books" id="id_books" multiple style="display: none;">
+                            <!-- Options will be populated by JavaScript -->
+                        </select>
+                        
+                        {% if form.books.errors %}
+                        <div class="text-danger small mt-2">{{ form.books.errors.0 }}</div>
+                        {% endif %}
+                        
+                        <small class="text-info d-block mt-2">
+                            <i class="fas fa-info-circle"></i> 
+                            {% if form.instance.pk %}
+                            Currently {{ form.instance.books.count }} book(s) assigned to this plan
+                            {% else %}
+                            Select books that will be available for this rental plan
+                            {% endif %}
+                        </small>
+                    </div>
+                    
+                    <!-- Settings Section -->
+                    <div class="mb-4">
+                        <h5 class="border-bottom pb-2 mb-3"><i class="fas fa-cog"></i> Settings</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <label>Display Order</label>
+                                    {{ form.order }}
+                                    <small class="text-muted d-block">Lower numbers appear first</small>
+                                    {% if form.order.errors %}
+                                    <div class="text-danger small">{{ form.order.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-form-group">
+                                    <div class="form-check mt-4">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label">
+                                            <strong>Active</strong>
+                                            <small class="text-muted d-block">Only active plans are visible to customers</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="border-top pt-3">
+                        <button type="submit" class="btn btn-admin-primary">
+                            <i class="fas fa-save"></i> Save Rental Plan
+                        </button>
+                        <a href="{% url 'admin_panel:rental_plan_list' %}" class="btn btn-admin-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+// Live price calculator
+document.addEventListener('DOMContentLoaded', function() {
+    const daysInput = document.getElementById('id_days');
+    const calculatedPriceSpan = document.getElementById('calculatedPrice');
+    const daysDisplaySpan = document.getElementById('daysDisplay');
+    
+    function updatePrice() {
+        const days = parseInt(daysInput.value) || 0;
+        const basePrice = 10;
+        const perDayPrice = 2;
+        const totalPrice = basePrice + (perDayPrice * days);
+        
+        calculatedPriceSpan.textContent = totalPrice;
+        daysDisplaySpan.textContent = days;
+    }
+    
+    // Update on page load
+    updatePrice();
+    
+    // Update on input change
+    daysInput.addEventListener('input', updatePrice);
+    daysInput.addEventListener('change', updatePrice);
+});
+
+// Book Assignment System
+document.addEventListener('DOMContentLoaded', function() {
+    let allBooks = [];
+    let categories = new Set();
+    const selectedBookIds = new Set();
+    
+    // Load books from JSON data passed from view
+    function loadBooksFromJSON() {
+        try {
+            // Get books data from template variable
+            const booksJSON = '{{ books_json|escapejs }}';
+            if (booksJSON) {
+                allBooks = JSON.parse(booksJSON);
+            }
+            
+            // Get selected books for edit mode
+            const selectedJSON = '{{ selected_books_json|default:"[]"|escapejs }}';
+            if (selectedJSON) {
+                const selectedIds = JSON.parse(selectedJSON);
+                selectedIds.forEach(id => selectedBookIds.add(id));
+            }
+            
+            // Extract unique categories
+            allBooks.forEach(book => {
+                if (book.category_name) {
+                    categories.add(book.category_name);
+                }
+            });
+            
+            // Populate category filter
+            populateCategoryFilter();
+            
+            // Render books
+            renderBooks();
+            updateSelectedCount();
+            syncHiddenSelect();
+            
+        } catch (error) {
+            console.error('Error loading books from JSON:', error);
+            // Fallback to form parsing if JSON fails
+            loadBooksFromForm();
+        }
+    }
+    
+    // Fallback: Load books from the existing form select options
+    function loadBooksFromForm() {
+        const originalSelect = document.querySelector('select#id_books');
+        if (!originalSelect || !originalSelect.options) {
+            console.error('Could not find books select element');
+            return;
+        }
+        
+        // Parse books from options
+        Array.from(originalSelect.options).forEach(option => {
+            if (!option.value) return;
+            
+            const bookId = parseInt(option.value);
+            const text = option.text;
+            const parts = text.split(' - ');
+            
+            allBooks.push({
+                id: bookId,
+                title: (parts[0] || text).trim(),
+                author: (parts[1] || '').trim(),
+                category_name: 'Uncategorized',
+                category_id: '',
+                isbn: '',
+                price: 0,
+                stock: 0
+            });
+            
+            categories.add('Uncategorized');
+            
+            if (option.selected) {
+                selectedBookIds.add(bookId);
+            }
+        });
+        
+        populateCategoryFilter();
+        renderBooks();
+        updateSelectedCount();
+        syncHiddenSelect();
+    }
+    
+    // Populate category filter dropdown
+    function populateCategoryFilter() {
+        const categoryFilter = document.getElementById('categoryFilter');
+        categoryFilter.innerHTML = '<option value="">All Categories</option>';
+        
+        // Convert Set to Array and sort
+        Array.from(categories).sort().forEach(categoryName => {
+            const option = document.createElement('option');
+            option.value = categoryName;
+            option.textContent = categoryName;
+            categoryFilter.appendChild(option);
+        });
+    }
+    
+    // Render books as checkboxes
+    function renderBooks(filteredBooks = null) {
+        const booksContainer = document.getElementById('booksContainer');
+        const noResults = document.getElementById('noResults');
+        const booksToRender = filteredBooks || allBooks;
+        
+        if (booksToRender.length === 0) {
+            booksContainer.style.display = 'none';
+            noResults.style.display = 'block';
+            return;
+        }
+        
+        booksContainer.style.display = 'block';
+        noResults.style.display = 'none';
+        
+        // Group books by category
+        const booksByCategory = {};
+        booksToRender.forEach(book => {
+            const categoryName = book.category_name || 'Uncategorized';
+            if (!booksByCategory[categoryName]) {
+                booksByCategory[categoryName] = [];
+            }
+            booksByCategory[categoryName].push(book);
+        });
+        
+        // Render grouped books
+        let html = '';
+        Object.keys(booksByCategory).sort().forEach(categoryName => {
+            html += `
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2"><i class="fas fa-folder"></i> ${categoryName}</h6>
+                    <div class="row">
+            `;
+            
+            booksByCategory[categoryName].forEach(book => {
+                const isChecked = selectedBookIds.has(book.id);
+                const stockBadge = book.stock > 0 
+                    ? `<span class="badge bg-success">In Stock: ${book.stock}</span>` 
+                    : `<span class="badge bg-danger">Out of Stock</span>`;
+                
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <div class="form-check border rounded p-2 book-item ${isChecked ? 'bg-light' : ''}" 
+                             data-book-id="${book.id}"
+                             data-title="${book.title.toLowerCase()}"
+                             data-author="${(book.author || '').toLowerCase()}"
+                             data-isbn="${(book.isbn || '').toLowerCase()}"
+                             data-category="${book.category_id || ''}">
+                            <input class="form-check-input book-checkbox" 
+                                   type="checkbox" 
+                                   value="${book.id}" 
+                                   id="book_${book.id}"
+                                   ${isChecked ? 'checked' : ''}>
+                            <label class="form-check-label w-100" for="book_${book.id}">
+                                <strong>${book.title}</strong>
+                                ${book.author ? `<br><small class="text-muted">by ${book.author}</small>` : ''}
+                                ${book.isbn ? `<br><small class="text-muted">ISBN: ${book.isbn}</small>` : ''}
+                                <br>${stockBadge}
+                                ${book.price ? `<span class="badge bg-info">৳${book.price}</span>` : ''}
+                            </label>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        });
+        
+        booksContainer.innerHTML = html;
+        
+        // Add event listeners to checkboxes
+        document.querySelectorAll('.book-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', handleBookSelection);
+        });
+    }
+    
+    // Handle individual book selection
+    function handleBookSelection(event) {
+        const bookId = parseInt(event.target.value);
+        const bookItem = event.target.closest('.book-item');
+        
+        if (event.target.checked) {
+            selectedBookIds.add(bookId);
+            bookItem.classList.add('bg-light');
+        } else {
+            selectedBookIds.delete(bookId);
+            bookItem.classList.remove('bg-light');
+        }
+        
+        updateSelectedCount();
+        syncHiddenSelect();
+    }
+    
+    // Update selected count badge
+    function updateSelectedCount() {
+        document.getElementById('selectedCount').textContent = selectedBookIds.size;
+    }
+    
+    // Sync hidden select element for form submission
+    function syncHiddenSelect() {
+        const hiddenSelect = document.getElementById('id_books');
+        hiddenSelect.innerHTML = '';
+        
+        selectedBookIds.forEach(bookId => {
+            const option = document.createElement('option');
+            option.value = bookId;
+            option.selected = true;
+            hiddenSelect.appendChild(option);
+        });
+    }
+    
+    // Search functionality
+    document.getElementById('bookSearch').addEventListener('input', function(e) {
+        filterBooks();
+    });
+    
+    // Category filter
+    document.getElementById('categoryFilter').addEventListener('change', function(e) {
+        filterBooks();
+    });
+    
+    // Filter books based on search and category
+    function filterBooks() {
+        const searchTerm = document.getElementById('bookSearch').value.toLowerCase();
+        const categoryName = document.getElementById('categoryFilter').value;
+        
+        let filtered = allBooks;
+        
+        // Filter by category
+        if (categoryName) {
+            filtered = filtered.filter(book => book.category_name === categoryName);
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(book => {
+                return book.title.toLowerCase().includes(searchTerm) ||
+                       (book.author && book.author.toLowerCase().includes(searchTerm)) ||
+                       (book.isbn && book.isbn.toLowerCase().includes(searchTerm));
+            });
+        }
+        
+        renderBooks(filtered);
+    }
+    
+    // Select all books
+    document.getElementById('selectAllBooks').addEventListener('click', function() {
+        allBooks.forEach(book => selectedBookIds.add(book.id));
+        document.querySelectorAll('.book-checkbox').forEach(cb => {
+            cb.checked = true;
+            cb.closest('.book-item').classList.add('bg-light');
+        });
+        updateSelectedCount();
+        syncHiddenSelect();
+    });
+    
+    // Deselect all books
+    document.getElementById('deselectAllBooks').addEventListener('click', function() {
+        selectedBookIds.clear();
+        document.querySelectorAll('.book-checkbox').forEach(cb => {
+            cb.checked = false;
+            cb.closest('.book-item').classList.remove('bg-light');
+        });
+        updateSelectedCount();
+        syncHiddenSelect();
+    });
+    
+    // Select visible books (based on current filter)
+    document.getElementById('selectVisibleBooks').addEventListener('click', function() {
+        document.querySelectorAll('.book-checkbox:not(:checked)').forEach(cb => {
+            const bookItem = cb.closest('.book-item');
+            if (bookItem && bookItem.style.display !== 'none') {
+                cb.checked = true;
+                selectedBookIds.add(parseInt(cb.value));
+                bookItem.classList.add('bg-light');
+            }
+        });
+        updateSelectedCount();
+        syncHiddenSelect();
+    });
+    
+    // Initialize - load books from JSON data
+    loadBooksFromJSON();
+    
+    // Ensure hidden select is synced before form submission
+    document.querySelector('form').addEventListener('submit', function() {
+        syncHiddenSelect();
+    });
+});
+</script>
 {% endblock %}
+

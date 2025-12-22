@@ -10,11 +10,39 @@ from .models import (
 
 @admin.register(RentalPlan)
 class RentalPlanAdmin(admin.ModelAdmin):
-    list_display = ['name', 'days', 'price_percentage', 'is_active', 'order', 'created_at']
+    list_display = ['name', 'days', 'rental_price_display', 'book_count', 'is_active', 'order', 'created_at']
     list_filter = ['is_active', 'created_at']
-    search_fields = ['name']
+    search_fields = ['name', 'description']
     list_editable = ['is_active', 'order']
     ordering = ['order', 'days']
+    filter_horizontal = ['books']  # Better UI for ManyToMany field
+    
+    fieldsets = (
+        ('Plan Information', {
+            'fields': ('name', 'name_bn', 'description', 'description_bn', 'days')
+        }),
+        ('Available Books', {
+            'fields': ('books',),
+            'description': 'Select which books can be rented with this plan. Only selected books will show this plan as an option.'
+        }),
+        ('Settings', {
+            'fields': ('is_active', 'order')
+        }),
+    )
+    
+    def rental_price_display(self, obj):
+        """Display calculated rental price"""
+        price = obj.calculate_rental_price()
+        return format_html('<strong>৳{}</strong>', price)
+    rental_price_display.short_description = 'Rental Price'
+    
+    def book_count(self, obj):
+        """Display number of books in this plan"""
+        count = obj.books.count()
+        if count == 0:
+            return format_html('<span style="color: red;">⚠️ 0 books</span>')
+        return format_html('<span style="color: green;">✓ {} book(s)</span>', count)
+    book_count.short_description = 'Books'
 
 
 class RentalStatusHistoryInline(admin.TabularInline):

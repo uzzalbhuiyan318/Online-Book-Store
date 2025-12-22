@@ -135,18 +135,79 @@ class CouponForm(forms.ModelForm):
 
 
 class RentalPlanForm(forms.ModelForm):
-    """Form for creating/editing rental plans"""
+    """Form for creating/editing rental plans with book assignment"""
     
     class Meta:
         model = RentalPlan
-        fields = ['name', 'days', 'price_percentage', 'is_active', 'order']
+        fields = [
+            'name', 'name_bn', 'description', 'description_bn', 
+            'days', 'books', 'price_percentage', 'is_active', 'order'
+        ]
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Plan name'}),
-            'days': forms.NumberInput(attrs={'class': 'form-control'}),
-            'price_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Plan name (English)',
+                'required': True
+            }),
+            'name_bn': forms.TextInput(attrs={
+                'class': 'form-control', 
+                'placeholder': 'পরিকল্পনার নাম (বাংলা)'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'Plan description (English)'
+            }),
+            'description_bn': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 3,
+                'placeholder': 'পরিকল্পনার বিবরণ (বাংলা)'
+            }),
+            'days': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': '1',
+                'id': 'id_days'
+            }),
+            'price_percentage': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.01',
+                'readonly': True,
+                'style': 'background-color: #f8f9fa;'
+            }),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+        help_texts = {
+            'days': 'Number of days for this rental plan',
+            'books': 'Select books available for this rental plan',
+            'price_percentage': '⚠️ DEPRECATED: This field is no longer used. Rental price is calculated as: ৳10 + (৳2 × days)',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from books.models import Book
+        
+        # Only show active books for selection
+        self.fields['books'].queryset = Book.objects.filter(is_active=True).select_related('category').order_by('title')
+        
+        # Custom widget to add data attributes
+        self.fields['books'].widget = forms.SelectMultiple(attrs={
+            'class': 'form-control',
+            'id': 'id_books',
+            'style': 'display: none;'  # Hidden, will be replaced by checkboxes
+        })
+        
+        # Make price_percentage not required since it's deprecated
+        self.fields['price_percentage'].required = False
+        
+        # Add calculated price info to days field
+        if self.instance and self.instance.pk:
+            calculated_price = self.instance.calculate_rental_price()
+            self.fields['days'].help_text = f'Current rental price: ৳{calculated_price} (৳10 + ৳2 × {self.instance.days} days)'
+    
+    def label_from_instance(self, obj):
+        """Custom label for book options with data attributes"""
+        return f"{obj.title} - {obj.author}"
 
 
 class RentalStatusForm(forms.ModelForm):

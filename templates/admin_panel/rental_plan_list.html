@@ -87,7 +87,8 @@
                         <th>Order</th>
                         <th>Name</th>
                         <th>Duration</th>
-                        <th>Price %</th>
+                        <th>Rental Price</th>
+                        <th>Books Assigned</th>
                         <th>Status</th>
                         <th>Created At</th>
                         <th>Actions</th>
@@ -100,9 +101,28 @@
                             <input type="checkbox" name="plan_ids" value="{{ plan.id }}" form="bulkActionForm">
                         </td>
                         <td>{{ plan.order }}</td>
-                        <td><strong>{{ plan.name }}</strong></td>
+                        <td>
+                            <strong>{{ plan.name }}</strong>
+                            {% if plan.name_bn %}
+                            <br><small class="text-muted">{{ plan.name_bn }}</small>
+                            {% endif %}
+                        </td>
                         <td>{{ plan.days }} days</td>
-                        <td>{{ plan.price_percentage }}%</td>
+                        <td>
+                            <strong class="text-success">৳{{ plan.calculate_rental_price }}</strong>
+                            <br><small class="text-muted">৳10 + ৳2×{{ plan.days }}</small>
+                        </td>
+                        <td>
+                            {% with book_count=plan.books.count %}
+                            {% if book_count > 0 %}
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#booksModal{{ plan.id }}">
+                                <i class="fas fa-book"></i> {{ book_count }} book{{ book_count|pluralize }}
+                            </button>
+                            {% else %}
+                            <span class="text-muted"><i class="fas fa-minus"></i> No books</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
                         <td>
                             <a href="{% url 'admin_panel:rental_plan_toggle_status' plan.id %}" class="text-decoration-none">
                                 {% if plan.is_active %}
@@ -172,6 +192,76 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Book Modals -->
+{% for plan in plans %}
+<div class="modal fade" id="booksModal{{ plan.id }}" tabindex="-1" aria-labelledby="booksModalLabel{{ plan.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="booksModalLabel{{ plan.id }}">
+                    <i class="fas fa-book"></i> Books Assigned to "{{ plan.name }}"
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% with books=plan.books.all %}
+                {% if books %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for book in books %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>
+                                    <strong>{{ book.title }}</strong>
+                                    {% if book.title_bn %}
+                                    <br><small class="text-muted">{{ book.title_bn }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ book.author }}
+                                    {% if book.author_bn %}
+                                    <br><small class="text-muted">{{ book.author_bn }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ book.category.name }}</td>
+                                <td>
+                                    {% if book.stock > 0 %}
+                                    <span class="badge bg-success">{{ book.stock }}</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Out of Stock</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3">No books assigned to this plan.</p>
+                {% endif %}
+                {% endwith %}
+            </div>
+            <div class="modal-footer">
+                <a href="{% url 'admin_panel:rental_plan_edit' plan.id %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edit Plan
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 <script>
     document.getElementById('selectAll').addEventListener('change', function() {
