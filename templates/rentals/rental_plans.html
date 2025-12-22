@@ -44,7 +44,7 @@
                     </ul>
                 </div>
                 <div class="card-footer bg-transparent border-0 pb-3">
-                    <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary w-100">
+                    <a href="{% url 'books:book_list' %}?rental_plan={{ plan.id }}" class="btn btn-outline-primary w-100">
                         Browse Books
                     </a>
                 </div>

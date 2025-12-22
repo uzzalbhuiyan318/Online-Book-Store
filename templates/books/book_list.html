@@ -107,6 +107,22 @@
         
         <!-- Books Grid -->
         <div class="col-md-9">
+            <!-- Rental Plan Filter Banner -->
+            {% if selected_rental_plan %}
+            <div class="alert alert-info mb-4" role="alert">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <i class="fas fa-filter me-2"></i>
+                        <strong>Filtering by Rental Plan:</strong> {{ selected_rental_plan.name }}
+                        <span class="badge bg-primary ms-2">{{ selected_rental_plan.days }} days</span>
+                    </div>
+                    <a href="{% url 'books:book_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-times me-1"></i> Clear Filter
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>All Books ({{ page_obj.paginator.count }})</h2>
                 

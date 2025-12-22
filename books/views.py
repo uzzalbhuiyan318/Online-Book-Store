@@ -57,6 +57,18 @@ def book_list(request):
     """Book listing with filters"""
     books = Book.objects.filter(is_active=True).exclude(slug__isnull=True).exclude(slug='')
     
+    # Filter by rental plan
+    rental_plan_id = request.GET.get('rental_plan')
+    selected_rental_plan = None
+    if rental_plan_id:
+        try:
+            from rentals.models import RentalPlan
+            selected_rental_plan = RentalPlan.objects.get(id=rental_plan_id, is_active=True)
+            books = books.filter(rental_plans=selected_rental_plan)
+        except (RentalPlan.DoesNotExist, ValueError):
+            # If plan doesn't exist or invalid ID, continue without filtering
+            pass
+    
     # Filter by category
     category_slug = request.GET.get('category')
     if category_slug:
@@ -120,6 +132,7 @@ def book_list(request):
         'wishlist_book_ids': wishlist_book_ids,
         'authors': authors,
         'publishers': publishers,
+        'selected_rental_plan': selected_rental_plan,  # Pass to template
     }
     return render(request, 'books/book_list.html', context)
 
