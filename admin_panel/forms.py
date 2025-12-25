@@ -235,12 +235,15 @@ class RentalSettingsForm(forms.ModelForm):
     class Meta:
         model = RentalSettings
         fields = [
-            'security_deposit_percentage', 'daily_late_fee',
+            'base_rental_fee', 'per_day_rental_fee', 
+            'security_deposit_amount', 'daily_late_fee',
             'max_active_rentals_per_user', 'max_renewals',
             'min_stock_for_rental', 'enable_notifications', 'due_soon_days'
         ]
         widgets = {
-            'security_deposit_percentage': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'base_rental_fee': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'per_day_rental_fee': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'security_deposit_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'daily_late_fee': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
             'max_active_rentals_per_user': forms.NumberInput(attrs={'class': 'form-control'}),
             'max_renewals': forms.NumberInput(attrs={'class': 'form-control'}),

@@ -425,14 +425,19 @@ class RentalNotificationAdmin(admin.ModelAdmin):
 @admin.register(RentalSettings)
 class RentalSettingsAdmin(admin.ModelAdmin):
     list_display = [
-        'security_deposit_percentage', 'daily_late_fee',
+        'base_rental_fee', 'per_day_rental_fee',
+        'security_deposit_amount', 'daily_late_fee',
         'max_active_rentals_per_user', 'max_renewals', 'enable_notifications', 'rental_stats'
     ]
     
     fieldsets = (
-        ('💰 Pricing Settings', {
-            'fields': ('security_deposit_percentage', 'daily_late_fee'),
-            'description': 'Configure rental pricing and fees. Security deposit is refundable on timely return.'
+        ('💰 Rental Pricing Settings', {
+            'fields': ('base_rental_fee', 'per_day_rental_fee'),
+            'description': 'Configure base rental fee and per-day charges. Formula: Base Fee + (Per Day Fee × Duration)'
+        }),
+        ('🔒 Security & Late Fees', {
+            'fields': ('security_deposit_amount', 'daily_late_fee'),
+            'description': 'Security deposit is a flat one-time amount per user (refundable on timely return of all books). Late fee is charged per day for overdue rentals.'
         }),
         ('📊 Rental Limits', {
             'fields': ('max_active_rentals_per_user', 'max_renewals', 'min_stock_for_rental'),

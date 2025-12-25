@@ -45,7 +45,7 @@ class RentalPlan(models.Model):
         return f"{self.name} - {self.days} days (৳{rental_price})"
     
     def calculate_rental_price(self, book_price=None):
-        """Calculate rental price: 10 + (2 × days)
+        """Calculate rental price using dynamic settings: base_fee + (per_day_fee × days)
         
         Args:
             book_price: Not used anymore, kept for backward compatibility
@@ -53,9 +53,8 @@ class RentalPlan(models.Model):
         Returns:
             Decimal: Rental price in BDT
         """
-        base_fee = 10
-        per_day_cost = 2
-        return Decimal(base_fee + (per_day_cost * self.days))
+        settings = RentalSettings.get_settings()
+        return Decimal(settings.base_rental_fee + (settings.per_day_rental_fee * self.days))
 
 
 class BookRental(models.Model):
@@ -377,12 +376,26 @@ class RentalSettings(models.Model):
     """Global Rental Settings"""
     
     # Pricing
-    security_deposit_percentage = models.DecimalField(
-        max_digits=5,
+    base_rental_fee = models.DecimalField(
+        max_digits=10,
         decimal_places=2,
-        default=20,
-        verbose_name='Security Deposit Percentage',
-        help_text='Percentage of book price to hold as security deposit'
+        default=10,
+        verbose_name='Base Rental Fee (BDT)',
+        help_text='Base fee charged for any rental (regardless of duration)'
+    )
+    per_day_rental_fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=2,
+        verbose_name='Per Day Rental Fee (BDT)',
+        help_text='Additional fee charged per day of rental'
+    )
+    security_deposit_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=1000,
+        verbose_name='Security Deposit Amount (BDT)',
+        help_text='Flat security deposit amount per user (one-time, not per book)'
     )
     daily_late_fee = models.DecimalField(
         max_digits=10,

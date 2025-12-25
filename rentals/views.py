@@ -57,11 +57,18 @@ def book_rental_detail(request, slug):
     
     can_user_rent = active_rentals_count < settings.max_active_rentals_per_user
     
+    # Check if user has already paid security deposit
+    user_has_paid_security = BookRental.objects.filter(
+        user=request.user,
+        security_deposit__gt=0
+    ).exists()
+    
     # Calculate rental prices for each plan
     rental_prices = []
     for plan in rental_plans:
         rental_price = plan.calculate_rental_price()  # No longer needs book price
-        security_deposit = (book.final_price * settings.security_deposit_percentage) / 100
+        # Security deposit is flat amount per user (one-time)
+        security_deposit = Decimal('0') if user_has_paid_security else settings.security_deposit_amount
         total = rental_price + security_deposit
         
         rental_prices.append({
@@ -114,9 +121,16 @@ def create_rental(request, slug):
             messages.error(request, f'You have reached the maximum limit of {settings.max_active_rentals_per_user} active rentals.')
             return redirect('rentals:my_rentals')
         
+        # Check if user has already paid security deposit
+        user_has_paid_security = BookRental.objects.filter(
+            user=request.user,
+            security_deposit__gt=0
+        ).exists()
+        
         # Calculate prices
         rental_price = rental_plan.calculate_rental_price()  # No longer needs book price
-        security_deposit = (book.final_price * settings.security_deposit_percentage) / 100
+        # Security deposit is flat amount per user (one-time)
+        security_deposit = Decimal('0') if user_has_paid_security else settings.security_deposit_amount
         total_amount = rental_price + security_deposit
         
         # Create rental

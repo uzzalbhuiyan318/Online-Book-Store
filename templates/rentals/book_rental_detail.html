@@ -650,13 +650,26 @@
                                 </div>
                                 
                                 <div class="breakdown-row">
-                                    <span class="breakdown-label">Security Deposit ({{ settings.security_deposit_percentage }}%)</span>
+                                    <span class="breakdown-label">Security Deposit (One-time per user)</span>
                                     <span class="breakdown-value">৳<span id="securityDisplay">-</span></span>
                                 </div>
                                 
                                 <div class="breakdown-total">
                                     <span class="breakdown-total-label">Total Amount</span>
                                     <span class="breakdown-total-amount">৳<span id="totalDisplay">-</span></span>
+                                </div>
+                                
+                                <!-- Fee Structure Info -->
+                                <div class="alert alert-info mt-3" style="font-size: 0.9rem;">
+                                    <div><i class="fas fa-info-circle"></i> <strong>Rental Fee Structure:</strong></div>
+                                    <div class="mt-2">
+                                        <i class="fas fa-check-circle text-success"></i> Base Fee: <strong>৳{{ settings.base_rental_fee }}</strong><br>
+                                        <i class="fas fa-check-circle text-success"></i> Per Day: <strong>৳{{ settings.per_day_rental_fee }}</strong>/day<br>
+                                        <i class="fas fa-check-circle text-success"></i> Security Deposit: <strong>৳{{ settings.security_deposit_amount }}</strong> (one-time, refundable)
+                                    </div>
+                                    <div class="mt-2 text-muted" style="font-size: 0.85rem;">
+                                        Formula: Base Fee + (Days × Per Day Fee)
+                                    </div>
                                 </div>
                                 
                                 {% comment %} <div class="info-box">
@@ -781,9 +794,10 @@
                 
                 <div class="mb-4">
                     <h6 style="color: #667eea; font-weight: 700;"><i class="fas fa-shield-alt"></i> Security Deposit</h6>
-                    <p>A security deposit of <strong>{{ settings.security_deposit_percentage }}% of the book price</strong> is required. This will be:</p>
+                    <p>A security deposit of <strong>৳{{ settings.security_deposit_amount }}</strong> per user (one-time) is required. This will be:</p>
                     <ul>
-                        <li><strong>Fully refunded</strong> upon timely return in good condition</li>
+                        <li><strong>Charged only once</strong> for your first rental</li>
+                        <li><strong>Fully refunded</strong> upon timely return of all books in good condition</li>
                         <li>Adjusted for damage repairs if necessary</li>
                         <li>Refunded within 5-7 business days after return verification</li>
                     </ul>
@@ -875,7 +889,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const bookPrice = parseFloat({{ book.final_price }});
-    const securityDepositPercentage = {{ settings.security_deposit_percentage }};
     const planRadios = document.querySelectorAll('.rental-plan');
     
     function updateDisplay() {

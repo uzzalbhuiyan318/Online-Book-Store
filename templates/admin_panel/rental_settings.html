@@ -6,21 +6,157 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="admin-card">
             <div class="admin-card-header">
-                <h5><i class="fas fa-cog"></i> Rental Settings</h5>
+                <h5><i class="fas fa-cog"></i> Rental Settings Configuration</h5>
             </div>
             <div class="admin-card-body">
                 <form method="post">
                     {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-admin-primary">
-                        <i class="fas fa-save"></i> Save Settings
-                    </button>
+                    
+                    <!-- Rental Pricing Section -->
+                    <div class="settings-section mb-4">
+                        <h6 class="settings-section-title">
+                            <i class="fas fa-money-bill-wave text-success"></i> Rental Pricing
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.base_rental_fee.id_for_label }}" class="form-label">
+                                        Base Rental Fee (BDT)
+                                    </label>
+                                    {{ form.base_rental_fee }}
+                                    <small class="form-text text-muted">Fixed fee charged for any rental duration</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.per_day_rental_fee.id_for_label }}" class="form-label">
+                                        Per Day Rental Fee (BDT)
+                                    </label>
+                                    {{ form.per_day_rental_fee }}
+                                    <small class="form-text text-muted">Additional fee per day (Formula: Base + Days × Per Day)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 
+                            <strong>Example:</strong> Base Fee ৳10 + (5 days × ৳2/day) = <strong>৳20 total rental fee</strong>
+                        </div>
+                    </div>
+
+                    <!-- Security & Late Fees Section -->
+                    <div class="settings-section mb-4">
+                        <h6 class="settings-section-title">
+                            <i class="fas fa-shield-alt text-primary"></i> Security & Late Fees
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.security_deposit_amount.id_for_label }}" class="form-label">
+                                        Security Deposit (BDT)
+                                    </label>
+                                    {{ form.security_deposit_amount }}
+                                    <small class="form-text text-muted">One-time flat amount per user (refundable)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.daily_late_fee.id_for_label }}" class="form-label">
+                                        Daily Late Fee (BDT)
+                                    </label>
+                                    {{ form.daily_late_fee }}
+                                    <small class="form-text text-muted">Charged per day for overdue rentals</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rental Limits Section -->
+                    <div class="settings-section mb-4">
+                        <h6 class="settings-section-title">
+                            <i class="fas fa-limit text-warning"></i> Rental Limits
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.max_active_rentals_per_user.id_for_label }}" class="form-label">
+                                        Max Active Rentals Per User
+                                    </label>
+                                    {{ form.max_active_rentals_per_user }}
+                                    <small class="form-text text-muted">Maximum books one user can rent at once</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.max_renewals.id_for_label }}" class="form-label">
+                                        Max Renewals
+                                    </label>
+                                    {{ form.max_renewals }}
+                                    <small class="form-text text-muted">Times a rental can be extended</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="{{ form.min_stock_for_rental.id_for_label }}" class="form-label">
+                                        Min Stock for Rental
+                                    </label>
+                                    {{ form.min_stock_for_rental }}
+                                    <small class="form-text text-muted">Minimum stock to allow rentals</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings Section -->
+                    <div class="settings-section mb-4">
+                        <h6 class="settings-section-title">
+                            <i class="fas fa-bell text-info"></i> Notification Settings
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    {{ form.enable_notifications }}
+                                    <label for="{{ form.enable_notifications.id_for_label }}" class="form-check-label">
+                                        Enable Rental Notifications
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.due_soon_days.id_for_label }}" class="form-label">
+                                        Due Soon Alert (Days)
+                                    </label>
+                                    {{ form.due_soon_days }}
+                                    <small class="form-text text-muted">Days before due date to send reminder</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-admin-primary btn-lg">
+                            <i class="fas fa-save"></i> Save All Settings
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.settings-section {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+.settings-section-title {
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+</style>
 {% endblock %}
