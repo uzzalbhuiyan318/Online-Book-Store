@@ -32,6 +32,17 @@ def book_rental_detail(request, slug):
         is_active=True,
         books=book
     ).order_by('order', 'days')
+
+    # If rental_plan is provided via GET (from book detail link), try to restrict to that plan
+    selected_plan_id = request.GET.get('rental_plan')
+    selected_plan = None
+    if selected_plan_id:
+        try:
+            selected_plan_obj = RentalPlan.objects.get(id=selected_plan_id, is_active=True, books=book)
+            rental_plans = RentalPlan.objects.filter(id=selected_plan_obj.id)
+            selected_plan = selected_plan_obj.id
+        except (RentalPlan.DoesNotExist, ValueError):
+            selected_plan = None
     
     settings = RentalSettings.get_settings()
     
@@ -64,6 +75,7 @@ def book_rental_detail(request, slug):
         'book': book,
         'rental_plans': rental_plans,
         'rental_prices': rental_prices,
+        'selected_plan_id': selected_plan,
         'can_rent': can_rent and can_user_rent,
         'max_rentals_reached': not can_user_rent,
         'active_rentals_count': active_rentals_count,

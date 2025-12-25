@@ -586,8 +586,8 @@
                             
                             <!-- Rental Plans -->
                             <div class="rental-plans-section">
-                                <div class="plans-header"><i class="fas fa-list"></i> Select Your Plan</div>
-                                <p class="plans-subtitle">Choose a rental duration that fits your reading pace</p>
+                                <div class="plans-header"><i class="fas fa-list"></i> Selected Plan</div>
+                                
                                 
                                 <div class="row g-3">
                                     {% for item in rental_prices %}
@@ -645,7 +645,7 @@
                                 </div>
                                 
                                 <div class="breakdown-row">
-                                    <span class="breakdown-label">Rental Fee (<span id="rentalPercentageDisplay">-</span>%)</span>
+                                    <span class="breakdown-label">Rental Fees</span>
                                     <span class="breakdown-value">৳<span id="rentalFeeDisplay">-</span></span>
                                 </div>
                                 
@@ -820,6 +820,56 @@
             </div>
         </div>
     </div>
+
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                function updateSelection(input) {
+                    // Remove selected class from all cards
+                    document.querySelectorAll('.plan-card').forEach(function(card){ card.classList.remove('selected'); });
+
+                    if (!input) return;
+                    var card = input.nextElementSibling && input.nextElementSibling.classList.contains('plan-card') ? input.nextElementSibling : null;
+                    if (card) card.classList.add('selected');
+
+                    // Update displays
+                    var rentalFee = input.dataset.price || '-';
+                    var security = input.dataset.security || '-';
+                    var total = input.dataset.total || '-';
+                    var percentage = input.dataset.percentage || '-';
+
+                    document.getElementById('rentalFeeDisplay').textContent = rentalFee;
+                    document.getElementById('securityDisplay').textContent = security;
+                    document.getElementById('totalDisplay').textContent = total;
+                    // legacy percentage display (if available)
+                    var percEl = document.getElementById('rentalPercentageDisplay');
+                    if (percEl) percEl.textContent = percentage !== '-' ? percentage : input.dataset.days || '-';
+                }
+
+                // Attach change listeners
+                document.querySelectorAll('.rental-plan').forEach(function(el){
+                    el.addEventListener('change', function(e){ updateSelection(e.target); });
+                });
+
+                // If server told us which plan to preselect, pick it
+                var selected_plan_id = '{{ selected_plan_id|default:"" }}';
+                if (selected_plan_id) {
+                    var pre = document.getElementById('plan' + selected_plan_id);
+                    if (pre) {
+                        pre.checked = true;
+                        updateSelection(pre);
+                        // scroll to plans
+                        pre.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    }
+                }
+
+                // If there's only one option, auto-select it
+                var radios = document.querySelectorAll('.rental-plan');
+                if (radios.length === 1) {
+                    radios[0].checked = true;
+                    updateSelection(radios[0]);
+                }
+            });
+            </script>
 </div>
 
 <script>

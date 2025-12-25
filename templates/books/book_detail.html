@@ -126,6 +126,7 @@
                         </button>
                     </form>
                     
+                    {% if rental_available %}
                     <div class="rental-section">
                         <div class="rental-info">
                             <div class="rental-icon">
@@ -136,10 +137,17 @@
                                 <p>Rent this book for as low as 10% of the price!</p>
                             </div>
                         </div>
+                        {% if default_rental_plan_id %}
+                        <a href="{% url 'rentals:book_rental_detail' book.slug %}?rental_plan={{ default_rental_plan_id }}" class="btn-rent-book">
+                            <i class="fas fa-hand-holding"></i> Rent This Book
+                        </a>
+                        {% else %}
                         <a href="{% url 'rentals:book_rental_detail' book.slug %}" class="btn-rent-book">
                             <i class="fas fa-hand-holding"></i> Rent This Book
                         </a>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
                 
                 <!-- Wishlist Button & Share Section -->

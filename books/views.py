@@ -226,12 +226,28 @@ def book_detail(request, slug):
         category=book.category,
         is_active=True
     ).exclude(id=book.id).exclude(slug__isnull=True).exclude(slug='')[:4]
+    # Check if this book is assigned to any active rental plan
+    rental_available = False
+    default_rental_plan_id = None
+    try:
+        from rentals.models import RentalPlan
+        plans_qs = RentalPlan.objects.filter(is_active=True, books=book)
+        rental_available = plans_qs.exists()
+        # If exactly one plan assigned, use it as default so we can pre-select on rental page
+        if plans_qs.count() == 1:
+            default_rental_plan_id = plans_qs.first().id
+    except Exception:
+        # If rentals app isn't available or any error occurs, default to False
+        rental_available = False
+        default_rental_plan_id = None
     
     context = {
         'book': book,
         'reviews': reviews,
         'user_has_reviewed': user_has_reviewed,
         'related_books': related_books,
+        'rental_available': rental_available,
+        'default_rental_plan_id': default_rental_plan_id,
     }
     return render(request, 'books/book_detail.html', context)
 
