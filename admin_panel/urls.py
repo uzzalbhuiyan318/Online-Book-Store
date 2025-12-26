@@ -26,6 +26,12 @@ urlpatterns = [
     path('orders/<str:order_number>/', views.order_detail, name='order_detail'),
     path('orders/<str:order_number>/update-status/', views.order_update_status, name='order_update_status'),
     
+    # Shipping Fee Management
+    path('shipping-fees/', views.shipping_fee_list, name='shipping_fee_list'),
+    path('shipping-fees/add/', views.shipping_fee_add, name='shipping_fee_add'),
+    path('shipping-fees/<int:pk>/edit/', views.shipping_fee_edit, name='shipping_fee_edit'),
+    path('shipping-fees/<int:pk>/delete/', views.shipping_fee_delete, name='shipping_fee_delete'),
+    
     # Customer Management
     path('customers/', views.customer_list, name='customer_list'),
     path('customers/<int:pk>/', views.customer_detail, name='customer_detail'),

@@ -195,17 +195,30 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Redis Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/1",
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        },
-        'KEY_PREFIX': 'bookstore',
-        'TIMEOUT': 300,
+# Set USE_REDIS=False in .env to use local memory cache (when Redis is not available)
+USE_REDIS = config('USE_REDIS', default=True, cast=bool)
+
+if USE_REDIS:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/1",
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+            'KEY_PREFIX': 'bookstore',
+            'TIMEOUT': 300,
+        }
     }
-}
+else:
+    # Fallback to local memory cache when Redis is not available
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'bookstore-cache',
+            'TIMEOUT': 300,
+        }
+    }
 
 # Session Settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -279,8 +292,15 @@ LOGIN_REDIRECT_URL = 'books:home'
 LOGOUT_REDIRECT_URL = 'books:home'
 
 # Celery Configuration
-CELERY_BROKER_URL = f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/0"
-CELERY_RESULT_BACKEND = f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/0"
+# Celery will only work if Redis is enabled
+if USE_REDIS:
+    CELERY_BROKER_URL = f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/0"
+    CELERY_RESULT_BACKEND = f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379')}/0"
+else:
+    # Disable Celery when Redis is not available (tasks will run synchronously)
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
+    
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

@@ -20,7 +20,7 @@ from datetime import timedelta, datetime
 
 from books.models import Book, Category, Review, Banner, Wishlist, Cart
 
-from orders.models import Order, OrderItem, OrderStatusHistory, Coupon, CouponUsage
+from orders.models import Order, OrderItem, OrderStatusHistory, Coupon, CouponUsage, ShippingFee
 from orders.models import GiftForm, GiftCity, GiftOccasion
 from rentals.models import RentalPlan, BookRental, RentalStatusHistory, RentalSettings, RentalNotification, RentalFeedback
 from support.models import SupportAgent, Conversation, Message, QuickReply, ChatSettings
@@ -39,7 +39,7 @@ from .forms import (
 
     BannerForm, SupportAgentForm, QuickReplyForm, ChatSettingsForm,
 
-    UserAdminForm, ReviewApprovalForm
+    UserAdminForm, ReviewApprovalForm, ShippingFeeForm
 
 )
 
@@ -4198,3 +4198,261 @@ def rental_feedback_respond(request, pk):
 
     return redirect('admin_panel:rental_feedback_list')
 
+# Add these views to the end of admin_panel/views_complete.py
+
+# ==================== SHIPPING FEE MANAGEMENT ====================
+
+@staff_member_required
+def shipping_fee_list(request):
+    """List all shipping fees"""
+    from django.core.cache import cache
+    
+    fees = ShippingFee.objects.all().order_by('-is_default', 'city_name')
+    
+    # Search by city name
+    query = request.GET.get('q')
+    if query:
+        fees = fees.filter(
+            Q(city_name__icontains=query) |
+            Q(city_name_bn__icontains=query)
+        )
+    
+    # Filter by status
+    status = request.GET.get('status')
+    if status == 'active':
+        fees = fees.filter(is_active=True)
+    elif status == 'inactive':
+        fees = fees.filter(is_active=False)
+    
+    # Pagination
+    paginator = Paginator(fees, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'fees': page_obj.object_list,
+        'total_count': fees.count(),
+        'active_count': ShippingFee.objects.filter(is_active=True).count(),
+        'inactive_count': ShippingFee.objects.filter(is_active=False).count(),
+    }
+    return render(request, 'admin_panel/shipping_fee_list.html', context)
+
+
+@staff_member_required
+def shipping_fee_add(request):
+    """Add new shipping fee"""
+    from django.core.cache import cache
+    
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST)
+        if form.is_valid():
+            fee = form.save()
+            # Clear cache to apply changes immediately
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" added successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm()
+    
+    context = {'form': form, 'action': 'Add'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+
+@staff_member_required
+def shipping_fee_edit(request, pk):
+    """Edit shipping fee"""
+    from django.core.cache import cache
+    
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST, instance=fee)
+        if form.is_valid():
+            fee = form.save()
+            # Clear cache to apply changes immediately
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" updated successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm(instance=fee)
+    
+    context = {'form': form, 'fee': fee, 'action': 'Edit'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+
+@staff_member_required
+def shipping_fee_delete(request, pk):
+    """Delete shipping fee"""
+    from django.core.cache import cache
+    
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    
+    if request.method == 'POST':
+        city_name = fee.city_name
+        fee.delete()
+        # Clear cache to apply changes immediately
+        cache.clear()
+        messages.success(request, f'Shipping fee for "{city_name}" deleted successfully!')
+        return redirect('admin_panel:shipping_fee_list')
+    
+    return render(request, 'admin_panel/shipping_fee_confirm_delete.html', {'fee': fee})
+
+# ==================== SHIPPING FEE MANAGEMENT ====================
+
+@staff_member_required
+def shipping_fee_list(request):
+    """List all shipping fees"""
+    from django.core.cache import cache
+    
+    fees = ShippingFee.objects.all().order_by('-is_default', 'city_name')
+    
+    # Search by city name
+    query = request.GET.get('q')
+    if query:
+        fees = fees.filter(
+            Q(city_name__icontains=query) |
+            Q(city_name_bn__icontains=query)
+        )
+    
+    # Filter by status
+    status = request.GET.get('status')
+    if status == 'active':
+        fees = fees.filter(is_active=True)
+    elif status == 'inactive':
+        fees = fees.filter(is_active=False)
+    
+    # Pagination
+    paginator = Paginator(fees, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'fees': page_obj.object_list,
+        'total_count': fees.count(),
+        'active_count': ShippingFee.objects.filter(is_active=True).count(),
+        'inactive_count': ShippingFee.objects.filter(is_active=False).count(),
+    }
+    return render(request, 'admin_panel/shipping_fee_list.html', context)
+
+
+@staff_member_required
+def shipping_fee_add(request):
+    """Add new shipping fee"""
+    from django.core.cache import cache
+    
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST)
+        if form.is_valid():
+            fee = form.save()
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" added successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm()
+    
+    context = {'form': form, 'action': 'Add'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+
+@staff_member_required
+def shipping_fee_edit(request, pk):
+    """Edit shipping fee"""
+    from django.core.cache import cache
+    
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST, instance=fee)
+        if form.is_valid():
+            fee = form.save()
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" updated successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm(instance=fee)
+    
+    context = {'form': form, 'fee': fee, 'action': 'Edit'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+
+@staff_member_required
+def shipping_fee_delete(request, pk):
+    """Delete shipping fee"""
+    from django.core.cache import cache
+    
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    
+    if request.method == 'POST':
+        city_name = fee.city_name
+        fee.delete()
+        cache.clear()
+        messages.success(request, f'Shipping fee for "{city_name}" deleted successfully!')
+        return redirect('admin_panel:shipping_fee_list')
+    
+    return render(request, 'admin_panel/shipping_fee_confirm_delete.html', {'fee': fee})
+
+
+# ==================== SHIPPING FEE MANAGEMENT ====================
+
+@staff_member_required
+def shipping_fee_list(request):
+    from django.core.cache import cache
+    fees = ShippingFee.objects.all().order_by('-is_default', 'city_name')
+    query = request.GET.get('q')
+    if query:
+        fees = fees.filter(Q(city_name__icontains=query) | Q(city_name_bn__icontains=query))
+    status = request.GET.get('status')
+    if status == 'active':
+        fees = fees.filter(is_active=True)
+    elif status == 'inactive':
+        fees = fees.filter(is_active=False)
+    paginator = Paginator(fees, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {'page_obj': page_obj, 'fees': page_obj.object_list, 'total_count': fees.count(), 'active_count': ShippingFee.objects.filter(is_active=True).count(), 'inactive_count': ShippingFee.objects.filter(is_active=False).count()}
+    return render(request, 'admin_panel/shipping_fee_list.html', context)
+
+@staff_member_required
+def shipping_fee_add(request):
+    from django.core.cache import cache
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST)
+        if form.is_valid():
+            fee = form.save()
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" added successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm()
+    context = {'form': form, 'action': 'Add'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+@staff_member_required
+def shipping_fee_edit(request, pk):
+    from django.core.cache import cache
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    if request.method == 'POST':
+        form = ShippingFeeForm(request.POST, instance=fee)
+        if form.is_valid():
+            fee = form.save()
+            cache.clear()
+            messages.success(request, f'Shipping fee for "{fee.city_name}" updated successfully!')
+            return redirect('admin_panel:shipping_fee_list')
+    else:
+        form = ShippingFeeForm(instance=fee)
+    context = {'form': form, 'fee': fee, 'action': 'Edit'}
+    return render(request, 'admin_panel/shipping_fee_form.html', context)
+
+@staff_member_required
+def shipping_fee_delete(request, pk):
+    from django.core.cache import cache
+    fee = get_object_or_404(ShippingFee, pk=pk)
+    if request.method == 'POST':
+        city_name = fee.city_name
+        fee.delete()
+        cache.clear()
+        messages.success(request, f'Shipping fee for "{city_name}" deleted successfully!')
+        return redirect('admin_panel:shipping_fee_list')
+    return render(request, 'admin_panel/shipping_fee_confirm_delete.html', {'fee': fee})

@@ -1,7 +1,7 @@
 from django import forms
 from django.db.models import Q
 from books.models import Book, Category, Review, Banner
-from orders.models import Order, Coupon
+from orders.models import Order, Coupon, ShippingFee
 from rentals.models import RentalPlan, BookRental, RentalSettings
 from support.models import SupportAgent, QuickReply, ChatSettings
 from accounts.models import User
@@ -400,3 +400,33 @@ class ReviewApprovalForm(forms.ModelForm):
         widgets = {
             'is_approved': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+
+class ShippingFeeForm(forms.ModelForm):
+    """Form for creating/editing shipping fees"""
+    
+    class Meta:
+        model = ShippingFee
+        fields = ['city_name', 'city_name_bn', 'fee', 'is_default', 'is_active']
+        widgets = {
+            'city_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City name in English'}),
+            'city_name_bn': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City name in Bangla'}),
+            'fee': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'is_default': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'city_name': 'City name will be matched case-insensitively',
+            'fee': 'Shipping fee in BDT (৳)',
+            'is_default': 'Mark as default fee for cities not in the list',
+        }
+    
+    def clean_city_name(self):
+        city_name = self.cleaned_data.get('city_name')
+        if city_name:
+            existing = ShippingFee.objects.filter(city_name__iexact=city_name)
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            if existing.exists():
+                raise forms.ValidationError(f"A shipping fee for '{city_name}' already exists.")
+        return city_name

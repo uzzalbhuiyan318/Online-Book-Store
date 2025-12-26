@@ -25,20 +25,41 @@ def calculate_shipping_fee(city):
         city: City name (string)
         
     Returns:
-        Decimal: Shipping fee (0 if no city, 60 for Dhaka, 120 for other cities)
+        Decimal: Shipping fee (0 if no city, database value for city, or default fee)
     """
+    from .models import ShippingFee
+    from django.core.cache import cache
+    
     if not city:
         return Decimal('0.00')  # Return 0 if no city selected
     
     # Normalize city name for comparison (case-insensitive, strip whitespace)
     city_normalized = city.strip().lower()
     
-    # Check if city is Dhaka (handle variations)
-    dhaka_variations = ['dhaka', 'ঢাকা']
-    if city_normalized in dhaka_variations:
-        return Decimal('60.00')
-    else:
-        return Decimal('120.00')
+    # Check cache first for performance
+    cache_key = f'shipping_fee_{city_normalized}'
+    cached_fee = cache.get(cache_key)
+    if cached_fee is not None:
+        return Decimal(str(cached_fee))
+    
+    # Query database for city-specific fee
+    try:
+        shipping_fee = ShippingFee.objects.get(
+            city_name__iexact=city,
+            is_active=True
+        )
+        fee = shipping_fee.fee
+    except ShippingFee.DoesNotExist:
+        # Get default fee for cities not in the list
+        default_fee = ShippingFee.objects.filter(
+            is_default=True,
+            is_active=True
+        ).first()
+        fee = default_fee.fee if default_fee else Decimal('120.00')  # Fallback if no default set
+    
+    # Cache for 1 hour (3600 seconds)
+    cache.set(cache_key, float(fee), 3600)
+    return fee
 
 
 def checkout(request):

@@ -1,0 +1,151 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+
+{% block title %}Shipping Fees - Admin Panel{% endblock %}
+{% block page_title %}Shipping Fees Management{% endblock %}
+
+{% block content %}
+<div class="admin-card">
+    <div class="admin-card-header">
+        <h5><i class="fas fa-shipping-fast"></i> All Shipping Fees ({{ page_obj.paginator.count }})</h5>
+        <a href="{% url 'admin_panel:shipping_fee_add' %}" class="btn btn-admin-primary">
+            <i class="fas fa-plus"></i> Add Shipping Fee
+        </a>
+    </div>
+    
+    <div class="admin-card-body">
+        <!-- Search & Filter -->
+        <form method="get" class="row g-3 mb-4">
+            <div class="col-md-6">
+                <input type="text" name="q" class="form-control" placeholder="Search by city name..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-admin-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <a href="{% url 'admin_panel:shipping_fee_list' %}" class="btn btn-admin-secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+
+        <!-- Stats -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <div class="alert alert-info mb-0">
+                    <strong>Total:</strong> {{ total_count }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="alert alert-success mb-0">
+                    <strong>Active:</strong> {{ active_count }}
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="alert alert-secondary mb-0">
+                    <strong>Inactive:</strong> {{ inactive_count }}
+                </div>
+            </div>
+        </div>
+
+        {% if fees %}
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>City Name</th>
+                        <th>City Name (Bangla)</th>
+                        <th>Shipping Fee</th>
+                        <th>Default</th>
+                        <th>Status</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee in fees %}
+                    <tr {% if fee.is_default %}class="table-warning"{% endif %}>
+                        <td>
+                            <strong>{{ fee.city_name }}</strong>
+                            {% if fee.is_default %}
+                            <span class="badge bg-warning text-dark ms-2">DEFAULT</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ fee.city_name_bn|default:"-" }}</td>
+                        <td><strong class="text-success">৳{{ fee.fee }}</strong></td>
+                        <td>
+                            {% if fee.is_default %}
+                            <i class="fas fa-check-circle text-warning"></i> Yes
+                            {% else %}
+                            <i class="fas fa-times-circle text-muted"></i> No
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if fee.is_active %}
+                            <span class="status-badge status-active">Active</span>
+                            {% else %}
+                            <span class="status-badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'admin_panel:shipping_fee_edit' fee.id %}" class="btn btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="{% url 'admin_panel:shipping_fee_delete' fee.id %}" class="btn btn-outline-danger" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+
+        {% else %}
+        <div class="admin-empty-state">
+            <i class="fas fa-shipping-fast"></i>
+            <h5>No shipping fees found</h5>
+            <p class="text-muted">Add shipping fees to manage city-specific delivery charges</p>
+            <a href="{% url 'admin_panel:shipping_fee_add' %}" class="btn btn-admin-primary">Add Shipping Fee</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

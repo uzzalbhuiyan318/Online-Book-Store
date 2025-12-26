@@ -69,6 +69,10 @@
                         <i class="fas fa-ticket-alt"></i>
                         <span>Coupons</span>
                     </a>
+                    <a href="{% url 'admin_panel:shipping_fee_list' %}" class="admin-nav-item {% if 'shipping-fee' in request.path %}active{% endif %}">
+                        <i class="fas fa-shipping-fast"></i>
+                        <span>Shipping Fees</span>
+                    </a>
                 </div>
                 
                 <!-- Rentals -->

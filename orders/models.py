@@ -231,6 +231,58 @@ class GiftForm(models.Model):
         return f"Gift #{self.pk}"
 
 
+class ShippingFee(models.Model):
+    """Shipping Fee Model - Store city-specific shipping fees"""
+    
+    city_name = models.CharField(
+        max_length=100, 
+        unique=True,
+        help_text="City name in English (case-insensitive matching)"
+    )
+    city_name_bn = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        verbose_name="City Name (Bangla)",
+        help_text="City name in Bangla (optional)"
+    )
+    fee = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(0)],
+        help_text="Shipping fee amount in BDT"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Mark as default fee for cities not in the list (only one can be default)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Enable/disable this shipping fee"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Shipping Fee'
+        verbose_name_plural = 'Shipping Fees'
+        ordering = ['city_name']
+        indexes = [
+            models.Index(fields=['city_name']),
+            models.Index(fields=['is_default', 'is_active']),
+        ]
+    
+    def __str__(self):
+        default_text = " (Default)" if self.is_default else ""
+        return f"{self.city_name}: ৳{self.fee}{default_text}"
+    
+    def save(self, *args, **kwargs):
+        # Ensure only one default shipping fee
+        if self.is_default:
+            ShippingFee.objects.filter(is_default=True).exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
+
 class OrderItem(models.Model):
     """Order Item Model"""
     
