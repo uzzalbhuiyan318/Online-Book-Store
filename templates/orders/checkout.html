@@ -125,8 +125,10 @@
                             <div class="address-selection">
                                 {% for address in addresses %}
                                 <div class="address-card {% if address.is_default %}default-address{% endif %}">
-                                    <input class="form-check-input" type="radio" name="address_id" id="address{{ address.id }}" 
-                                           value="{{ address.id }}" {% if address.is_default %}checked{% endif %} required>
+                                    <input class="form-check-input address-radio" type="radio" name="address_id" id="address{{ address.id }}" 
+                                           value="{{ address.id }}" 
+                                           data-city="{{ address.city }}"
+                                           {% if address.is_default %}checked{% endif %} required>
                                     <label class="address-card-label" for="address{{ address.id }}">
                                         <div class="address-header">
                                             <strong class="address-name">{{ address.full_name }}</strong>
@@ -1081,6 +1083,126 @@ function updateOrderSummary(subtotal, shippingCost, total, cartCount) {
         cartBadge.textContent = cartCount;
     }
 }
+
+// Calculate shipping fee based on city
+function calculateShippingFee(city) {
+    if (!city) {
+        return 60.00; // Default to Dhaka rate if no city
+    }
+    
+    // Normalize city name for comparison (case-insensitive, strip whitespace)
+    const cityNormalized = city.trim().toLowerCase();
+    
+    // Check if city is Dhaka (handle variations)
+    const dhakaVariations = ['dhaka', 'ঢাকা'];
+    if (dhakaVariations.includes(cityNormalized)) {
+        return 60.00;
+    } else {
+        return 120.00;
+    }
+}
+
+// Update shipping fee display and recalculate total
+function updateShippingFeeDisplay(city) {
+    const shippingFee = calculateShippingFee(city);
+    
+    // Update shipping fee display
+    const shippingElements = document.querySelectorAll('.summary-row .summary-value');
+    if (shippingElements.length >= 2) {
+        shippingElements[1].textContent = '৳' + shippingFee.toFixed(2);
+    }
+    
+    // Recalculate total
+    const subtotalElement = document.querySelector('.summary-row .summary-value');
+    const subtotal = subtotalElement ? parseFloat(subtotalElement.textContent.replace('৳', '').replace(',', '')) : 0;
+    
+    // Get discount if exists
+    const discountRow = document.querySelector('.discount-row .summary-value');
+    const discount = discountRow ? parseFloat(discountRow.textContent.replace('৳', '').replace('-', '').replace(',', '')) : 0;
+    
+    // Calculate new total
+    const total = subtotal + shippingFee - discount;
+    
+    // Update total display
+    const totalElement = document.querySelector('.total-row .summary-value');
+    if (totalElement) {
+        totalElement.textContent = '৳' + total.toFixed(2);
+    }
+}
+
+// Initialize shipping fee listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Listen to address selection changes
+    const addressRadios = document.querySelectorAll('.address-radio');
+    addressRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const city = this.dataset.city;
+            if (city) {
+                updateShippingFeeDisplay(city);
+            }
+        });
+    });
+    
+    // Listen to city input changes (for new address form)
+    const cityInput = document.getElementById('city');
+    if (cityInput) {
+        cityInput.addEventListener('blur', function() {
+            const city = this.value;
+            if (city) {
+                updateShippingFeeDisplay(city);
+            }
+        });
+        
+        // Also update on input for real-time feedback
+        cityInput.addEventListener('input', function() {
+            const city = this.value;
+            if (city && city.length >= 3) { // Only update if at least 3 characters entered
+                updateShippingFeeDisplay(city);
+            }
+        });
+    }
+    
+    // Listen to gift city selection changes
+    const giftCitySelect = document.getElementById('id_gift_to_city');
+    if (giftCitySelect) {
+        giftCitySelect.addEventListener('change', function() {
+            // Get the selected city name from the option text
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const cityName = selectedOption.text;
+                updateShippingFeeDisplay(cityName);
+            } else {
+                // No city selected, show 0 shipping
+                updateShippingFeeDisplay(null);
+            }
+        });
+    }
+    
+    // Listen to gift address selection changes
+    const giftAddressRadios = document.querySelectorAll('input[name="gift_address"]');
+    giftAddressRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value) {
+                // Get the address ID and find the corresponding address to extract city
+                // For now, we'll need to make an AJAX call or store city in data attribute
+                // Simpler approach: extract city from the label text
+                const label = this.nextElementSibling;
+                if (label) {
+                    const labelText = label.textContent;
+                    // Try to extract city from address text (format: "Name — Address, City")
+                    const cityMatch = labelText.match(/,\s*([^,]+)$/);
+                    if (cityMatch) {
+                        const city = cityMatch[1].trim();
+                        updateShippingFeeDisplay(city);
+                    }
+                }
+            } else {
+                // "Enter a new recipient address" selected
+                updateShippingFeeDisplay(null);
+            }
+        });
+    });
+});
 
 // Toast notification function
 function showToast(message, type = 'info') {

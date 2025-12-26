@@ -18,6 +18,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def calculate_shipping_fee(city):
+    """Calculate shipping fee based on city
+    
+    Args:
+        city: City name (string)
+        
+    Returns:
+        Decimal: Shipping fee (0 if no city, 60 for Dhaka, 120 for other cities)
+    """
+    if not city:
+        return Decimal('0.00')  # Return 0 if no city selected
+    
+    # Normalize city name for comparison (case-insensitive, strip whitespace)
+    city_normalized = city.strip().lower()
+    
+    # Check if city is Dhaka (handle variations)
+    dhaka_variations = ['dhaka', 'ঢাকা']
+    if city_normalized in dhaka_variations:
+        return Decimal('60.00')
+    else:
+        return Decimal('120.00')
+
+
 def checkout(request):
     """Checkout view - Shows cart and handles order placement"""
     # Get cart items for both authenticated and guest users
@@ -30,16 +53,25 @@ def checkout(request):
     
     # Calculate totals
     subtotal = sum(item.subtotal for item in cart_items) if cart_items else 0
-    shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')  # Flat rate
+    
+    # Get addresses if user is authenticated (needed for shipping calculation)
+    addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-id') if request.user.is_authenticated else []
+    
+    # Calculate shipping based on default/first address city
+    shipping_city = None
+    if request.user.is_authenticated and addresses:
+        # Get default address or first address
+        default_address = addresses.filter(is_default=True).first() or addresses.first()
+        if default_address:
+            shipping_city = default_address.city
+    
+    shipping = calculate_shipping_fee(shipping_city) if subtotal > 0 else Decimal('0.00')
     
     # Get coupon discount from session
     discount = Decimal(str(request.session.get('discount', 0)))
     coupon_code = request.session.get('coupon_code', None)
     
     total = subtotal + shipping - discount
-    
-    # Get addresses if user is authenticated
-    addresses = Address.objects.filter(user=request.user).order_by('-is_default', '-id') if request.user.is_authenticated else []
     
     # Handle form submission - REQUIRE LOGIN for order placement
     if request.method == 'POST':
@@ -62,7 +94,47 @@ def checkout(request):
         
         # Recalculate totals for order placement
         subtotal = sum(item.subtotal for item in cart_items)
-        shipping = Decimal('60.00')  # Flat rate
+        
+        # Determine shipping city from selected/entered address
+        shipping_city = None
+        is_gift = request.POST.get('is_gift') == 'on'
+        
+        if is_gift:
+            # For gift orders, use recipient city
+            # Check if gift address was selected
+            gift_address_id = request.POST.get('gift_address')
+            if gift_address_id:
+                try:
+                    gift_address = Address.objects.get(id=gift_address_id, user=request.user)
+                    shipping_city = gift_address.city
+                except Address.DoesNotExist:
+                    pass
+            else:
+                # Get city from gift recipient form (GiftCity model ID)
+                gift_city_id = request.POST.get('gift_to_city')
+                if gift_city_id:
+                    try:
+                        from .models import GiftCity
+                        gift_city_obj = GiftCity.objects.get(id=gift_city_id)
+                        shipping_city = gift_city_obj.name
+                    except (GiftCity.DoesNotExist, ValueError):
+                        pass
+        else:
+            # For normal orders, use delivery address
+            address_id = request.POST.get('address_id')
+            
+            if address_id:
+                # Get city from selected address
+                try:
+                    selected_address = Address.objects.get(id=address_id, user=request.user)
+                    shipping_city = selected_address.city
+                except Address.DoesNotExist:
+                    pass
+            else:
+                # Get city from new address form
+                shipping_city = request.POST.get('city')
+        
+        shipping = calculate_shipping_fee(shipping_city)
         
         form = CheckoutForm(request.POST, user=request.user)
         if form.is_valid():
@@ -625,8 +697,16 @@ def apply_coupon(request):
         request.session['coupon_code'] = coupon.code
         request.session['coupon_id'] = coupon.id
         request.session['discount'] = float(discount)
+        
         # Recalculate totals to return to frontend (so page doesn't need full reload)
-        shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')
+        # Get shipping city from default address
+        shipping_city = None
+        if request.user.is_authenticated:
+            default_address = Address.objects.filter(user=request.user, is_default=True).first()
+            if default_address:
+                shipping_city = default_address.city
+        
+        shipping = calculate_shipping_fee(shipping_city) if subtotal > 0 else Decimal('0.00')
         total = Decimal(subtotal) + shipping - Decimal(str(discount))
 
         return JsonResponse({
@@ -661,7 +741,15 @@ def remove_coupon(request):
             cart_items = Cart.objects.filter(session_key=request.session.session_key)
 
         subtotal = sum(item.subtotal for item in cart_items) if cart_items else 0
-        shipping = Decimal('60.00') if subtotal > 0 else Decimal('0.00')
+        
+        # Get shipping city from default address for coupon removal
+        shipping_city = None
+        if request.user.is_authenticated:
+            default_address = Address.objects.filter(user=request.user, is_default=True).first()
+            if default_address:
+                shipping_city = default_address.city
+        
+        shipping = calculate_shipping_fee(shipping_city) if subtotal > 0 else Decimal('0.00')
         discount = Decimal(str(request.session.get('discount', 0)))
         total = Decimal(subtotal) + shipping - discount
 
