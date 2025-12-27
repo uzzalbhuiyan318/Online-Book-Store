@@ -4398,7 +4398,11 @@ def shipping_fee_delete(request, pk):
 
 @staff_member_required
 def shipping_fee_list(request):
+    """List all shipping fees - No caching, always fresh from database"""
     from django.core.cache import cache
+    from django.views.decorators.cache import never_cache
+    
+    # Query database directly without any caching
     fees = ShippingFee.objects.all().order_by('-is_default', 'city_name')
     query = request.GET.get('q')
     if query:
@@ -4412,16 +4416,26 @@ def shipping_fee_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj, 'fees': page_obj.object_list, 'total_count': fees.count(), 'active_count': ShippingFee.objects.filter(is_active=True).count(), 'inactive_count': ShippingFee.objects.filter(is_active=False).count()}
-    return render(request, 'admin_panel/shipping_fee_list.html', context)
+    
+    # Render with cache control headers to prevent browser caching
+    response = render(request, 'admin_panel/shipping_fee_list.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 @staff_member_required
 def shipping_fee_add(request):
+    """Add new shipping fee"""
     from django.core.cache import cache
     if request.method == 'POST':
         form = ShippingFeeForm(request.POST)
         if form.is_valid():
             fee = form.save()
-            cache.clear()
+            # Clear specific cache keys for shipping fees
+            cache_key = f'shipping_fee_{fee.city_name.strip().lower()}'
+            cache.delete(cache_key)
+            cache.clear()  # Also clear all cache to be safe
             messages.success(request, f'Shipping fee for "{fee.city_name}" added successfully!')
             return redirect('admin_panel:shipping_fee_list')
     else:
@@ -4431,13 +4445,20 @@ def shipping_fee_add(request):
 
 @staff_member_required
 def shipping_fee_edit(request, pk):
+    """Edit shipping fee"""
     from django.core.cache import cache
     fee = get_object_or_404(ShippingFee, pk=pk)
+    old_city_name = fee.city_name  # Store old name for cache key
     if request.method == 'POST':
         form = ShippingFeeForm(request.POST, instance=fee)
         if form.is_valid():
             fee = form.save()
-            cache.clear()
+            # Clear cache keys for both old and new city names
+            old_cache_key = f'shipping_fee_{old_city_name.strip().lower()}'
+            new_cache_key = f'shipping_fee_{fee.city_name.strip().lower()}'
+            cache.delete(old_cache_key)
+            cache.delete(new_cache_key)
+            cache.clear()  # Also clear all cache to be safe
             messages.success(request, f'Shipping fee for "{fee.city_name}" updated successfully!')
             return redirect('admin_panel:shipping_fee_list')
     else:
@@ -4447,12 +4468,16 @@ def shipping_fee_edit(request, pk):
 
 @staff_member_required
 def shipping_fee_delete(request, pk):
+    """Delete shipping fee"""
     from django.core.cache import cache
     fee = get_object_or_404(ShippingFee, pk=pk)
     if request.method == 'POST':
         city_name = fee.city_name
+        # Clear cache key for this city
+        cache_key = f'shipping_fee_{city_name.strip().lower()}'
+        cache.delete(cache_key)
         fee.delete()
-        cache.clear()
+        cache.clear()  # Also clear all cache to be safe
         messages.success(request, f'Shipping fee for "{city_name}" deleted successfully!')
         return redirect('admin_panel:shipping_fee_list')
     return render(request, 'admin_panel/shipping_fee_confirm_delete.html', {'fee': fee})
