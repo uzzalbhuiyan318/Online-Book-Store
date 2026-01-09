@@ -108,14 +108,29 @@ def dashboard(request):
     low_stock_books = Book.objects.filter(stock__lt=5, is_active=True).count()
     
     # Revenue
-    total_revenue = Order.objects.filter(
+    # Sales Revenue (from book sales/orders)
+    sales_revenue = Order.objects.filter(
         payment_status='paid'
     ).aggregate(total=Sum('total'))['total'] or 0
     
-    monthly_revenue = Order.objects.filter(
+    monthly_sales_revenue = Order.objects.filter(
         payment_status='paid',
         created_at__gte=last_30_days
     ).aggregate(total=Sum('total'))['total'] or 0
+    
+    # Rental Revenue (from book rentals)
+    rental_revenue = BookRental.objects.filter(
+        payment_status='paid'
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    monthly_rental_revenue = BookRental.objects.filter(
+        payment_status='paid',
+        rental_date__gte=last_30_days
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    # Total Revenue (sales + rentals)
+    total_revenue = sales_revenue + rental_revenue
+    monthly_revenue = monthly_sales_revenue + monthly_rental_revenue
     
     # Recent orders
     recent_orders = Order.objects.order_by('-created_at')[:10]
@@ -135,6 +150,10 @@ def dashboard(request):
         'low_stock_books': low_stock_books,
         'total_revenue': total_revenue,
         'monthly_revenue': monthly_revenue,
+        'sales_revenue': sales_revenue,
+        'monthly_sales_revenue': monthly_sales_revenue,
+        'rental_revenue': rental_revenue,
+        'monthly_rental_revenue': monthly_rental_revenue,
         'recent_orders': recent_orders,
         'top_books': top_books,
         'pending_reviews': pending_reviews,

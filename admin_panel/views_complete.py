@@ -83,7 +83,9 @@ def dashboard(request):
 
     # Revenue Statistics
 
-    total_revenue = Order.objects.filter(
+    # Sales Revenue (from book sales/orders)
+
+    sales_revenue = Order.objects.filter(
 
         payment_status='paid'
 
@@ -91,7 +93,7 @@ def dashboard(request):
 
     
 
-    monthly_revenue = Order.objects.filter(
+    monthly_sales_revenue = Order.objects.filter(
 
         payment_status='paid',
 
@@ -108,6 +110,34 @@ def dashboard(request):
         created_at__gte=last_7_days
 
     ).aggregate(total=Sum('total'))['total'] or 0
+
+    
+
+    # Rental Revenue (from book rentals)
+
+    rental_revenue = BookRental.objects.filter(
+
+        payment_status='paid'
+
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+    
+
+    monthly_rental_revenue = BookRental.objects.filter(
+
+        payment_status='paid',
+
+        rental_date__gte=last_30_days
+
+    ).aggregate(total=Sum('total_amount'))['total'] or 0
+
+    
+
+    # Total Revenue (sales + rentals)
+
+    total_revenue = sales_revenue + rental_revenue
+
+    monthly_revenue = monthly_sales_revenue + monthly_rental_revenue
 
     
 
@@ -244,6 +274,14 @@ def dashboard(request):
         'monthly_revenue': monthly_revenue,
 
         'weekly_revenue': weekly_revenue,
+
+        'sales_revenue': sales_revenue,
+
+        'monthly_sales_revenue': monthly_sales_revenue,
+
+        'rental_revenue': rental_revenue,
+
+        'monthly_rental_revenue': monthly_rental_revenue,
 
         'total_customers': total_customers,
 

@@ -3,6 +3,11 @@
 
 {% block title %}Rental Plans - BookStore{% endblock %}
 
+{% block extra_css %}
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+{% endblock %}
+
 {% block content %}
 <div class="container my-5">
     <!-- Page Header -->
@@ -49,4 +54,79 @@
         {% endfor %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    // Show welcome modal on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        Swal.fire({
+            title: '<strong>📚 Offline Library Rental Service</strong>',
+            html: `
+                <div class="text-start">
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        <strong>Important:</strong> This rental service is only available for people in the library center area. All rentals and returns must be done in-person at our physical library location.
+                    </div>
+                    
+                    <h5 class="text-primary mb-3">How Offline Book Rental Works:</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Visit Our Library:</strong> Come to our offline library center in person
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Choose a Plan:</strong> Select the rental duration that suits you
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Pick Your Book:</strong> Browse and select books from our collection
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Pay at Counter:</strong> Pay rental fee + refundable security deposit
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Take Book Home:</strong> Enjoy reading for your selected period
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Return to Library:</strong> Bring the book back to our center before due date
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>Get Deposit Back:</strong> Receive your full security deposit refund
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-info mb-2">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Note:</strong> You can renew up to 3 times by visiting the library center
+                    </div>
+                    
+                    <div class="alert alert-danger mb-0">
+                        <i class="fas fa-clock me-2"></i>
+                        <strong>Late Fee:</strong> ৳10 per day after the due date
+                    </div>
+                </div>
+            `,
+            icon: 'info',
+            iconColor: '#0d6efd',
+            confirmButtonText: '<i class="fas fa-book-reader"></i> View Rental Plans',
+            confirmButtonColor: '#0d6efd',
+            width: '650px',
+            showClass: {
+                popup: 'animate__animated animate__fadeInDown'
+            },
+            hideClass: {
+                popup: 'animate__animated animate__fadeOutUp'
+            }
+        });
+    });
+</script>
 {% endblock %}

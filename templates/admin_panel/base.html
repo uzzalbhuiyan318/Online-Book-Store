@@ -165,37 +165,6 @@
                     </a>
                 </div>
                 
-                <!-- Reports -->
-                <div class="admin-nav-section">
-                    <div class="admin-nav-section-title">Reports</div>
-                    <a href="{% url 'admin_panel:sales_report' %}" class="admin-nav-item {% if 'sales' in request.path %}active{% endif %}">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Sales Report</span>
-                    </a>
-                    <a href="{% url 'admin_panel:customer_report' %}" class="admin-nav-item {% if 'customer' in request.path and 'report' in request.path %}active{% endif %}">
-                        <i class="fas fa-users"></i>
-                        <span>Customer Report</span>
-                    </a>
-                    <a href="{% url 'admin_panel:inventory_report' %}" class="admin-nav-item {% if 'inventory' in request.path %}active{% endif %}">
-                        <i class="fas fa-boxes"></i>
-                        <span>Inventory Report</span>
-                    </a>
-                </div>
-                
-                <!-- System -->
-                <div class="admin-nav-section">
-                    <div class="admin-nav-section-title">System</div>
-                    <a href="/admin/" class="admin-nav-item" target="_blank">
-                        <i class="fas fa-cogs"></i>
-                        <span>Django Admin</span>
-                        <i class="fas fa-external-link-alt ms-auto"></i>
-                    </a>
-                    <a href="{% url 'books:home' %}" class="admin-nav-item">
-                        <i class="fas fa-home"></i>
-                        <span>View Site</span>
-                        <i class="fas fa-external-link-alt ms-auto"></i>
-                    </a>
-                </div>
             </nav>
         </aside>
         
@@ -220,10 +189,20 @@
                     <div class="admin-header-actions">
                         <div class="admin-header-user">
                             <div class="admin-user-avatar">
-                                {{ request.user.email|slice:":1"|upper }}
+                                {% if request.user.full_name %}
+                                    {{ request.user.full_name|slice:":1"|upper }}
+                                {% else %}
+                                    {{ request.user.email|slice:":1"|upper }}
+                                {% endif %}
                             </div>
                             <div class="admin-user-info">
-                                <div class="admin-user-name">{{ request.user.full_name|default:request.user.email }}</div>
+                                <div class="admin-user-name">
+                                    {% if request.user.full_name %}
+                                        {{ request.user.full_name }}
+                                    {% else %}
+                                        {{ request.user.email }}
+                                    {% endif %}
+                                </div>
                                 <div class="admin-user-role">Administrator</div>
                             </div>
                         </div>

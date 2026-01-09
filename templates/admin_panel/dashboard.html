@@ -6,7 +6,7 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<!-- Statistics Cards -->
+<!-- Statistics Cards - First Row -->
 <div class="admin-stats-grid">
     <div class="admin-stat-card">
         <div class="admin-stat-header">
@@ -15,7 +15,7 @@
                 <div class="stat-value">৳{{ total_revenue|floatformat:2|intcomma }}</div>
             </div>
             <div class="admin-stat-icon">
-                <i class="fas fa-dollar-sign"></i>
+                <i class="fas fa-chart-line"></i>
             </div>
         </div>
         <div class="admin-stat-footer">
@@ -27,10 +27,42 @@
     <div class="admin-stat-card success">
         <div class="admin-stat-header">
             <div class="admin-stat-content">
+                <h6>Sales Revenue</h6>
+                <div class="stat-value">৳{{ sales_revenue|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon success">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+        </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-arrow-up stat-increase"></i>
+            Monthly: ৳{{ monthly_sales_revenue|floatformat:2|intcomma }}
+        </div>
+    </div>
+    
+    <div class="admin-stat-card info">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
+                <h6>Rental Revenue</h6>
+                <div class="stat-value">৳{{ rental_revenue|floatformat:2|intcomma }}</div>
+            </div>
+            <div class="admin-stat-icon info">
+                <i class="fas fa-book-reader"></i>
+            </div>
+        </div>
+        <div class="admin-stat-footer">
+            <i class="fas fa-arrow-up stat-increase"></i>
+            Monthly: ৳{{ monthly_rental_revenue|floatformat:2|intcomma }}
+        </div>
+    </div>
+    
+    <div class="admin-stat-card warning">
+        <div class="admin-stat-header">
+            <div class="admin-stat-content">
                 <h6>Total Orders</h6>
                 <div class="stat-value">{{ total_orders|intcomma }}</div>
             </div>
-            <div class="admin-stat-icon success">
+            <div class="admin-stat-icon warning">
                 <i class="fas fa-shopping-cart"></i>
             </div>
         </div>
@@ -39,42 +71,46 @@
             Pending: {{ pending_orders }}
         </div>
     </div>
-    
-    <div class="admin-stat-card info">
-        <div class="admin-stat-header">
-            <div class="admin-stat-content">
-                <h6>Total Books</h6>
-                <div class="stat-value">{{ total_books|intcomma }}</div>
-            </div>
-            <div class="admin-stat-icon info">
-                <i class="fas fa-book"></i>
-            </div>
-        </div>
-        <div class="admin-stat-footer">
-            <i class="fas fa-exclamation-triangle text-warning"></i>
-            Low Stock: {{ low_stock_books }}
-        </div>
-    </div>
-    
-    <div class="admin-stat-card warning">
-        <div class="admin-stat-header">
-            <div class="admin-stat-content">
-                <h6>Total Customers</h6>
-                <div class="stat-value">{{ total_customers|intcomma }}</div>
-            </div>
-            <div class="admin-stat-icon warning">
-                <i class="fas fa-users"></i>
-            </div>
-        </div>
-        <div class="admin-stat-footer">
-            <i class="fas fa-user-plus stat-increase"></i>
-            New this month: {{ new_customers_month }}
-        </div>
-    </div>
 </div>
 
-<!-- Additional Stats Row -->
+<!-- Statistics Cards - Second Row -->
 <div class="row mb-4">
+    <div class="col-md-3">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Total Books</h6>
+                    <div class="stat-value">{{ total_books|intcomma }}</div>
+                </div>
+                <div class="admin-stat-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+            </div>
+            <div class="admin-stat-footer">
+                <i class="fas fa-exclamation-triangle text-warning"></i>
+                Low Stock: {{ low_stock_books }}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="admin-stat-card success">
+            <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                    <h6>Total Customers</h6>
+                    <div class="stat-value">{{ total_customers|intcomma }}</div>
+                </div>
+                <div class="admin-stat-icon success">
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="admin-stat-footer">
+                <i class="fas fa-user-plus stat-increase"></i>
+                New this month: {{ new_customers_month }}
+            </div>
+        </div>
+    </div>
+    
     <div class="col-md-3">
         <div class="admin-stat-card danger">
             <div class="admin-stat-header">
@@ -93,52 +129,18 @@
     </div>
     
     <div class="col-md-3">
-        <div class="admin-stat-card">
-            <div class="admin-stat-header">
-                <div class="admin-stat-content">
-                    <h6>Support Tickets</h6>
-                    <div class="stat-value">{{ open_conversations }}</div>
-                </div>
-                <div class="admin-stat-icon">
-                    <i class="fas fa-headset"></i>
-                </div>
-            </div>
-            <div class="admin-stat-footer">
-                Pending: {{ pending_conversations }}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="admin-stat-card success">
+        <div class="admin-stat-card warning">
             <div class="admin-stat-header">
                 <div class="admin-stat-content">
                     <h6>Reviews</h6>
                     <div class="stat-value">{{ total_reviews }}</div>
                 </div>
-                <div class="admin-stat-icon success">
+                <div class="admin-stat-icon warning">
                     <i class="fas fa-star"></i>
                 </div>
             </div>
             <div class="admin-stat-footer">
                 Pending Approval: {{ pending_reviews }}
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="admin-stat-card warning">
-            <div class="admin-stat-header">
-                <div class="admin-stat-content">
-                    <h6>Out of Stock</h6>
-                    <div class="stat-value">{{ out_of_stock }}</div>
-                </div>
-                <div class="admin-stat-icon warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-            </div>
-            <div class="admin-stat-footer">
-                Needs Restocking
             </div>
         </div>
     </div>
