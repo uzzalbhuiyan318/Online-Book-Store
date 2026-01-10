@@ -155,10 +155,6 @@
                         <i class="fas fa-user-tie"></i>
                         <span>Agents</span>
                     </a>
-                    <a href="{% url 'admin_panel:quick_reply_list' %}" class="admin-nav-item {% if 'quick-reply' in request.path %}active{% endif %}">
-                        <i class="fas fa-reply"></i>
-                        <span>Quick Replies</span>
-                    </a>
                     <a href="{% url 'admin_panel:chat_settings' %}" class="admin-nav-item {% if 'chat-settings' in request.path %}active{% endif %}">
                         <i class="fas fa-cog"></i>
                         <span>Chat Settings</span>
