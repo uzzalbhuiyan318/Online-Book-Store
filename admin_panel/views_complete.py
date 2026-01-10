@@ -219,11 +219,25 @@ def dashboard(request):
 
         date = today - timedelta(days=i)
 
+        # Create start and end of day in local timezone to properly filter orders
+
+        start_of_day = timezone.datetime.combine(date, timezone.datetime.min.time())
+
+        end_of_day = timezone.datetime.combine(date, timezone.datetime.max.time())
+
+        start_of_day = timezone.make_aware(start_of_day)
+
+        end_of_day = timezone.make_aware(end_of_day)
+
+        
+
         daily_sales = Order.objects.filter(
 
-            payment_status='paid',
+            Q(payment_status='paid') | Q(status='delivered'),
 
-            created_at__date=date
+            created_at__gte=start_of_day,
+
+            created_at__lte=end_of_day
 
         ).aggregate(total=Sum('total'))['total'] or 0
 
