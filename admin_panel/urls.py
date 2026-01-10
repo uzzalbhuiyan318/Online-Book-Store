@@ -59,8 +59,6 @@ urlpatterns = [
     path('rentals/plans/<int:pk>/toggle-status/', views.rental_plan_toggle_status, name='rental_plan_toggle_status'),
     path('rentals/settings/', views.rental_settings, name='rental_settings'),
     path('rentals/bulk-action/', views.rental_bulk_action, name='rental_bulk_action'),
-    path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
-    path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
     path('rentals/history/', views.rental_status_history_list, name='rental_status_history_list'),
     
     # Rental Feedback Management
@@ -73,6 +71,10 @@ urlpatterns = [
     # Rental Notification Management
     path('rentals/notifications/', views.rental_notification_list, name='rental_notification_list'),
     path('rentals/notifications/bulk-action/', views.rental_notification_bulk_action, name='rental_notification_bulk_action'),
+    
+    # Rental Detail (must be last to avoid catching specific URLs)
+    path('rentals/<str:rental_number>/', views.rental_detail, name='rental_detail'),
+    path('rentals/<str:rental_number>/update-status/', views.rental_update_status, name='rental_update_status'),
     
     # Banner Management
     path('banners/', views.banner_list, name='banner_list'),
