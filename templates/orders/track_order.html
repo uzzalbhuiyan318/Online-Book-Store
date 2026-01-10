@@ -72,9 +72,9 @@
                         </div>
 
                         <!-- Order Confirmed -->
-                        <div class="timeline-item {% if order.status in 'confirmed,processing,shipped,delivered' %}completed{% endif %}">
+                        <div class="timeline-item {% if order.status == 'confirmed' or order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}">
                             <div class="timeline-marker">
-                                <i class="fas {% if order.status in 'confirmed,processing,shipped,delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                                <i class="fas {% if order.status == 'confirmed' or order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6 class="mb-1">Order Confirmed</h6>
@@ -86,9 +86,9 @@
                         </div>
 
                         <!-- Processing -->
-                        <div class="timeline-item {% if order.status in 'processing,shipped,delivered' %}completed{% endif %}">
+                        <div class="timeline-item {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}">
                             <div class="timeline-marker">
-                                <i class="fas {% if order.status in 'processing,shipped,delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                                <i class="fas {% if order.status == 'processing' or order.status == 'shipped' or order.status == 'delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6 class="mb-1">Processing</h6>
@@ -100,9 +100,9 @@
                         </div>
 
                         <!-- Shipped -->
-                        <div class="timeline-item {% if order.status in 'shipped,delivered' %}completed{% endif %}">
+                        <div class="timeline-item {% if order.status == 'shipped' or order.status == 'delivered' %}completed{% endif %}">
                             <div class="timeline-marker">
-                                <i class="fas {% if order.status in 'shipped,delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
+                                <i class="fas {% if order.status == 'shipped' or order.status == 'delivered' %}fa-check-circle{% else %}fa-circle{% endif %}"></i>
                             </div>
                             <div class="timeline-content">
                                 <h6 class="mb-1">Shipped</h6>

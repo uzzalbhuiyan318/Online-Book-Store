@@ -141,7 +141,7 @@
             </div>
 
             <!-- Additional Information -->
-            <div class="card mb-4 shadow-sm">
+            {% comment %} <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title"><i class="fas fa-info-circle"></i> What's Next?</h5>
                     <ul class="list-unstyled">
@@ -165,7 +165,7 @@
                         {% endif %}
                     </ul>
                 </div>
-            </div>
+            </div> {% endcomment %}
 
             <!-- Action Buttons -->
             <div class="row g-3">
@@ -174,11 +174,11 @@
                         <i class="fas fa-eye"></i> View Order Details
                     </a>
                 </div>
-                <div class="col-md-4">
+                {% comment %} <div class="col-md-4">
                     <a href="{% url 'orders:track_order' order.order_number %}" class="btn btn-info w-100">
                         <i class="fas fa-truck"></i> Track Order
                     </a>
-                </div>
+                </div> {% endcomment %}
                 <div class="col-md-4">
                     <a href="{% url 'books:book_list' %}" class="btn btn-outline-primary w-100">
                         <i class="fas fa-shopping-cart"></i> Continue Shopping
@@ -187,13 +187,13 @@
             </div>
 
             <!-- Help Section -->
-            <div class="alert alert-info mt-4">
+            {% comment %} <div class="alert alert-info mt-4">
                 <h6 class="alert-heading"><i class="fas fa-question-circle"></i> Need Help?</h6>
                 <p class="mb-0">
                     If you have any questions about your order, please contact us at 
                     <strong>support@bookstore.com</strong> or call <strong>+880 1234-567890</strong>
                 </p>
-            </div>
+            </div> {% endcomment %}
         </div>
     </div>
 </div>

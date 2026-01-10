@@ -74,12 +74,9 @@ class OrderStatusForm(forms.ModelForm):
     
     class Meta:
         model = Order
-        fields = ['status', 'payment_status', 'tracking_number', 'admin_notes']
+        fields = ['status']
         widgets = {
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'payment_status': forms.Select(attrs={'class': 'form-select'}),
-            'tracking_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter tracking number'}),
-            'admin_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 

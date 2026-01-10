@@ -1115,3 +1115,42 @@ def inventory_report(request):
         'total_value': total_value,
     }
     return render(request, 'admin_panel/inventory_report.html', context)
+
+
+@staff_member_required
+def order_update_status(request, order_number):
+    """Update order status"""
+    order = get_object_or_404(Order, order_number=order_number)
+    
+    if request.method == 'POST':
+        form = OrderStatusForm(request.POST, instance=order)
+        if form.is_valid():
+            old_status = order.status
+            order = form.save(commit=False)
+            
+            # Update timestamps
+            if order.status == 'confirmed' and not order.confirmed_at:
+                order.confirmed_at = timezone.now()
+            elif order.status == 'shipped' and not order.shipped_at:
+                order.shipped_at = timezone.now()
+            elif order.status == 'delivered' and not order.delivered_at:
+                order.delivered_at = timezone.now()
+            
+            order.save()
+            
+            # Create status history
+            notes = form.cleaned_data.get('notes', '')
+            OrderStatusHistory.objects.create(
+                order=order,
+                status=order.status,
+                notes=notes,
+                changed_by=request.user
+            )
+            
+            messages.success(request, f'Order status updated to {order.get_status_display()}')
+            return redirect('admin_panel:order_detail', order_number=order_number)
+    else:
+        form = OrderStatusForm(instance=order)
+    
+    context = {'form': form, 'order': order}
+    return render(request, 'admin_panel/order_status_form.html', context)

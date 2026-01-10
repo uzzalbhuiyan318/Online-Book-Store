@@ -84,31 +84,23 @@ def dashboard(request):
     # Revenue Statistics
 
     # Sales Revenue (from book sales/orders)
-
+    # Include both 'paid' orders and 'delivered' orders (delivered implies paid)
     sales_revenue = Order.objects.filter(
-
-        payment_status='paid'
-
+        Q(payment_status='paid') | Q(status='delivered')
     ).aggregate(total=Sum('total'))['total'] or 0
 
     
 
     monthly_sales_revenue = Order.objects.filter(
-
-        payment_status='paid',
-
+        Q(payment_status='paid') | Q(status='delivered'),
         created_at__gte=last_30_days
-
     ).aggregate(total=Sum('total'))['total'] or 0
 
     
 
     weekly_revenue = Order.objects.filter(
-
-        payment_status='paid',
-
+        Q(payment_status='paid') | Q(status='delivered'),
         created_at__gte=last_7_days
-
     ).aggregate(total=Sum('total'))['total'] or 0
 
     
@@ -1353,7 +1345,7 @@ def order_update_status(request, order_number):
 
             
 
-            # Update timestamps
+            # Update timestamps and payment status
 
             if order.status == 'confirmed' and not order.confirmed_at:
 
@@ -1366,6 +1358,10 @@ def order_update_status(request, order_number):
             elif order.status == 'delivered' and not order.delivered_at:
 
                 order.delivered_at = timezone.now()
+                
+                # Auto-set payment status to 'paid' when delivered
+                if order.payment_status != 'paid':
+                    order.payment_status = 'paid'
 
             
 
@@ -1478,8 +1474,17 @@ def customer_list(request):
 def customer_detail(request, pk):
 
     """Customer Detail"""
-
-    customer = get_object_or_404(User, pk=pk, is_staff=False)
+    
+    try:
+        user = get_object_or_404(User, pk=pk)
+        if user.is_staff:
+            messages.error(request, f'User {user.email} is a staff member, not a customer.')
+            return redirect('admin_panel:customer_list')
+        
+        customer = user
+    except User.DoesNotExist:
+        messages.error(request, 'Customer not found.')
+        return redirect('admin_panel:customer_list')
 
     orders = Order.objects.filter(user=customer).order_by('-created_at')[:10]
 
