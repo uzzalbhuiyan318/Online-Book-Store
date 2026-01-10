@@ -171,18 +171,23 @@
                                         <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
                                         <input type="tel" class="form-control" id="phone" name="phone" {% if not addresses %}required{% endif %}>
                                     </div>
-                                    <div class="col-12">
-                                        <label for="address_line1" class="form-label">Address <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="address_line1" name="address_line1" {% if not addresses %}required{% endif %}>
+                                    
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="id_delivery_city">City <span class="text-danger">*</span></label>
+                                        {{ form.delivery_city }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="id_delivery_area">Area <span class="text-danger">*</span></label>
+                                        {{ form.delivery_area }}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label" for="id_delivery_zone">Zone <span class="text-danger">*</span></label>
+                                        {{ form.delivery_zone }}
                                     </div>
                                     
-                                    <div class="col-md-6">
-                                        <label for="city" class="form-label">City <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="city" name="city" {% if not addresses %}required{% endif %}>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="state" class="form-label">State/Division <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="state" name="state" {% if not addresses %}required{% endif %}>
+                                    <div class="col-12">
+                                        <label for="address_line1" class="form-label">Full Address <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="address_line1" name="address_line1" placeholder="Enter full address" {% if not addresses %}required{% endif %}>
                                     </div>
                                 </div>
                             </div>
@@ -923,6 +928,88 @@ document.addEventListener('DOMContentLoaded', function() {
             if (preCity) populateAreas(preCity, preArea);
             if (preArea) populateZones(preArea, preZone);
         } catch (e) { console.warn('Error initializing location selects', e); }
+    });
+})();
+
+// Linked selects for City -> Area -> Zone (normal delivery address)
+(function() {
+    function getEl(id) { return document.getElementById(id); }
+
+    const deliveryCitySelect = getEl('id_delivery_city');
+    const deliveryAreaSelect = getEl('id_delivery_area');
+    const deliveryZoneSelect = getEl('id_delivery_zone');
+
+    function clearSelect(sel) { if (!sel) return; sel.innerHTML = ''; }
+    function addOption(sel, value, label, selected) {
+        const opt = document.createElement('option'); opt.value = value; opt.textContent = label; if (selected) opt.selected = true; sel.appendChild(opt);
+    }
+
+    async function fetchAreas(cityId) {
+        const url = new URL("{% url 'orders:gift_areas' %}", window.location.origin);
+        url.searchParams.set('city_id', cityId);
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        return res.ok ? await res.json() : { areas: [] };
+    }
+
+    async function fetchZones(areaId) {
+        const url = new URL("{% url 'orders:gift_zones' %}", window.location.origin);
+        url.searchParams.set('area_id', areaId);
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        return res.ok ? await res.json() : { zones: [] };
+    }
+
+    async function populateDeliveryAreas(cityId, preserveArea) {
+        if (!deliveryAreaSelect) return;
+        clearSelect(deliveryAreaSelect);
+        addOption(deliveryAreaSelect, '', 'Select Area');
+        try {
+            const data = await fetchAreas(cityId);
+            (data.areas || []).forEach(a => addOption(deliveryAreaSelect, a.id, a.name, String(a.id) === String(preserveArea)));
+            deliveryAreaSelect.dispatchEvent(new Event('change'));
+        } catch (e) { console.warn('Failed to load areas', e); }
+    }
+
+    async function populateDeliveryZones(areaId, preserveZone) {
+        if (!deliveryZoneSelect) return;
+        clearSelect(deliveryZoneSelect);
+        addOption(deliveryZoneSelect, '', 'Select Zone');
+        try {
+            const data = await fetchZones(areaId);
+            (data.zones || []).forEach(z => addOption(deliveryZoneSelect, z.id, z.name, String(z.id) === String(preserveZone)));
+        } catch (e) { console.warn('Failed to load zones', e); }
+    }
+
+    if (deliveryCitySelect) {
+        deliveryCitySelect.addEventListener('change', function() {
+            const cityId = this.value || '';
+            populateDeliveryAreas(cityId);
+            clearSelect(deliveryZoneSelect); addOption(deliveryZoneSelect, '', 'Select Zone');
+            
+            // Update shipping fee based on selected city
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const cityName = selectedOption.text;
+                updateShippingFeeDisplay(cityName);
+            }
+        });
+    }
+
+    if (deliveryAreaSelect) {
+        deliveryAreaSelect.addEventListener('change', function() {
+            const areaId = this.value || '';
+            populateDeliveryZones(areaId);
+        });
+    }
+
+    // Initialize selects if values present
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const preCity = deliveryCitySelect ? deliveryCitySelect.value : '';
+            const preArea = deliveryAreaSelect ? deliveryAreaSelect.value : '';
+            const preZone = deliveryZoneSelect ? deliveryZoneSelect.value : '';
+            if (preCity) populateDeliveryAreas(preCity, preArea);
+            if (preArea) populateDeliveryZones(preArea, preZone);
+        } catch (e) { console.warn('Error initializing delivery location selects', e); }
     });
 })();
 // Update cart quantity via AJAX

@@ -45,20 +45,36 @@ class CheckoutForm(forms.Form):
         required=False,
         widget=forms.TextInput(attrs={'class': 'form-control'})
     )
+    
+    # City/Area/Zone dropdowns for delivery address
+    delivery_city = forms.IntegerField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_delivery_city'})
+    )
+    delivery_area = forms.IntegerField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_delivery_area'})
+    )
+    delivery_zone = forms.IntegerField(
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_delivery_zone'})
+    )
+    
+    # Keep old fields for backward compatibility (hidden)
     city = forms.CharField(
         max_length=100,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.HiddenInput()
     )
     state = forms.CharField(
         max_length=100,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.HiddenInput()
     )
     postal_code = forms.CharField(
         max_length=20,
         required=False,
-        widget=forms.TextInput(attrs={'class': 'form-control'})
+        widget=forms.HiddenInput()
     )
     
     payment_method = forms.ChoiceField(
@@ -199,6 +215,27 @@ class CheckoutForm(forms.Form):
         if user:
             self.fields['address'].queryset = Address.objects.filter(user=user)
             self.fields['gift_address'].queryset = Address.objects.filter(user=user)
+        
+        # Populate delivery_city with all cities from database
+        city_choices = [('', 'Select City')]
+        cities = GiftCity.objects.all().order_by('name')
+        for city in cities:
+            city_choices.append((city.id, city.name))
+        self.fields['delivery_city'].widget.choices = city_choices
+        
+        # Populate delivery_area with all areas from database
+        area_choices = [('', 'Select Area')]
+        areas = GiftArea.objects.all().order_by('name')
+        for area in areas:
+            area_choices.append((area.id, area.name))
+        self.fields['delivery_area'].widget.choices = area_choices
+        
+        # Populate delivery_zone with all zones from database
+        zone_choices = [('', 'Select Zone')]
+        zones = GiftZone.objects.all().order_by('name')
+        for zone in zones:
+            zone_choices.append((zone.id, zone.name))
+        self.fields['delivery_zone'].widget.choices = zone_choices
         
         # Populate gift_to_city with all cities from database
         city_choices = [('', 'Select City')]
