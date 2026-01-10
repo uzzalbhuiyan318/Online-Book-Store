@@ -176,17 +176,13 @@
                                         <input type="text" class="form-control" id="address_line1" name="address_line1" {% if not addresses %}required{% endif %}>
                                     </div>
                                     
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label for="city" class="form-label">City <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="city" name="city" {% if not addresses %}required{% endif %}>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <label for="state" class="form-label">State/Division <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="state" name="state" {% if not addresses %}required{% endif %}>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="postal_code" class="form-label">Postal Code <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="postal_code" name="postal_code" {% if not addresses %}required{% endif %}>
                                     </div>
                                 </div>
                             </div>
@@ -1250,7 +1246,8 @@ function showToast(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     const checkoutForm = document.getElementById('checkout-form');
     
-    // Add real-time validation for gift fields
+    // Add real-time validation for all fields (regular order and gift)
+    const regularPhone = document.getElementById('phone');
     const giftFromName = document.getElementById('gift_from_name');
     const giftFromPhone = document.getElementById('gift_from_phone');
     const giftToName = document.getElementById('gift_to_name');
@@ -1268,6 +1265,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Add blur event listeners for real-time validation
+    
+    // Regular order phone validation
+    if (regularPhone) {
+        regularPhone.addEventListener('blur', function() {
+            const field = this;
+            const value = this.value.trim();
+            if (value && !validatePhone(value)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid Phone Number',
+                    text: 'Phone number must be exactly 11 digits',
+                    confirmButtonColor: '#81b197'
+                }).then(() => {
+                    field.focus();
+                });
+            }
+        });
+    }
+    
     if (giftFromName) {
         giftFromName.addEventListener('blur', function() {
             const field = this;
@@ -1340,6 +1356,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
             const isGiftChecked = document.getElementById('is_gift')?.checked;
+            
+            // Validate regular order phone (when not a gift order or when new address is being used)
+            if (!isGiftChecked) {
+                const phone = regularPhone?.value.trim();
+                if (phone && !validatePhone(phone)) {
+                    e.preventDefault();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Invalid Phone Number',
+                        text: 'Phone number must be exactly 11 digits',
+                        confirmButtonColor: '#81b197'
+                    });
+                    regularPhone.focus();
+                    return false;
+                }
+            }
             
             if (isGiftChecked) {
                 // Validate gift from name
