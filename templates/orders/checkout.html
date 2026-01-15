@@ -785,6 +785,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Also toggle delivery address visibility when gift mode is toggled
     const deliveryCard = document.getElementById('delivery-address-card');
     const orderAsGiftBtn = document.getElementById('order_as_gift_btn');
+    const placeOrderBtn = document.querySelector('.btn-proceed-checkout');
+    
     if (isGiftCheckbox && deliveryCard) {
         isGiftCheckbox.addEventListener('change', function() {
             const deliveryAddressFields = deliveryCard.querySelectorAll('input[required], select[required]');
@@ -809,6 +811,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (sslcommerzPayment) {
                     sslcommerzPayment.checked = true;
                 }
+                
+                // Change button text to "Place Order as Gift" and hide "Order as Gift" button
+                if (placeOrderBtn) {
+                    placeOrderBtn.innerHTML = '<i class="fas fa-gift"></i> Place Order as Gift';
+                }
+                if (orderAsGiftBtn && orderAsGiftBtn.parentElement) {
+                    orderAsGiftBtn.parentElement.style.display = 'none';
+                }
+                
+                // Add required validation to gift fields
+                const giftRequiredFields = [
+                    document.getElementById('gift_from_name'),
+                    document.getElementById('gift_from_phone'),
+                    document.getElementById('gift_to_name'),
+                    document.getElementById('gift_to_phone'),
+                    document.getElementById('id_gift_to_city'),
+                    document.getElementById('id_gift_to_area'),
+                    document.getElementById('id_gift_to_zone'),
+                    document.getElementById('id_gift_to_address_line1')
+                ];
+                giftRequiredFields.forEach(field => {
+                    if (field) field.setAttribute('required', 'required');
+                });
+                
             } else {
                 deliveryCard.style.display = '';
                 // Restore required on delivery address fields when gift is unselected
@@ -824,6 +850,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     codPayment.parentElement.style.display = '';
                     codPayment.checked = true;
                 }
+                
+                // Change button text back to "Place Order" and show "Order as Gift" button
+                if (placeOrderBtn) {
+                    placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i> Place Order';
+                }
+                if (orderAsGiftBtn && orderAsGiftBtn.parentElement) {
+                    orderAsGiftBtn.parentElement.style.display = '';
+                }
+                
+                // Remove required validation from gift fields
+                const giftFields = document.querySelectorAll('#gift-details input, #gift-details select, #gift-details textarea');
+                giftFields.forEach(field => field.removeAttribute('required'));
             }
         });
     }
