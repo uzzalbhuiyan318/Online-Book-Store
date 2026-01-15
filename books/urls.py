@@ -12,6 +12,11 @@ urlpatterns = [
     # Language switcher
     path('set-language/', set_language_view, name='set_language'),
     
+    # Browse pages
+    path('categories/', views.all_categories, name='all_categories'),
+    path('authors/', views.all_authors, name='all_authors'),
+    path('publishers/', views.all_publishers, name='all_publishers'),
+    
     # Books (Using str instead of slug to support Bangla Unicode characters)
     path('books/', views.book_list, name='book_list'),
     path('books/<str:slug>/', views.book_detail, name='book_detail'),

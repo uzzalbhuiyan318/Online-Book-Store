@@ -597,3 +597,80 @@ def add_review(request, slug):
         'book': book,
     }
     return render(request, 'books/add_review.html', context)
+
+
+def all_categories(request):
+    """View to display all categories with pagination"""
+    categories_list = Category.objects.filter(is_active=True).annotate(
+        book_count=Count('books', filter=Q(books__is_active=True))
+    ).order_by('name')
+    
+    # Pagination
+    paginator = Paginator(categories_list, 24)  # 24 categories per page
+    page_number = request.GET.get('page')
+    categories = paginator.get_page(page_number)
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories_list.count(),
+    }
+    return render(request, 'books/all_categories.html', context)
+
+
+def all_authors(request):
+    """View to display all authors with pagination"""
+    # Get unique authors with book count
+    authors_list = Book.objects.filter(is_active=True).values('author', 'author_bn').annotate(
+        book_count=Count('id')
+    ).order_by('author')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        authors_list = authors_list.filter(
+            Q(author__icontains=search_query) | 
+            Q(author_bn__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(authors_list, 30)  # 30 authors per page
+    page_number = request.GET.get('page')
+    authors = paginator.get_page(page_number)
+    
+    context = {
+        'authors': authors,
+        'total_authors': authors_list.count(),
+        'search_query': search_query,
+    }
+    return render(request, 'books/all_authors.html', context)
+
+
+def all_publishers(request):
+    """View to display all publishers with pagination"""
+    # Get unique publishers with book count
+    publishers_list = Book.objects.filter(
+        is_active=True, 
+        publisher__isnull=False
+    ).exclude(publisher='').values('publisher', 'publisher_bn').annotate(
+        book_count=Count('id')
+    ).order_by('publisher')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        publishers_list = publishers_list.filter(
+            Q(publisher__icontains=search_query) | 
+            Q(publisher_bn__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(publishers_list, 30)  # 30 publishers per page
+    page_number = request.GET.get('page')
+    publishers = paginator.get_page(page_number)
+    
+    context = {
+        'publishers': publishers,
+        'total_publishers': publishers_list.count(),
+        'search_query': search_query,
+    }
+    return render(request, 'books/all_publishers.html', context)

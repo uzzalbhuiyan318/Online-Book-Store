@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}All Categories - BookStore{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'books:home' %}">{% trans "Home" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "All Categories" %}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-3">
+                <i class="fas fa-layer-group text-primary"></i> 
+                {% trans "All Book Categories" %}
+            </h1>
+            <p class="text-muted">
+                {% blocktrans count counter=total_categories %}
+                    Browse {{ counter }} category
+                {% plural %}
+                    Browse {{ counter }} categories
+                {% endblocktrans %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Categories Grid -->
+    <div class="row g-4">
+        {% for category in categories %}
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="{% url 'books:category_books' category.slug %}" class="text-decoration-none">
+                <div class="category-card h-100">
+                    {% if category.image %}
+                    <div class="category-card-image">
+                        <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-fluid">
+                    </div>
+                    {% else %}
+                    <div class="category-card-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    {% endif %}
+                    <div class="category-card-body">
+                        <h6 class="category-card-title">{{ category.name }}</h6>
+                        <p class="category-card-count">
+                            <i class="fas fa-book text-primary"></i>
+                            {{ category.book_count }} {% if category.book_count == 1 %}book{% else %}books{% endif %}
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> {% trans "No categories found." %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if categories.has_other_pages %}
+    <div class="row mt-5">
+        <div class="col-12">
+            {% include 'includes/pagination.html' with page_obj=categories %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.category-card {
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.category-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    transform: translateY(-5px);
+}
+
+.category-card-image {
+    width: 100%;
+    height: 120px;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.category-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.category-card-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--primary-color), #1a4428);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.category-card-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.category-card-body {
+    width: 100%;
+}
+
+.category-card-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.category-card-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.category-card:hover .category-card-title {
+    color: var(--primary-color);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}All Authors - BookStore{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'books:home' %}">{% trans "Home" %}</a></li>
+                    <li class="breadcrumb-item active">{% trans "All Authors" %}</li>
+                </ol>
+            </nav>
+            <h1 class="mb-3">
+                <i class="fas fa-user-edit text-info"></i> 
+                {% trans "All Book Authors" %}
+            </h1>
+            <p class="text-muted">
+                {% blocktrans count counter=total_authors %}
+                    Browse {{ counter }} author
+                {% plural %}
+                    Browse {{ counter }} authors
+                {% endblocktrans %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Search Box -->
+    <div class="row mb-4">
+        <div class="col-md-6 mx-auto">
+            <form method="get" class="search-box">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" 
+                           placeholder="{% trans 'Search authors...' %}" 
+                           value="{{ search_query }}">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-search"></i> {% trans "Search" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Authors List -->
+    <div class="row g-3">
+        {% for author in authors %}
+        <div class="col-md-6 col-lg-4">
+            <a href="{% url 'books:book_list' %}?author={{ author.author|urlencode }}" class="text-decoration-none">
+                <div class="author-item">
+                    <div class="author-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="author-info">
+                        <h6 class="author-name">{{ author.author }}</h6>
+                        {% if author.author_bn and author.author_bn != author.author %}
+                        <p class="author-name-bn">{{ author.author_bn }}</p>
+                        {% endif %}
+                        <p class="author-book-count">
+                            <i class="fas fa-book text-info"></i>
+                            {{ author.book_count }} {% if author.book_count == 1 %}book{% else %}books{% endif %}
+                        </p>
+                    </div>
+                    <div class="author-arrow">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle"></i> 
+                {% if search_query %}
+                    {% trans "No authors found matching your search." %}
+                {% else %}
+                    {% trans "No authors found." %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if authors.has_other_pages %}
+    <div class="row mt-5">
+        <div class="col-12">
+            {% include 'includes/pagination.html' with page_obj=authors %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.search-box .input-group {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 50px;
+    overflow: hidden;
+}
+
+.search-box .form-control {
+    border: none;
+    padding: 0.75rem 1.5rem;
+}
+
+.search-box .form-control:focus {
+    box-shadow: none;
+}
+
+.search-box .btn {
+    border-radius: 0 50px 50px 0;
+    padding: 0.75rem 1.5rem;
+}
+
+.author-item {
+    background: #fff;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.author-item:hover {
+    border-color: #17a2b8;
+    box-shadow: 0 8px 24px rgba(23, 162, 184, 0.1);
+    transform: translateX(5px);
+}
+
+.author-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.author-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.author-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.author-name {
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.author-name-bn {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0 0 0.25rem 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.author-book-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.author-arrow {
+    color: #17a2b8;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: all 0.3s ease;
+}
+
+.author-item:hover .author-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.author-item:hover .author-name {
+    color: #17a2b8;
+}
+</style>
+{% endblock %}
