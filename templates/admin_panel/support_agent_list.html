@@ -84,6 +84,11 @@
                                    class="btn btn-outline-primary" title="Edit Agent">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                <a href="{% url 'admin_panel:support_agent_delete' agent.id %}" 
+                                   class="btn btn-outline-danger" title="Delete Agent" 
+                                   onclick="return confirm('Are you sure you want to delete this support agent?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
                             </div>
                         </td>
                     </tr>

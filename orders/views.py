@@ -135,7 +135,6 @@ def checkout(request):
                 gift_city_id = request.POST.get('gift_to_city')
                 if gift_city_id:
                     try:
-                        from .models import GiftCity
                         gift_city_obj = GiftCity.objects.get(id=gift_city_id)
                         shipping_city = gift_city_obj.name
                     except (GiftCity.DoesNotExist, ValueError):
@@ -152,8 +151,17 @@ def checkout(request):
                 except Address.DoesNotExist:
                     pass
             else:
-                # Get city from new address form
-                shipping_city = request.POST.get('city')
+                # Get city from new address form (delivery_city is GiftCity ID)
+                delivery_city_id = request.POST.get('delivery_city')
+                if delivery_city_id:
+                    try:
+                        delivery_city_obj = GiftCity.objects.get(id=delivery_city_id)
+                        shipping_city = delivery_city_obj.name
+                    except (GiftCity.DoesNotExist, ValueError):
+                        # Fallback to hidden city field
+                        shipping_city = request.POST.get('city')
+                else:
+                    shipping_city = request.POST.get('city')
         
         shipping = calculate_shipping_fee(shipping_city)
         
@@ -179,15 +187,30 @@ def checkout(request):
                     }
                 else:
                     # Use recipient fields submitted as part of gift form
+                    # Get the actual city name from GiftCity if ID was provided
+                    gift_city_value = form.cleaned_data.get('gift_to_city')
+                    if gift_city_value:
+                        # Check if it's a GiftCity ID (GiftCity already imported at top)
+                        try:
+                            if str(gift_city_value).isdigit():
+                                gift_city_obj = GiftCity.objects.get(id=int(gift_city_value))
+                                gift_city_name = gift_city_obj.name
+                            else:
+                                gift_city_name = gift_city_value
+                        except (GiftCity.DoesNotExist, ValueError):
+                            gift_city_name = gift_city_value
+                    else:
+                        gift_city_name = form.cleaned_data.get('city') or ''
+                    
                     shipping_data = {
                         'shipping_full_name': form.cleaned_data.get('gift_to_name') or form.cleaned_data.get('full_name'),
                         'shipping_phone': form.cleaned_data.get('gift_to_phone') or form.cleaned_data.get('phone'),
-                        'shipping_email': form.cleaned_data.get('gift_to_email') or form.cleaned_data.get('email'),
-                        'shipping_address_line1': form.cleaned_data.get('gift_to_address_line1') or form.cleaned_data.get('address_line1'),
-                        'shipping_address_line2': '',
-                        'shipping_city': form.cleaned_data.get('gift_to_city') or form.cleaned_data.get('city'),
-                        'shipping_state': '',
-                        'shipping_postal_code': '',
+                        'shipping_email': form.cleaned_data.get('gift_to_email') or form.cleaned_data.get('email') or '',
+                        'shipping_address_line1': form.cleaned_data.get('gift_to_address_line1') or form.cleaned_data.get('address_line1') or '',
+                        'shipping_address_line2': form.cleaned_data.get('gift_to_address_line2') or form.cleaned_data.get('address_line2') or '',
+                        'shipping_city': gift_city_name,
+                        'shipping_state': form.cleaned_data.get('gift_to_area') or form.cleaned_data.get('state') or '',
+                        'shipping_postal_code': form.cleaned_data.get('gift_to_postal_code') or form.cleaned_data.get('postal_code') or '',
                         'shipping_country': form.cleaned_data.get('gift_to_country') or 'Bangladesh',
                     }
             else:
@@ -208,16 +231,39 @@ def checkout(request):
                         'shipping_country': address.country,
                     }
                 else:
-                    # Use new address
+                    # Use new address - extract city/area from delivery_city/delivery_area IDs
+                    delivery_city_id = form.cleaned_data.get('delivery_city')
+                    delivery_area_id = form.cleaned_data.get('delivery_area')
+                    
+                    # Get city name from GiftCity ID
+                    if delivery_city_id:
+                        try:
+                            delivery_city_obj = GiftCity.objects.get(id=delivery_city_id)
+                            city_name = delivery_city_obj.name
+                        except GiftCity.DoesNotExist:
+                            city_name = form.cleaned_data.get('city') or ''
+                    else:
+                        city_name = form.cleaned_data.get('city') or ''
+                    
+                    # Get area name from GiftArea ID
+                    if delivery_area_id:
+                        try:
+                            delivery_area_obj = GiftArea.objects.get(id=int(delivery_area_id))
+                            area_name = delivery_area_obj.name
+                        except (GiftArea.DoesNotExist, ValueError, TypeError):
+                            area_name = form.cleaned_data.get('state') or ''
+                    else:
+                        area_name = form.cleaned_data.get('state') or ''
+                    
                     shipping_data = {
                         'shipping_full_name': form.cleaned_data['full_name'],
                         'shipping_phone': form.cleaned_data['phone'],
-                        'shipping_email': form.cleaned_data['email'],
+                        'shipping_email': form.cleaned_data.get('email') or '',
                         'shipping_address_line1': form.cleaned_data['address_line1'],
-                        'shipping_address_line2': form.cleaned_data['address_line2'],
-                        'shipping_city': form.cleaned_data['city'],
-                        'shipping_state': form.cleaned_data['state'],
-                        'shipping_postal_code': form.cleaned_data['postal_code'],
+                        'shipping_address_line2': form.cleaned_data.get('address_line2') or '',
+                        'shipping_city': city_name,
+                        'shipping_state': area_name,
+                        'shipping_postal_code': form.cleaned_data.get('postal_code') or '',
                         'shipping_country': 'Bangladesh',
                     }
             

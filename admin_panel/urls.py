@@ -36,6 +36,7 @@ urlpatterns = [
     path('customers/', views.customer_list, name='customer_list'),
     path('customers/<int:pk>/', views.customer_detail, name='customer_detail'),
     path('customers/<int:pk>/edit/', views.customer_edit, name='customer_edit'),
+    path('customers/<int:pk>/delete/', views.customer_delete, name='customer_delete'),
     
     # Review Management
     path('reviews/', views.review_list, name='review_list'),
@@ -90,6 +91,7 @@ urlpatterns = [
     path('support/agents/', views.support_agent_list, name='support_agent_list'),
     path('support/agents/add/', views.support_agent_add, name='support_agent_add'),
     path('support/agents/<int:pk>/edit/', views.support_agent_edit, name='support_agent_edit'),
+    path('support/agents/<int:pk>/delete/', views.support_agent_delete, name='support_agent_delete'),
     path('support/quick-replies/', views.quick_reply_list, name='quick_reply_list'),
     path('support/quick-replies/add/', views.quick_reply_add, name='quick_reply_add'),
     path('support/quick-replies/<int:pk>/edit/', views.quick_reply_edit, name='quick_reply_edit'),
@@ -122,4 +124,5 @@ urlpatterns = [
     path('gifts/occasions/', views.gift_occasion_list, name='gift_occasion_list'),
     path('gifts/occasions/add/', views.gift_occasion_add, name='gift_occasion_add'),
     path('gifts/occasions/<int:pk>/edit/', views.gift_occasion_edit, name='gift_occasion_edit'),
+    path('gifts/occasions/<int:pk>/delete/', views.gift_occasion_delete, name='gift_occasion_delete'),
 ]

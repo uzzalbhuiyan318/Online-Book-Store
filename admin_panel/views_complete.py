@@ -1178,6 +1178,20 @@ def gift_occasion_edit(request, pk):
 
 
 @staff_member_required
+def gift_occasion_delete(request, pk):
+    """Delete gift occasion"""
+    occasion = get_object_or_404(GiftOccasion, pk=pk)
+    
+    if request.method == 'POST':
+        label = occasion.label
+        occasion.delete()
+        messages.success(request, f'Occasion "{label}" deleted successfully!')
+        return redirect('admin_panel:gift_occasion_list')
+    
+    return render(request, 'admin_panel/gift_occasion_confirm_delete.html', {'occasion': occasion})
+
+
+@staff_member_required
 def gift_area_list(request):
     """List all gift areas"""
     from orders.models import GiftArea
@@ -1569,6 +1583,34 @@ def customer_edit(request, pk):
     context = {'form': form, 'customer': customer}
 
     return render(request, 'admin_panel/customer_form.html', context)
+
+
+
+
+
+@staff_member_required
+
+def customer_delete(request, pk):
+
+    """Delete customer"""
+
+    customer = get_object_or_404(User, pk=pk, is_staff=False)
+
+    
+
+    if request.method == 'POST':
+
+        email = customer.email
+
+        customer.delete()
+
+        messages.success(request, f'Customer "{email}" deleted successfully!')
+
+        return redirect('admin_panel:customer_list')
+
+    
+
+    return render(request, 'admin_panel/customer_confirm_delete.html', {'customer': customer})
 
 
 
@@ -2838,6 +2880,34 @@ def support_agent_edit(request, pk):
     context = {'form': form, 'agent': agent, 'action': 'Edit'}
 
     return render(request, 'admin_panel/support_agent_form.html', context)
+
+
+
+
+
+@staff_member_required
+
+def support_agent_delete(request, pk):
+
+    """Delete support agent"""
+
+    agent = get_object_or_404(SupportAgent, pk=pk)
+
+    
+
+    if request.method == 'POST':
+
+        display_name = agent.display_name
+
+        agent.delete()
+
+        messages.success(request, f'Support agent "{display_name}" deleted successfully!')
+
+        return redirect('admin_panel:support_agent_list')
+
+    
+
+    return render(request, 'admin_panel/support_agent_confirm_delete.html', {'agent': agent})
 
 
 

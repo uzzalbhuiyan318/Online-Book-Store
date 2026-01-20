@@ -71,7 +71,7 @@
                                 <a href="{% url 'admin_panel:category_edit' category.id %}" class="btn btn-outline-primary" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{% url 'admin_panel:category_delete' category.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure?')">
+                                <a href="{% url 'admin_panel:category_delete' category.id %}" class="btn btn-outline-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this category?')">
                                     <i class="fas fa-trash"></i>
                                 </a>
                             </div>
