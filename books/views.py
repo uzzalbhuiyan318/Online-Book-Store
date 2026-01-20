@@ -328,7 +328,16 @@ def cart(request):
 
 
 def add_to_cart(request, book_id):
-    """Add book to cart"""
+    """Add book to cart
+    
+    BUSINESS RULE: Maximum order quantity constraint
+    - Location: books/views.py - add_to_cart function
+    - Constraint: One person cannot order more than MAX_ORDER_QUANTITY_PER_BOOK (10) pieces of the same book
+    - Applied at: Cart addition time
+    - Modification: Change MAX_ORDER_QUANTITY_PER_BOOK constant in books/models.py
+    """
+    from .models import MAX_ORDER_QUANTITY_PER_BOOK
+    
     book = get_object_or_404(Book, id=book_id, is_active=True)
     
     if not book.is_in_stock:
@@ -339,6 +348,14 @@ def add_to_cart(request, book_id):
     
     quantity = int(request.POST.get('quantity', 1))
     
+    # VALIDATION: Check if requested quantity exceeds maximum allowed
+    if quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+        error_msg = f'You cannot order more than {MAX_ORDER_QUANTITY_PER_BOOK} pieces of the same book at once.'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': error_msg})
+        messages.error(request, error_msg)
+        return redirect('books:book_detail', slug=book.slug)
+    
     if request.user.is_authenticated:
         cart_item, created = Cart.objects.get_or_create(
             user=request.user,
@@ -346,7 +363,15 @@ def add_to_cart(request, book_id):
             defaults={'quantity': quantity}
         )
         if not created:
-            cart_item.quantity += quantity
+            # VALIDATION: Check if adding more items would exceed maximum
+            new_quantity = cart_item.quantity + quantity
+            if new_quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+                error_msg = f'Adding {quantity} more would exceed the maximum limit of {MAX_ORDER_QUANTITY_PER_BOOK} pieces for this book. You currently have {cart_item.quantity} in your cart.'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': error_msg})
+                messages.error(request, error_msg)
+                return redirect('books:cart')
+            cart_item.quantity = new_quantity
             cart_item.save()
         
         # Get cart count for authenticated users
@@ -361,7 +386,15 @@ def add_to_cart(request, book_id):
             defaults={'quantity': quantity}
         )
         if not created:
-            cart_item.quantity += quantity
+            # VALIDATION: Check if adding more items would exceed maximum
+            new_quantity = cart_item.quantity + quantity
+            if new_quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+                error_msg = f'Adding {quantity} more would exceed the maximum limit of {MAX_ORDER_QUANTITY_PER_BOOK} pieces for this book. You currently have {cart_item.quantity} in your cart.'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'message': error_msg})
+                messages.error(request, error_msg)
+                return redirect('books:cart')
+            cart_item.quantity = new_quantity
             cart_item.save()
         
         # Get cart count for guest users
@@ -380,12 +413,28 @@ def add_to_cart(request, book_id):
 
 
 def update_cart(request, cart_id):
-    """Update cart item quantity"""
+    """Update cart item quantity
+    
+    BUSINESS RULE: Maximum order quantity constraint
+    - Location: books/views.py - update_cart function
+    - Constraint: Quantity cannot exceed MAX_ORDER_QUANTITY_PER_BOOK (10) pieces
+    - Applied at: Cart update time
+    - Modification: Change MAX_ORDER_QUANTITY_PER_BOOK constant in books/models.py
+    """
+    from .models import MAX_ORDER_QUANTITY_PER_BOOK
+    
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Invalid request method'})
     
     try:
         quantity = int(request.POST.get('quantity', 1))
+        
+        # VALIDATION: Check if quantity exceeds maximum allowed
+        if quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+            return JsonResponse({
+                'success': False,
+                'message': f'You cannot order more than {MAX_ORDER_QUANTITY_PER_BOOK} pieces of the same book.'
+            })
         
         # Try to find cart item - check both user and session
         cart_item = None

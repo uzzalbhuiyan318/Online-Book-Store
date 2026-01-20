@@ -1,8 +1,26 @@
 from django.db import models
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from accounts.models import User
 from ckeditor.fields import RichTextField
+
+# ============================================================================
+# ORDER QUANTITY CONSTRAINTS
+# ============================================================================
+# This constant defines the maximum number of pieces that can be ordered
+# for any single book in a single order. This applies to:
+# - Adding items to cart
+# - Updating cart quantities
+# - Final checkout validation
+#
+# To modify this limit:
+# 1. Change the value below
+# 2. Restart the Django server (python manage.py runserver)
+# 3. No database migration needed
+# ============================================================================
+MAX_ORDER_QUANTITY_PER_BOOK = 10
+# ============================================================================
 
 
 class Category(models.Model):
@@ -239,7 +257,15 @@ class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='cart_items')
     session_key = models.CharField(max_length=40, null=True, blank=True)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    quantity = models.IntegerField(default=1, validators=[MinValueValidator(1)])
+    quantity = models.IntegerField(
+        default=1,
+        validators=[
+            MinValueValidator(1, message='Quantity must be at least 1.'),
+            MaxValueValidator(MAX_ORDER_QUANTITY_PER_BOOK, 
+                            message=f'You cannot order more than {MAX_ORDER_QUANTITY_PER_BOOK} pieces of the same book.')
+        ],
+        help_text=f'Maximum {MAX_ORDER_QUANTITY_PER_BOOK} pieces per book'
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -248,6 +274,23 @@ class Cart(models.Model):
         verbose_name = 'Cart Item'
         verbose_name_plural = 'Cart Items'
         ordering = ['-created_at']
+    
+    def clean(self):
+        """Validate cart item before saving"""
+        super().clean()
+        if self.quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+            raise ValidationError({
+                'quantity': f'You cannot order more than {MAX_ORDER_QUANTITY_PER_BOOK} pieces of the same book.'
+            })
+        if self.quantity < 1:
+            raise ValidationError({
+                'quantity': 'Quantity must be at least 1.'
+            })
+    
+    def save(self, *args, **kwargs):
+        """Override save to call full_clean for validation"""
+        self.full_clean()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         if self.user:

@@ -107,8 +107,21 @@ def checkout(request):
             messages.error(request, 'Your cart is empty.')
             return redirect('orders:checkout')
         
-        # Check stock availability
+        # VALIDATION: Import MAX_ORDER_QUANTITY constraint
+        from books.models import MAX_ORDER_QUANTITY_PER_BOOK
+        
+        # Check stock availability and order quantity limits
         for item in cart_items:
+            # BUSINESS RULE: Maximum order quantity validation at checkout
+            # Location: orders/views.py - checkout_view function
+            # Constraint: Validates each cart item doesn't exceed MAX_ORDER_QUANTITY_PER_BOOK
+            # Modification: Change MAX_ORDER_QUANTITY_PER_BOOK in books/models.py
+            if item.quantity > MAX_ORDER_QUANTITY_PER_BOOK:
+                messages.error(request, 
+                    f'{item.book.title}: You cannot order more than {MAX_ORDER_QUANTITY_PER_BOOK} pieces of the same book. '
+                    f'Please update your cart.')
+                return redirect('orders:checkout')
+            
             if item.quantity > item.book.stock:
                 messages.error(request, f'{item.book.title} has insufficient stock.')
                 return redirect('orders:checkout')
